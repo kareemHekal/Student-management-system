@@ -7,16 +7,24 @@ class three extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [Column
-      (
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 60),
-          child: Center(child: Image.asset("assets/images/1......1.png")),
+        ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 60),
+                child: Center(child: Image.asset("assets/images/1......1.png")),
+              ),
+              SizedBox(height: 50),
+            ],
+          ),
         ),
-        SizedBox(height: 50)
+        AddStudentScreen(level: "3 secondary"),
       ],
-    ),AddStudentTab_(level: "3 secondary",)]);
+    );
   }
+
 }

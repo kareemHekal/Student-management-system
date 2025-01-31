@@ -7,7 +7,7 @@ import 'package:printing/printing.dart';
 import '../cards/StudentWidget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
-import 'cards/smallStydentCard.dart';
+import 'cards/smallStudentCard.dart';
 import 'models/Studentmodel.dart';
 
 class StudentStreamBuilder extends StatefulWidget {
@@ -80,7 +80,6 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-
                                 IconButton(
                                   icon: const Icon(Icons.print,
                                       color: Colors.white),
@@ -218,6 +217,7 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                                   ? StudentWidget(
                                       studentModel: student,
                                       grade: widget.grade,
+                                      IsComingFromGroup: false,
                                     )
                                   : Smallstydentcard(
                                       studentModel: student,
@@ -251,8 +251,10 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
     final pw.Font font = pw.Font.ttf(fontData);
 
     final int totalStudents = students.length;
-    final int totalCardsPerPage = crossAxisCount * maxRowsPerPage; // 18 cards per page
-    final int totalPages = (totalStudents / totalCardsPerPage).ceil(); // Calculate number of pages
+    final int totalCardsPerPage =
+        crossAxisCount * maxRowsPerPage; // 18 cards per page
+    final int totalPages =
+        (totalStudents / totalCardsPerPage).ceil(); // Calculate number of pages
 
     for (int pageIndex = 0; pageIndex < totalPages; pageIndex++) {
       pdf.addPage(
@@ -265,7 +267,9 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                   mainAxisAlignment: pw.MainAxisAlignment.start,
                   children: List.generate(crossAxisCount, (colIndex) {
                     // Calculate the current student's index
-                    final studentIndex = pageIndex * totalCardsPerPage + rowIndex * crossAxisCount + colIndex;
+                    final studentIndex = pageIndex * totalCardsPerPage +
+                        rowIndex * crossAxisCount +
+                        colIndex;
 
                     if (studentIndex < totalStudents) {
                       final student = students[studentIndex];
@@ -284,7 +288,9 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                           mainAxisAlignment: pw.MainAxisAlignment.center,
                           children: [
                             pw.Text(
-                              nameText.length > 20 ? nameText.substring(0, 20) + '...' : nameText,
+                              nameText.length > 20
+                                  ? nameText.substring(0, 20) + '...'
+                                  : nameText,
                               style: pw.TextStyle(font: font, fontSize: 10),
                               textDirection: pw.TextDirection.rtl,
                             ),
@@ -319,5 +325,4 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
       onLayout: (PdfPageFormat format) async => pdf.save(),
     );
   }
-
 }

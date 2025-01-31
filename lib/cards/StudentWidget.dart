@@ -1,16 +1,19 @@
 import 'package:el_tooltip/el_tooltip.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import '../Alert dialogs/Notify Absence.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
 import '../pages/EditStudent.dart';
 
 class StudentWidget extends StatelessWidget {
+  bool IsComingFromGroup;
   final Studentmodel studentModel;
   final String? grade;
 
-  StudentWidget({required this.studentModel, required this.grade, super.key});
+  StudentWidget({required this.studentModel, required this.IsComingFromGroup,required this.grade, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +21,7 @@ class StudentWidget extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: GestureDetector(
         onLongPress: () {
-          showDialog(
+          IsComingFromGroup==true?null: showDialog(
             context: context,
             builder: (BuildContext context) {
               return Theme(
@@ -91,11 +94,55 @@ class StudentWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
                   children: [
                     Text("${studentModel.dateofadd}"),
+                    Spacer(),
+                    _buildIconButton(
+                      imagePath: "assets/images/whatsapp.png",
+                      // Path to WhatsApp icon
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: app_colors.ligthGreen,
+                            title: const Text(
+                              'Who would you like to send the message to?',style: TextStyle(color: app_colors.green),),
+                            content: SelectRecipientDialogContent(
+                              sendMessageToFather: () => _sendMessageToParent('father'),
+                              sendMessageToMother: () => _sendMessageToParent('mother'),
+                              sendMessageToStudent: () => _sendMessageToParent('student'),
+                            ),
+                            actions: [
+                              Material(
+                                color: Colors.transparent, // Make the material background transparent
+                                elevation: 10, // Set elevation for the shadow effect
+                                shadowColor: Colors.black.withOpacity(0.5), // Set shadow color
+                                borderRadius: BorderRadius.circular(10), // Optional: Add rounded corners
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: app_colors.orange, // Set background color
+                                    foregroundColor: Colors.white, // Set text color for contrast
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Optional: Adjust padding
+                                  ),
+                                  child: const Text('Cancel'),
+                                ),
+                              )
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(
+                      width: 20,
+                    ),
                     ElTooltip(
                       position: ElTooltipPosition.leftCenter,
+                      content:
+                          Text("${studentModel.note ?? "there is no note"}"),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(30),
                         child: Image.asset(
@@ -104,8 +151,6 @@ class StudentWidget extends StatelessWidget {
                           height: 50,
                         ),
                       ),
-                      content:
-                          Text("${studentModel.note ?? "there is no note"}"),
                     ),
                   ],
                 ),
@@ -186,17 +231,91 @@ class StudentWidget extends StatelessWidget {
     );
   }
 
+  void _sendMessageToParent(String parentRole) {
+    String genderSpecificMessage;
 
-  // Widget to display student-specific days if available
+    // Determine the parent's role and customize the message
+    if (parentRole == 'father') {
+      genderSpecificMessage = """
+عزيزي والد ${studentModel.name} 
+
+
+
+أطيب التحيات،
+فاطمة العرباني
+      """;
+    }
+    else if (parentRole == 'mother') {
+      genderSpecificMessage = """
+عزيزتي والدة ${studentModel.name}  
+
+ 
+
+أطيب التحيات،
+فاطمة العرباني
+      """;
+    }
+    else {
+      genderSpecificMessage = """
+عزيزي ${studentModel.name}،
+
+أطيب التحيات،
+فاطمة العرباني
+      """;
+    }
+
+    // Send the message based on the parent's role
+    if (parentRole == 'father') {
+      _sendWhatsAppMessage(studentModel.fatherPhone!, genderSpecificMessage);
+    } else if (parentRole == 'mother') {
+      _sendWhatsAppMessage(studentModel.motherPhone!, genderSpecificMessage);
+    } else {
+      _sendWhatsAppMessage(studentModel.phoneNumber!, genderSpecificMessage);
+    }
+  }
+  Future<void> _sendWhatsAppMessage(String phoneNumber, String message) async {
+    // Format the phone number
+    final String formattedPhone = phoneNumber.startsWith('0')
+        ? '+20${phoneNumber.substring(1)}'
+        : phoneNumber;
+
+    // Print the formatted phone number
+    print("Formatted Phone Number: $formattedPhone");
+
+    // Encode the message
+    final String encodedMessage = Uri.encodeComponent(message);
+
+    // Build the WhatsApp URL
+    final Uri url = Uri.parse(
+        'whatsapp://send?phone=$formattedPhone&text=$encodedMessage');
+
+    // Print the WhatsApp URL for debugging
+    print("WhatsApp URL: $url");
+
+    try {
+      // Check if WhatsApp can be launched
+      bool canLaunch = await canLaunchUrl(url);
+      if (canLaunch) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        print("WhatsApp is not installed or cannot be opened.");
+      }
+    } catch (e) {
+      print("Error launching WhatsApp: $e");
+    }
+  }
   Widget _buildStudentDaysList() {
-    List<Map<String, dynamic>> daysWithTimes = [
-      {'day': studentModel.firstDay, 'time': studentModel.firstDayTime},
-      {'day': studentModel.secondDay, 'time': studentModel.secondDayTime},
-      {'day': studentModel.thirdDay, 'time': studentModel.thirdDayTime},
-      {'day': studentModel.forthday, 'time': studentModel.forthdayTime}
-    ];
+    // Assuming `studentModel.hisGroups` is a list of Magmo3amodel
+    List<Map<String, dynamic>> daysWithTimes = studentModel.hisGroups?.map((group) {
+      return {
+        'day': group.days, // Group days as a string (e.g., "Monday, Wednesday")
+        'time': group.time != null
+            ? {'hour': group.time?.hour, 'minute': group.time?.minute}
+            : null,
+      };
+    }).toList() ?? [];
 
-    // Remove days that are null
+    // Remove entries where day is null
     daysWithTimes.removeWhere((entry) => entry['day'] == null);
 
     return Row(
@@ -215,11 +334,12 @@ class StudentWidget extends StatelessWidget {
             child: Row(
               children: daysWithTimes.map((entry) {
                 String day = entry['day'] ?? '';
-                TimeOfDay? time = entry['time'];
+                TimeOfDay? time = entry['time'] != null
+                    ? TimeOfDay(hour: entry['time']['hour'], minute: entry['time']['minute'])
+                    : null;
 
                 // Convert TimeOfDay to 12-hour format with AM/PM
-                String timeString =
-                    time != null ? _formatTime12Hour(time) : 'No Time';
+                String timeString = time != null ? _formatTime12Hour(time) : 'No Time';
 
                 return Row(
                   children: [
@@ -255,6 +375,23 @@ class StudentWidget extends StatelessWidget {
     );
   }
 
+  Widget _buildIconButton({
+    required String imagePath,
+    required VoidCallback onPressed,
+  }) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onPressed,
+          child: Image.asset(
+            imagePath,
+            width: 30,
+            height: 30,
+          ),
+        ), // مسافة بين الصورة والنص
+      ],
+    );
+  }
 // Helper function to format TimeOfDay to 12-hour format with AM/PM
   String _formatTime12Hour(TimeOfDay time) {
     final int hour = time.hourOfPeriod == 0

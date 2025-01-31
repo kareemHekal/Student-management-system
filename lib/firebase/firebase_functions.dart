@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fatma_elorbany/models/Invoice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/Big invoice.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Studentmodel.dart';
+import 'package:fatma_elorbany/models/payment.dart';
+
 import '../models/usermodel.dart';
 
 class FirebaseFunctions {
@@ -20,7 +24,8 @@ class FirebaseFunctions {
   }
 
   /// Deletes a `Magmo3aModel` document from a specific day's collection
-  static Future<void> deleteMagmo3aFromDay(String day, String documentId) async {
+  static Future<void> deleteMagmo3aFromDay(
+      String day, String documentId) async {
     await getDayCollection(day).doc(documentId).delete();
   }
 
@@ -60,12 +65,12 @@ class FirebaseFunctions {
   static Future<void> deleteAbsencesSubcollection(String day) async {
     try {
       CollectionReference dayCollection =
-      FirebaseFirestore.instance.collection(day);
+          FirebaseFirestore.instance.collection(day);
       QuerySnapshot daySnapshot = await dayCollection.get();
 
       for (var groupDoc in daySnapshot.docs) {
         CollectionReference absencesSubcollectionRef =
-        groupDoc.reference.collection('absences');
+            groupDoc.reference.collection('absences');
 
         QuerySnapshot absencesSnapshot = await absencesSubcollectionRef.get();
         for (var absenceDoc in absencesSnapshot.docs) {
@@ -82,10 +87,10 @@ class FirebaseFunctions {
     return FirebaseFirestore.instance
         .collection(day)
         .withConverter<Magmo3amodel>(
-      fromFirestore: (snapshot, _) =>
-          Magmo3amodel.fromJson(snapshot.data()!),
-      toFirestore: (value, _) => value.toJson(),
-    );
+          fromFirestore: (snapshot, _) =>
+              Magmo3amodel.fromJson(snapshot.data()!),
+          toFirestore: (value, _) => value.toJson(),
+        );
   }
 
   // =============================== Student Functions ===============================
@@ -94,7 +99,7 @@ class FirebaseFunctions {
   static Future<void> addStudentToCollection(
       String grade, Studentmodel studentModel) async {
     CollectionReference<Studentmodel> collection =
-    getSecondaryCollection(grade);
+        getSecondaryCollection(grade);
 
     DocumentReference<Studentmodel> newDocRef = collection.doc();
     studentModel.id = newDocRef.id;
@@ -102,13 +107,13 @@ class FirebaseFunctions {
     await newDocRef.set(studentModel);
   }
 
-
- static Future<void> resetAttendanceForAllStudents() async {
+  static Future<void> resetAttendanceForAllStudents() async {
     List<String> grades = ['1 secondary', '2 secondary', '3 secondary'];
 
     for (var grade in grades) {
       // Get the collection for each grade
-      CollectionReference<Studentmodel> collection = getSecondaryCollection(grade);
+      CollectionReference<Studentmodel> collection =
+          getSecondaryCollection(grade);
 
       // Get all students in the grade collection
       QuerySnapshot snapshot = await collection.get();
@@ -133,55 +138,39 @@ class FirebaseFunctions {
   static Future<void> deleteStudentFromHisCollection(
       String grade, String documentId) async {
     CollectionReference<Studentmodel> collection =
-    getSecondaryCollection(grade);
+        getSecondaryCollection(grade);
     await collection.doc(documentId).delete();
   }
 
   /// Updates a `StudentModel` document in a specific grade's collection
   static Future<void> updateStudentInCollection(
       String grade, String studentId, Studentmodel updatedStudentModel) async {
-    CollectionReference<Studentmodel> collection = getSecondaryCollection(grade);
+    CollectionReference<Studentmodel> collection =
+        getSecondaryCollection(grade);
     await collection.doc(studentId).update(updatedStudentModel.toJson());
   }
 
   /// Retrieves all students for a specific grade as a stream
   static Stream<List<Studentmodel>> getAllStudentsByGrade(String grade) {
-    CollectionReference<Studentmodel> collection = getSecondaryCollection(grade);
-    return collection.snapshots().map(
-            (snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    CollectionReference<Studentmodel> collection =
+        getSecondaryCollection(grade);
+    return collection
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
   /// Retrieves students filtered by first day ID
-  static Stream<QuerySnapshot<Studentmodel>> getStudentsByFirstDayId(
-      String grade, String firstdayid) {
-    var collection =
-    getSecondaryCollection(grade); // Get the collection based on grade
-    return collection.where("firstdayid", isEqualTo: firstdayid).snapshots();
+  static Stream<QuerySnapshot<Studentmodel>> getStudentsByGroupId(
+      String grade,
+      String groupId // The group ID you want to check in the `hisGroups` list
+      ) {
+    var collection = getSecondaryCollection(grade); // Get the collection based on grade
+
+    return collection
+        .where("hisGroupsId", arrayContains: groupId) // Check if the hisGroups array contains the groupId
+        .snapshots();
   }
 
-  /// Retrieves students filtered by Second day ID
-  static Stream<QuerySnapshot<Studentmodel>> getStudentsBySecondDayId(
-      String grade, String seconddayid) {
-    var collection =
-    getSecondaryCollection(grade); // Get the collection based on grade
-    return collection.where("seconddayid", isEqualTo: seconddayid).snapshots();
-  }
-
-  /// Retrieves students filtered by Third day ID
-  static Stream<QuerySnapshot<Studentmodel>> getStudentsByThirdDayId(
-      String grade, String thirddayid) {
-    var collection =
-    getSecondaryCollection(grade); // Get the collection based on grade
-    return collection.where("thirddayid", isEqualTo: thirddayid).snapshots();
-  }
-
-  /// Retrieves students filtered by Forth day ID
-  static Stream<QuerySnapshot<Studentmodel>> getStudentsByForthDayId(
-      String grade, String forthdayid) {
-    var collection =
-    getSecondaryCollection(grade); // Get the collection based on grade
-    return collection.where("forthdayid", isEqualTo: forthdayid).snapshots();
-  }
 
   /// Returns a reference to the specific grade's collection
   static CollectionReference<Studentmodel> getSecondaryCollection(
@@ -189,10 +178,10 @@ class FirebaseFunctions {
     return FirebaseFirestore.instance
         .collection(grade)
         .withConverter<Studentmodel>(
-      fromFirestore: (snapshot, _) =>
-          Studentmodel.fromJson(snapshot.data()!),
-      toFirestore: (value, _) => value.toJson(),
-    );
+          fromFirestore: (snapshot, _) =>
+              Studentmodel.fromJson(snapshot.data()!),
+          toFirestore: (value, _) => value.toJson(),
+        );
   }
 
   /// Deletes all documents in a specific grade's collection
@@ -209,15 +198,15 @@ class FirebaseFunctions {
 
   /// Creates a new account in Firebase and saves the user data
   static createAccount(
-      String emailAddress,
-      String password, {
-        required Function onSucsses,
-        required Function onEror,
-        required String Username,
-      }) async {
+    String emailAddress,
+    String password, {
+    required Function onSucsses,
+    required Function onEror,
+    required String Username,
+  }) async {
     try {
       final credential =
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailAddress,
         password: password,
       );
@@ -234,8 +223,8 @@ class FirebaseFunctions {
   /// Logs in the user and verifies their email
   static login(String emailAddress, String password,
       {required String Username,
-        required Function onSucsses,
-        required Function onEror}) async {
+      required Function onSucsses,
+      required Function onEror}) async {
     try {
       final credential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: emailAddress, password: password);
@@ -251,7 +240,7 @@ class FirebaseFunctions {
   static Future<Usermodel?> ReadUserData() async {
     var collection = getUsersCollection();
     DocumentSnapshot<Usermodel> docUser =
-    await collection.doc(FirebaseAuth.instance.currentUser!.uid).get();
+        await collection.doc(FirebaseAuth.instance.currentUser!.uid).get();
     return docUser.data();
   }
 
@@ -267,9 +256,129 @@ class FirebaseFunctions {
     return FirebaseFirestore.instance
         .collection("users")
         .withConverter<Usermodel>(
-      fromFirestore: (snapshot, _) =>
-          Usermodel.fromJson(snapshot.data()!),
-      toFirestore: (value, _) => value.tojson(),
-    );
+          fromFirestore: (snapshot, _) => Usermodel.fromJson(snapshot.data()!),
+          toFirestore: (value, _) => value.tojson(),
+        );
   }
+
+  static Future<void> createBigInvoiceCollection() async {
+    // Get Firestore instance
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Reference to the collection (this will create the collection if it doesn't exist)
+    CollectionReference bigInvoicesCollection =
+        firestore.collection('big_invoices');
+
+    // Optionally, you can add a dummy document to ensure the collection exists
+    await bigInvoicesCollection.doc('dummy').set({'dummyField': 'dummyValue'});
+  }
+
+  static Future<void> deleteBigInvoiceCollection() async {
+    // Get Firestore instance
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Reference to the collection
+    CollectionReference bigInvoicesCollection = firestore.collection('big_invoices');
+
+    // Get all documents in the collection
+    QuerySnapshot snapshot = await bigInvoicesCollection.get();
+
+    // Loop through each document and delete it
+    for (var doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  static Stream<QuerySnapshot> getAllBigInvoices() {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    return firestore.collection('big_invoices').snapshots();
+  }
+
+  static Future<void> addBigInvoice(BigInvoice bigInvoice) async {
+    // Reference to the Firestore collection
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference invoicesCollection =
+        firestore.collection('big_invoices');
+
+    // Create or update the document with the formatted date as the doc ID
+    await invoicesCollection.doc(bigInvoice.date).set(bigInvoice.toJson());
+  }
+
+  static Future<void> updateBigInvoice(
+      String date, BigInvoice bigInvoice) async {
+    // Reference to the Firestore collection
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference invoicesCollection =
+        firestore.collection('big_invoices');
+
+    // Check if the document exists
+    DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
+
+    if (docSnapshot.exists) {
+      // If document exists, update it with the new data
+      await invoicesCollection.doc(date).update(bigInvoice.toJson());
+    } else {
+      // If document doesn't exist, create a new one
+      await invoicesCollection.doc(date).set(bigInvoice.toJson());
+    }
+  }
+
+  static Future<void> updatePaymentInBigInvoice({
+    required String date, // Document ID
+    required Payment updatedPayment,
+    required int paymentIndex, // Index of the payment in the list
+  }) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference invoicesCollection = firestore.collection('big_invoices');
+
+    // Fetch the BigInvoice document
+    DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
+
+    if (!docSnapshot.exists) {
+      throw Exception("Document with date $date does not exist");
+    }
+
+    // Convert the document to a BigInvoice object
+    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+    BigInvoice bigInvoice = BigInvoice.fromJson(data);
+
+    // Update the specific payment in the list
+    if (paymentIndex < 0 || paymentIndex >= bigInvoice.payments.length) {
+      throw Exception("Invalid payment index");
+    }
+    bigInvoice.payments[paymentIndex] = updatedPayment;
+
+    // Update the document in Firestore
+    await invoicesCollection.doc(date).set(bigInvoice.toJson());
+  }
+  static Future<void> updateIncomeInBigInvoice({
+    required String date, // Document ID
+    required Invoice updatedIncome, // Updated income object
+    required int incomeIndex, // Index of the income in the list
+  }) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    CollectionReference invoicesCollection = firestore.collection('big_invoices');
+
+    // Fetch the BigInvoice document
+    DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
+
+    if (!docSnapshot.exists) {
+      throw Exception("Document with date $date does not exist");
+    }
+
+    // Convert the document to a BigInvoice object
+    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+    BigInvoice bigInvoice = BigInvoice.fromJson(data);
+
+    // Update the specific income in the list
+    if (incomeIndex < 0 || incomeIndex >= bigInvoice.invoices.length) {
+      throw Exception("Invalid income index");
+    }
+    bigInvoice.invoices[incomeIndex] = updatedIncome;
+
+    // Update the document in Firestore
+    await invoicesCollection.doc(date).set(bigInvoice.toJson());
+  }
+
+
 }

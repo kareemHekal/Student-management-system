@@ -1,28 +1,28 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../../colors_app.dart';
-import '../../firebase/firebase_functions.dart';
-import '../../loadingFile/loadingWidget.dart';
-import '../../cards/magmo3afor display widget.dart';
-import '../../models/Magmo3aModel.dart';
+import '../colors_app.dart';
+import '../firebase/firebase_functions.dart';
+import '../loadingFile/loadingWidget.dart';
+import '../cards/magmo3afor display widget.dart';
+import '../models/Magmo3aModel.dart';
 
-class Thirdday extends StatefulWidget {
+class Firstday extends StatefulWidget {
   final String? level;
-  Thirdday({this.level, super.key});
+  Firstday({this.level, super.key});
 
   @override
-  _ThirddayState createState() => _ThirddayState();
+  _SeconddayState createState() => _SeconddayState();
 }
 
-class _ThirddayState extends State<Thirdday> with SingleTickerProviderStateMixin {
+class _SeconddayState extends State<Firstday> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     // Initialize the TabController with two tabs
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
   }
 
   @override
@@ -53,8 +53,14 @@ class _ThirddayState extends State<Thirdday> with SingleTickerProviderStateMixin
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(text: "wednesday"),
-            Tab(text: "thursday"),
+            Tab(text: "Saturday"),
+            Tab(text: "Sunday"),
+            Tab(text: "Monday"),
+            Tab(text: "Tuesday"),
+            Tab(text: "Wednesday"),
+            Tab(text: "Thursday"),
+            Tab(text: "Friday"),
+
           ],
           indicatorColor: app_colors.orange,
           labelColor: app_colors.orange,
@@ -64,8 +70,14 @@ class _ThirddayState extends State<Thirdday> with SingleTickerProviderStateMixin
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildGroupList("Wednesday"),
-          _buildGroupList("Thursday"), // Stream for Tuesday
+          _buildGroupList("Saturday"), // Stream for Saturday
+          _buildGroupList("Sunday"),   // Stream for Sunday
+          _buildGroupList("Monday"),   // Stream for Monday
+          _buildGroupList("Tuesday"),  // Stream for Tuesday
+          _buildGroupList("Wednesday"),// Stream for Wednesday
+          _buildGroupList("Thursday"), // Stream for Thursday
+          _buildGroupList("Friday"),   // Stream for Friday
+          // Stream for Tuesday
         ],
       ),
     );
@@ -153,6 +165,7 @@ class _ThirddayState extends State<Thirdday> with SingleTickerProviderStateMixin
                     );
                   },
                 )
+
               ],
             ),
           ),

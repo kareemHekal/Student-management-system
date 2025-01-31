@@ -15,6 +15,7 @@ class Groupsmallcard extends StatelessWidget {
 
         elevation: 10,
         shape: RoundedRectangleBorder(
+
           borderRadius: BorderRadius.circular(30),
         ),
         color: app_colors.ligthGreen,
@@ -24,12 +25,15 @@ class Groupsmallcard extends StatelessWidget {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _buildDaysList(),
-                      const SizedBox(height: 10),
-                      _buildGradeAndTimeAndType(),
-                    ],
+                  child: SizedBox(
+                    width: 150, // Set a fixed width for the card
+                    child: Column(
+                      children: [
+                        _buildDaysList(),
+                        const SizedBox(height: 10),
+                        _buildGradeAndTimeAndType(),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -61,7 +65,7 @@ class Groupsmallcard extends StatelessWidget {
               padding: const EdgeInsets.all(8.0), // added padding
               child: Text(
                 magmo3aModel?.days??"", // Display the full day name
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22, // increased font size
                   color: app_colors.orange,
                 ),
@@ -74,7 +78,7 @@ class Groupsmallcard extends StatelessWidget {
   }
 
   Widget _buildGradeAndTimeAndType() {
-    return Container(
+    return SizedBox(
       height: 40,
       child: ListView(
         scrollDirection: Axis.horizontal,
@@ -85,7 +89,7 @@ class Groupsmallcard extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   children: [
-                    TextSpan(
+                    const TextSpan(
                       text: "Grade: ",
                       style: TextStyle(
                         fontSize: 17,
@@ -93,8 +97,8 @@ class Groupsmallcard extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: "${magmo3aModel?.grade ?? ''}",
-                      style: TextStyle(
+                      text: magmo3aModel?.grade ?? '',
+                      style: const TextStyle(
                         fontSize: 20,
                         color: app_colors.orange,
                       ),
@@ -102,13 +106,13 @@ class Groupsmallcard extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 width: 10,
               ),
               RichText(
                 text: TextSpan(
                   children: [
-                    TextSpan(
+                    const TextSpan(
                       text: " Time : ",
                       style: TextStyle(
                         fontSize: 17,
@@ -117,9 +121,9 @@ class Groupsmallcard extends StatelessWidget {
                     ),
                     TextSpan(
                       text: magmo3aModel?.time != null
-                          ? "${_formatTime(magmo3aModel!.time!)}"
+                          ? _formatTime(magmo3aModel!.time!)
                           : '',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         color: app_colors.orange,
                       ),
@@ -127,7 +131,7 @@ class Groupsmallcard extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 width: 10,
               ),
             ],
@@ -149,5 +153,4 @@ class Groupsmallcard extends StatelessWidget {
   }
 }
 
-mixin magmo3aModel {
-}
+

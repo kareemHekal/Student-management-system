@@ -1,58 +1,55 @@
+import 'package:fatma_elorbany/cards/groupSmallCard.dart';
 import 'package:flutter/material.dart';
+import 'Magmo3aModel.dart';
 
+/// A model representing a student and their associated data.
 class Studentmodel {
-  String id;
-  String? name;
-  String? grade;
-  String? firstDayId;
-  String? forthdayid;
-  String? forthday;
-  TimeOfDay? forthdayTime;
-  String? firstDay;
-  TimeOfDay? firstDayTime;
-  String? secondDay;
-  String? secondDayId;
-  TimeOfDay? secondDayTime;
-  String? thirdDay;
-  String? thirdDayId;
-  TimeOfDay? thirdDayTime;
-  String? gender;
-  String? phoneNumber;
-  String? motherPhone;
-  String? fatherPhone;
-  bool? firstMonth;
-  bool? secondMonth;
-  bool? thirdMonth;
-  bool? fourthMonth;
-  bool? fifthMonth;
-  bool? explainingNote;
-  bool? reviewNote;
-  String? note;
-  String? dateofadd;
-  int? numberOfAbsentDays;
-  int? numberOfAttendantDays;
-  String? lastDayStudentCame;
-  String? lastDateStudentCame;
+  // Basic student details
+  String id; // Unique identifier for the student
+  String? name; // Name of the student
+  String? grade; // Grade/level of the student
+  String? gender; // Gender of the student (e.g., male, female)
+  String? phoneNumber; // Student's phone number
+  String? motherPhone; // Mother's phone number
+  String? fatherPhone; // Father's phone number
 
-  String? dateOfFirstMonthPaid;
-  String? dateOfSecondMonthPaid;
-  String? dateOfThirdMonthPaid;
-  String? dateOfFourthMonthPaid;
-  String? dateOfFifthMonthPaid;
+  // List of groups the student belongs to
+  List<Magmo3amodel>? hisGroups;
+  List<String>? hisGroupsId; // List of group IDs (Strings)
 
+  /// Flags for tracking payments for monthly fees and notes
+  bool? firstMonth; // Payment status for the first month
+  bool? secondMonth; // Payment status for the second month
+  bool? thirdMonth; // Payment status for the third month
+  bool? fourthMonth; // Payment status for the fourth month
+  bool? fifthMonth; // Payment status for the fifth month
+  bool? explainingNote; // Payment status for explaining notes
+  bool? reviewNote; // Payment status for reviewing notes
+
+  // Additional student information
+  String? note; // Notes or remarks about the student
+  String? dateofadd; // Date the student was added
+  int? numberOfAbsentDays; // Total number of days the student was absent
+  int? numberOfAttendantDays; // Total number of days the student was present
+  String? lastDayStudentCame; // The last day the student attended class
+  String? lastDateStudentCame; // The last date the student attended class
+
+  // Dates for when payments were made
+  String? dateOfFirstMonthPaid; // Date when the first month's fee was paid
+  String? dateOfSecondMonthPaid; // Date when the second month's fee was paid
+  String? dateOfThirdMonthPaid; // Date when the third month's fee was paid
+  String? dateOfFourthMonthPaid; // Date when the fourth month's fee was paid
+  String? dateOfFifthMonthPaid; // Date when the fifth month's fee was paid
+  String? dateOfExplainingNotePaid; // Date when the explaining note fee was paid
+  String? dateOfReviewingNotePaid; // Date when the reviewing note fee was paid
+
+  /// Constructor to initialize the student model.
   Studentmodel({
     this.id = "",
+    this.hisGroups,
+    this.hisGroupsId,
     this.grade,
-    this.thirdDayId,
-    this.firstDayId,
-    this.secondDayId,
     this.name,
-    this.firstDay,
-    this.firstDayTime,
-    this.secondDay,
-    this.secondDayTime,
-    this.thirdDay,
-    this.thirdDayTime,
     this.gender,
     this.explainingNote,
     this.reviewNote,
@@ -64,34 +61,33 @@ class Studentmodel {
     this.thirdMonth,
     this.fourthMonth,
     this.fifthMonth,
-    this.forthdayid,
-    this.forthday,
-    this.forthdayTime,
     this.note,
     this.dateofadd,
     this.numberOfAbsentDays,
     this.numberOfAttendantDays,
     this.lastDayStudentCame,
     this.lastDateStudentCame,
-
     this.dateOfFirstMonthPaid,
     this.dateOfSecondMonthPaid,
     this.dateOfThirdMonthPaid,
     this.dateOfFourthMonthPaid,
     this.dateOfFifthMonthPaid,
+    this.dateOfExplainingNotePaid,
+    this.dateOfReviewingNotePaid,
   });
 
+  /// Factory method to create a `Studentmodel` instance from a JSON object.
   factory Studentmodel.fromJson(Map<String, dynamic> json) {
     return Studentmodel(
       id: json['id'] ?? "",
       name: json['name'],
+      motherPhone: json['mothernumber'],
+      phoneNumber: json['phonenumber'],
+      explainingNote: json['explainingnote'],
+      reviewNote: json['reviewnote'],
       note: json['note'],
       dateofadd: json['dateofadd'],
       gender: json['gender'],
-      firstDayId: json['firstdayid'],
-      secondDayId: json['seconddayid'],
-      thirdDayId: json['thirddayid'],
-      firstDay: json["firstDay"],
       grade: json['grade'],
       fatherPhone: json['fatherphone'],
       firstMonth: json['firstmonth'],
@@ -99,38 +95,6 @@ class Studentmodel {
       thirdMonth: json['thirdmonth'],
       fourthMonth: json['fourthmonth'],
       fifthMonth: json['fifthMonth'],
-      motherPhone: json['mothernumber'],
-      phoneNumber: json['phonenumber'],
-      explainingNote: json['explainingnote'],
-      reviewNote: json['reviewnote'],
-      firstDayTime: json['firstdaytime'] != null
-          ? TimeOfDay(
-        hour: json['firstdaytime']['hour'] ?? 0,
-        minute: json['firstdaytime']['minute'] ?? 0,
-      )
-          : null,
-      secondDay: json['secondday'],
-      secondDayTime: json['seconddaytime'] != null
-          ? TimeOfDay(
-        hour: json['seconddaytime']['hour'] ?? 0,
-        minute: json['seconddaytime']['minute'] ?? 0,
-      )
-          : null,
-      thirdDay: json['thirdday'],
-      thirdDayTime: json['thirddaytime'] != null
-          ? TimeOfDay(
-        hour: json['thirddaytime']['hour'] ?? 0,
-        minute: json['thirddaytime']['minute'] ?? 0,
-      )
-          : null,
-      forthdayid: json['forthdayid'],
-      forthday: json['forthday'],
-      forthdayTime: json['forthdaytime'] != null
-          ? TimeOfDay(
-        hour: json['forthdaytime']['hour'] ?? 0,
-        minute: json['forthdaytime']['minute'] ?? 0,
-      )
-          : null,
       numberOfAbsentDays: json['numberOfAbsentDays'],
       numberOfAttendantDays: json['numberOfAttendantDays'],
       lastDayStudentCame: json['lastDayStudentCame'],
@@ -140,9 +104,20 @@ class Studentmodel {
       dateOfThirdMonthPaid: json['dateOfThirdMonthPaid'],
       dateOfFourthMonthPaid: json['dateOfFourthMonthPaid'],
       dateOfFifthMonthPaid: json['dateOfFifthMonthPaid'],
+      dateOfExplainingNotePaid: json['dateOfExplainingNotePaid'],
+      dateOfReviewingNotePaid: json['dateOfReviewingNotePaid'],
+      // Convert JSON list to `hisGroups`
+      hisGroups: (json['hisGroups'] as List<dynamic>?)
+          ?.map((group) => Magmo3amodel.fromJson(group))
+          .toList(),
+      // Convert `hisGroupsId` if available in the JSON
+      hisGroupsId: (json['hisGroupsId'] as List<dynamic>?)
+          ?.map((id) => id.toString())
+          .toList(),
     );
   }
 
+  /// Converts the `Studentmodel` instance to a JSON object.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -151,9 +126,6 @@ class Studentmodel {
       'dateofadd': dateofadd,
       'note': note,
       'name': name,
-      'firstdayid': firstDayId,
-      'seconddayid': secondDayId,
-      'thirddayid': thirdDayId,
       'fatherphone': fatherPhone,
       'firstmonth': firstMonth,
       'secondmonth': secondMonth,
@@ -161,26 +133,9 @@ class Studentmodel {
       'fourthmonth': fourthMonth,
       'fifthMonth': fifthMonth,
       'mothernumber': motherPhone,
-      "firstDay": firstDay,
       'phonenumber': phoneNumber,
       'explainingnote': explainingNote,
       'reviewnote': reviewNote,
-      'firstdaytime': firstDayTime != null
-          ? {'hour': firstDayTime!.hour, 'minute': firstDayTime!.minute}
-          : null,
-      'secondday': secondDay,
-      'seconddaytime': secondDayTime != null
-          ? {'hour': secondDayTime!.hour, 'minute': secondDayTime!.minute}
-          : null,
-      'thirdday': thirdDay,
-      'thirddaytime': thirdDayTime != null
-          ? {'hour': thirdDayTime!.hour, 'minute': thirdDayTime!.minute}
-          : null,
-      'forthdayid': forthdayid,
-      'forthday': forthday,
-      'forthdaytime': forthdayTime != null
-          ? {'hour': forthdayTime!.hour, 'minute': forthdayTime!.minute}
-          : null,
       'numberOfAbsentDays': numberOfAbsentDays,
       'numberOfAttendantDays': numberOfAttendantDays,
       'lastDayStudentCame': lastDayStudentCame,
@@ -190,6 +145,12 @@ class Studentmodel {
       'dateOfThirdMonthPaid': dateOfThirdMonthPaid,
       'dateOfFourthMonthPaid': dateOfFourthMonthPaid,
       'dateOfFifthMonthPaid': dateOfFifthMonthPaid,
+      'dateOfExplainingNotePaid': dateOfExplainingNotePaid,
+      'dateOfReviewingNotePaid': dateOfReviewingNotePaid,
+      // Convert `hisGroups` to JSON
+      'hisGroups': hisGroups?.map((group) => group.toJson()).toList(),
+      // Convert `hisGroupsId` to JSON
+      'hisGroupsId': hisGroupsId,
     };
   }
 }

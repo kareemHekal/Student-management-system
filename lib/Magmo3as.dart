@@ -46,67 +46,63 @@ class Magmo3as extends StatelessWidget {
             )
           ],
         ),
-        Container(
-          child: StreamBuilder<List<Magmo3amodel>>(
-            stream: FirebaseFunctions.getAllDocsFromDay(day), // Ensure this returns Stream<List<Magmo3amodel>>
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: DiscreteCircle(
-                    color: app_colors.green,
-                    size: 30,
-                    secondCircleColor: app_colors.ligthGreen,
-                    thirdCircleColor: app_colors.orange,
-                  ),
-                );
-              }
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    children: [
-                      Text("Something went wrong"),
-                      ElevatedButton(
-                        onPressed: () {
-                          // You can implement retry logic here if needed
-                        },
-                        child: Text('Try again'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              // Directly get the list of Magmo3amodel
-              var magmo3as = snapshot.data ?? []; // This is already a list of Magmo3amodel
-              print(magmo3as);
-              print(day);
-
-              if (magmo3as.isEmpty) {
-                return Center(
-                  child: Text(
-                    "No groups",
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 25,
-                      color: app_colors.black,
-                    ),
-                  ),
-                );
-              }
-
-              return Expanded(
-                child: ListView.separated(
-                  separatorBuilder: (context, index) => SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    return Magmo3aWidget(
-                      magmo3aModel: magmo3as[index], // Use the Magmo3amodel directly
-                    );
-                  },
-                  itemCount: magmo3as.length,
+        StreamBuilder<List<Magmo3amodel>>(
+          stream: FirebaseFunctions.getAllDocsFromDay(day), // Ensure this returns Stream<List<Magmo3amodel>>
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: DiscreteCircle(
+                  color: app_colors.green,
+                  size: 30,
+                  secondCircleColor: app_colors.ligthGreen,
+                  thirdCircleColor: app_colors.orange,
                 ),
               );
-            },
-          )
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  children: [
+                    const Text("Something went wrong"),
+                    ElevatedButton(
+                      onPressed: () {
+                        // You can implement retry logic here if needed
+                      },
+                      child: const Text('Try again'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
+            // Directly get the list of Magmo3amodel
+            var magmo3as = snapshot.data ?? []; // This is already a list of Magmo3amodel
+
+
+            if (magmo3as.isEmpty) {
+              return Center(
+                child: Text(
+                  "No groups",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 25,
+                    color: app_colors.black,
+                  ),
+                ),
+              );
+            }
+
+            return Expanded(
+              child: ListView.separated(
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  return Magmo3aWidget(
+                    magmo3aModel: magmo3as[index], // Use the Magmo3amodel directly
+                  );
+                },
+                itemCount: magmo3as.length,
+              ),
+            );
+          },
         )
       ],
     );

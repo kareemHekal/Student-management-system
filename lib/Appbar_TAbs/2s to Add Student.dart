@@ -7,16 +7,24 @@ class two extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [Column
-      (
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 60),
-          child: Center(child: Image.asset("assets/images/1......1.png")),
+        Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 60),
+                  child: Image.asset("assets/images/1......1.png"),
+                ),
+              ),
+            ),
+            SizedBox(height: 50),
+          ],
         ),
-        SizedBox(height: 50)
+        AddStudentScreen(level: "2 secondary"),
       ],
-    ),AddStudentTab_(level: "2 secondary",)]);
+    );
   }
+
 }

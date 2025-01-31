@@ -1,10 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import '../cards/normaltudentcard.dart';
+import '../cards/StudentWidget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loadingWidget.dart';
@@ -12,11 +11,10 @@ import '../models/Magmo3aModel.dart';
 import '../models/Studentmodel.dart';
 
 class StudentInAgroup extends StatefulWidget {
-  final String magmo3aId;
   Magmo3amodel magmo3aModel;
 
   StudentInAgroup(
-      {required this.magmo3aModel, required this.magmo3aId, super.key});
+      {required this.magmo3aModel, super.key});
 
   @override
   State<StudentInAgroup> createState() => _StudentInAgroupState();
@@ -137,26 +135,10 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                       height: 10,
                     ),
                     StreamBuilder(
-                      stream: widget.magmo3aModel.days == "Saturday" ||
-                              widget.magmo3aModel.days == "Sunday"
-                          ? FirebaseFunctions.getStudentsByFirstDayId(
-                              widget.magmo3aModel.grade ?? "", widget.magmo3aId)
-                          : widget.magmo3aModel.days == "Monday" ||
-                                  widget.magmo3aModel.days == "Tuesday"
-                              ? FirebaseFunctions.getStudentsBySecondDayId(
-                                  widget.magmo3aModel.grade ?? "",
-                                  widget.magmo3aId)
-                              : widget.magmo3aModel.days == "Wednesday" ||
-                                      widget.magmo3aModel.days == "Thursday"
-                                  ? FirebaseFunctions.getStudentsByThirdDayId(
-                                      widget.magmo3aModel.grade ?? "",
-                                      widget.magmo3aId)
-                                  : widget.magmo3aModel.days == "Friday"
-                                      ? FirebaseFunctions
-                                          .getStudentsByForthDayId(
-                                              widget.magmo3aModel.grade ?? "",
-                                              widget.magmo3aId)
-                                      : null,
+                      stream: FirebaseFunctions.getStudentsByGroupId(
+                        widget.magmo3aModel.grade??"",
+                        widget.magmo3aModel.id
+                      ),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -215,7 +197,8 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                             separatorBuilder: (context, index) =>
                                 const SizedBox(height: 5),
                             itemBuilder: (context, index) {
-                              return normalStudentWidget(
+                              return StudentWidget(
+                                IsComingFromGroup: true,
                                 grade: filteredStudents[index].grade,
                                 studentModel: filteredStudents[index],
                               );

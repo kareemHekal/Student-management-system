@@ -1,9 +1,10 @@
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Magmo3aModel.dart';
+import '../models/Studentmodel.dart';
 import '../pages/all students in one group.dart';
 
 class Magmo3aWidget extends StatelessWidget {
@@ -27,27 +28,104 @@ class Magmo3aWidget extends StatelessWidget {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      title: Row(
-                        children: [
-                          Text('Warning',style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red,fontSize: 30),),
-                          SizedBox(width: 10,),
-                          Icon(Icons.warning_amber_rounded,color: Colors.red,)
-                        ],
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(16), // Modern rounded corners
                       ),
-                      content: Text('This will delete all data in this group!',style:Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red[300],fontSize: 25) ,),
+                      backgroundColor: Colors.red[50],
+                      // Light red background for contrast
+                      title: Text(
+                        'Start a New Month',
+                        style: TextStyle(
+                          color: Colors.red[900],
+                          // Darker red for the title for better readability
+                          fontSize: 20,
+                        ),
+                      ),
+                      content: Text(
+                        'Are you sure you want to reset the attendance for all students?',
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          // Slightly darker red for content
+                          fontSize: 16,
+                        ),
+                      ),
                       actions: [
-                        ElevatedButton(
-                          child: Text('Cancel',style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red,fontSize: 20),),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red[900],
+                            // Darker red text for cancel
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            textStyle:
+                                const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style:
+                                TextStyle(color: Colors.red[900], fontSize: 16),
+                          ),
                           onPressed: () {
-                            Navigator.of(context).pop(); // close the dialog
+                            Navigator.pop(context); // Close the dialog
                           },
                         ),
                         ElevatedButton(
-                          child: Text('OK',style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red,fontSize: 20),),
-                          onPressed: () {
-                            FirebaseFunctions.deleteMagmo3aFromDay(magmo3aModel.days??"",magmo3aModel.id);
-                            print('Delete button pressed');
-                            Navigator.of(context).pop(); // close the dialog
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            // White text on the red button
+                            backgroundColor: Colors.red[600],
+                            // Dark red button color
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                  8), // Rounded corners for the button
+                            ),
+                            elevation: 5, // Subtle shadow for depth
+                          ),
+                          child: const Text(
+                            'Confirm',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                          onPressed: () async {
+                            try {
+                              // Delete the Magmo3a from the day
+                              await FirebaseFunctions.deleteMagmo3aFromDay(
+                                  magmo3aModel.days ?? "", magmo3aModel.id);
+                              Navigator.pop(context);
+
+                              // Fetch students by group ID
+                              Stream<QuerySnapshot<Studentmodel>>
+                                  studentsStream =
+                                  FirebaseFunctions.getStudentsByGroupId(
+                                      magmo3aModel.grade ?? "",
+                                      magmo3aModel.id ?? "");
+                              print(studentsStream);
+                              studentsStream.listen((snapshot) async {
+                                for (var doc in snapshot.docs) {
+                                  var student = doc.data();
+                                  if (student != null) {
+                                    // Remove the group from the student's `hisGroups` list and the group ID from `hisGroupsId` list
+                                    student.hisGroups?.removeWhere(
+                                        (group) => group.id == magmo3aModel.id);
+                                    student.hisGroupsId
+                                        ?.remove(magmo3aModel.id);
+
+                                    // Update the student in the collection
+                                    await FirebaseFunctions
+                                        .updateStudentInCollection(
+                                      student.grade ?? "",
+                                      student.id,
+                                      student,
+                                    );
+                                  }
+                                }
+                              });
+
+                              print('Delete button pressed');
+                            } catch (e) {
+                              print("Error deleting group: $e");
+                            }
                           },
                         ),
                       ],
@@ -116,27 +194,27 @@ class Magmo3aWidget extends StatelessWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-      Padding(
-      padding: const EdgeInsets.all(5.0), // increased padding
-      child: Container(
-        decoration: BoxDecoration(
-          color: app_colors.green,
-          border: Border.all(
-            color: app_colors.orange,
-            width: 2, // increased border width
-          ),
-          borderRadius: BorderRadius.circular(15), // increased radius
-        ),
-        padding: const EdgeInsets.all(8.0), // added padding
-        child: Text(
-          magmo3aModel.days??"", // Display the full day name
-          style: TextStyle(
-            fontSize: 30, // increased font size
-            color: app_colors.orange,
-          ),
-        ),
-      ),
-    )
+          Padding(
+            padding: const EdgeInsets.all(5.0), // increased padding
+            child: Container(
+              decoration: BoxDecoration(
+                color: app_colors.green,
+                border: Border.all(
+                  color: app_colors.orange,
+                  width: 2, // increased border width
+                ),
+                borderRadius: BorderRadius.circular(15), // increased radius
+              ),
+              padding: const EdgeInsets.all(8.0), // added padding
+              child: Text(
+                magmo3aModel.days ?? "", // Display the full day name
+                style: TextStyle(
+                  fontSize: 30, // increased font size
+                  color: app_colors.orange,
+                ),
+              ),
+            ),
+          )
         ],
       ),
     );
@@ -171,7 +249,9 @@ class Magmo3aWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(width:10 ,),
+              SizedBox(
+                width: 10,
+              ),
               RichText(
                 text: TextSpan(
                   children: [
@@ -194,14 +274,16 @@ class Magmo3aWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(width:10 ,),
-
+              SizedBox(
+                width: 10,
+              ),
             ],
           ),
         ],
       ),
     );
   }
+
   String _formatTime(TimeOfDay time) {
     final hour = time.hour;
     final minute = time.minute;
@@ -225,12 +307,10 @@ class Magmo3aWidget extends StatelessWidget {
               MaterialPageRoute(
                 builder: (context) => StudentInAgroup(
                   magmo3aModel: magmo3aModel,
-                  magmo3aId: magmo3aModel.id ?? "",
                 ),
               ),
             );
           },
-
           icon: Container(
             decoration: BoxDecoration(
               color: app_colors.green,
