@@ -328,7 +328,6 @@ class StudentCubit extends Cubit<StudentState> {
 void setTheSelectedGenderByNull(){
   selectedGender = null;
   emit(StudentUpdated());
-
 }
   void changeValueOfGenderDropDown(value) {
     selectedGender = value as String;

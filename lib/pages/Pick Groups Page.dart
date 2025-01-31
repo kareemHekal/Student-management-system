@@ -7,15 +7,15 @@ import '../loadingFile/loadingWidget.dart';
 import '../cards/magmo3afor display widget.dart';
 import '../models/Magmo3aModel.dart';
 
-class Firstday extends StatefulWidget {
+class ChoosedaysToAttend extends StatefulWidget {
   final String? level;
-  Firstday({this.level, super.key});
+  ChoosedaysToAttend({this.level, super.key});
 
   @override
   _SeconddayState createState() => _SeconddayState();
 }
 
-class _SeconddayState extends State<Firstday> with SingleTickerProviderStateMixin {
+class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override

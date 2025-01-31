@@ -1,8 +1,10 @@
 import 'package:el_tooltip/el_tooltip.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../Alert dialogs/Notify Absence.dart';
+import '../bloc/Edit Student/edit_student_cubit.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
@@ -75,12 +77,16 @@ class StudentWidget extends StatelessWidget {
           );
         },
         onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) {
-            return EditStudentScreen(
-              student: studentModel,
-              grade: grade,
-            );
-          }));
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BlocProvider(
+                create: (context) => StudentEditCubit(studentModel),
+                child: EditStudentScreen(grade: grade,student:studentModel,),
+              ),
+            ),
+          );
+
         },
         child: Card(
           elevation: 5,
