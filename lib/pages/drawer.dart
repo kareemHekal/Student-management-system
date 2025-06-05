@@ -1,6 +1,5 @@
 import 'package:chips_choice/chips_choice.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fatma_elorbany/models/Big%20invoice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,7 +7,10 @@ import '../Alert dialogs/Delete diaolog.dart';
 import '../Alert dialogs/ResetAbscenceMonthDialog.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
+import '../models/Big invoice.dart';
 import '../models/payment.dart';
+import 'PaymentCheckPage.dart';
+import 'allgrades.dart';
 import 'invoices page.dart';
 
 class CustomDrawer extends StatefulWidget {
@@ -44,19 +46,20 @@ class _CustomDrawerState extends State<CustomDrawer> {
   late String? Day;
   bool isDangresAreaOpen = false;
   List<String> tags = [];
-  List<String> options = [
-    '1 secondary',
-    '2 secondary',
-    '3 secondary',
-    'Absence',
-    'bills'
-  ];
+  List<String>? fetchedGrades;
+  List<String> options = ['Absence', 'bills'];
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     getCurrentDate();
+    fetchGrades();
+  }
+
+  Future<void> fetchGrades() async {
+    fetchedGrades = await FirebaseFunctions.getGradesList();
+    options.addAll(fetchedGrades ?? []);
   }
 
   Widget build(BuildContext context) {
@@ -67,7 +70,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
           // Part 1: Two images in a row
           Container(
             decoration: const BoxDecoration(
-              color: app_colors.green,
+              color: app_colors.darkGrey,
             ),
             width: double.infinity,
             height: 220,
@@ -82,7 +85,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                     width: 120,
                   ),
                   Text(
-                    "Fatima El-Orabani",
+                    "Fatma elorbany",
                     style: GoogleFonts.qwitcherGrypen(
                         color: app_colors.ligthGreen, fontSize: 50),
                   ),
@@ -108,7 +111,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       title: const Text(
                         "All Students",
                         style:
-                            TextStyle(color: app_colors.orange, fontSize: 18),
+                            TextStyle(color: app_colors.green, fontSize: 18),
                       ),
                     ),
                   ),
@@ -126,7 +129,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       title: const Text(
                         "Reset The Attendance",
                         style:
-                            TextStyle(color: app_colors.orange, fontSize: 18),
+                            TextStyle(color: app_colors.green, fontSize: 18),
                       ),
                     ),
                   ),
@@ -147,11 +150,10 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       title: const Text(
                         "go and check all the invoices",
                         style:
-                            TextStyle(color: app_colors.orange, fontSize: 15),
+                            TextStyle(color: app_colors.green, fontSize: 15),
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
                   GestureDetector(
                     onTap: () {
@@ -279,7 +281,47 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       title: const Text(
                         "Add Outcome",
                         style:
-                            TextStyle(color: app_colors.orange, fontSize: 18),
+                            TextStyle(color: app_colors.green, fontSize: 18),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Allgrades()),
+                        (Route<dynamic> route) =>
+                            false, // This will remove all previous routes
+                      );
+                    },
+                    child: ListTile(
+                      leading: Image.asset("assets/images/edit-table.png", width: 40),
+                      title: const Text(
+                        "My Grades",
+                        style:
+                            TextStyle(color: app_colors.green, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                const PaymentCheckPage()),
+                        (Route<dynamic> route) =>
+                            false, // This will remove all previous routes
+                      );
+                    },
+                    child:  ListTile(
+                      leading:  Image.asset("assets/images/seo.png", width: 40),
+                      title: const Text(
+                        "Payment Check",
+                        style:
+                            TextStyle(color: app_colors.green, fontSize: 15),
                       ),
                     ),
                   ),
@@ -295,8 +337,8 @@ class _CustomDrawerState extends State<CustomDrawer> {
               setState(() {});
             },
             child: Container(
-              decoration: BoxDecoration(
-                color: app_colors.green,
+              decoration: const BoxDecoration(
+                color: app_colors.darkGrey,
               ),
               width: double.maxFinite, // <--- Add this line
               height: 60,
@@ -310,12 +352,12 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       isDangresAreaOpen == false
                           ? Icons.arrow_forward_ios_rounded
                           : Icons.keyboard_double_arrow_down_rounded,
-                      color: app_colors.orange,
+                      color: app_colors.green,
                     ),
                     const Spacer(),
                     const Text(
                       "Dangerous Zone",
-                      style: TextStyle(color: app_colors.orange, fontSize: 20),
+                      style: TextStyle(color: app_colors.green, fontSize: 20),
                     )
                   ],
                 ),
@@ -323,7 +365,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
             ),
           ),
           Container(
-              color: app_colors.green,
+              color: app_colors.darkGrey,
               child: isDangresAreaOpen == true
                   ? Column(
                       children: [
@@ -341,7 +383,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                               padding: EdgeInsets.only(left: 8),
                               child: Text("Sign out",
                                   style: TextStyle(
-                                      color: app_colors.orange, fontSize: 20)),
+                                      color: app_colors.green, fontSize: 20)),
                             ),
                             Padding(
                               padding: const EdgeInsets.all(12),
@@ -396,7 +438,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                               padding: EdgeInsets.only(left: 8),
                               child: Text("Delete Every Thing",
                                   style: TextStyle(
-                                      color: app_colors.orange, fontSize: 20)),
+                                      color: app_colors.green, fontSize: 20)),
                             ),
                             ChipsChoice<String>.multiple(
                               value: tags,
@@ -413,7 +455,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                               ),
                               choiceStyle: C2ChipStyle.outlined(
                                 borderWidth: 2,
-                                backgroundColor: app_colors.orange,
+                                backgroundColor: app_colors.green,
 
                                 // Text color for unselected chips
                                 selectedStyle: const C2ChipStyle(
@@ -468,9 +510,8 @@ class _CustomDrawerState extends State<CustomDrawer> {
                                           // Pass the tags if you have them
                                           onConfirm: (tags) async {
                                             for (var tag in tags) {
-                                              if (tag == '1 secondary' ||
-                                                  tag == '2 secondary' ||
-                                                  tag == '3 secondary') {
+                                              if (fetchedGrades!
+                                                  .contains(tag)) {
                                                 await FirebaseFunctions
                                                     .deleteCollection(tag);
                                                 print(
@@ -512,6 +553,4 @@ class _CustomDrawerState extends State<CustomDrawer> {
       ),
     );
   }
-
-
 }

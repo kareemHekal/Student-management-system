@@ -1,14 +1,12 @@
-import 'package:fatma_elorbany/firebase/firebase_functions.dart';
-import 'package:fatma_elorbany/models/Big%20invoice.dart';
 import 'package:flutter/material.dart';
 import '../Alert dialogs/DeleteIncomeBillDialog.dart';
 import '../Alert dialogs/DeleteOutcomeBillDialog.dart';
 import '../cards/outcome widget.dart';
 import '../cards/In come widget.dart';
 import '../colors_app.dart';
-import 'package:fatma_elorbany/models/Invoice.dart';
-
-import '../models/payment.dart';
+import '../firebase/firebase_functions.dart';
+import '../models/Big invoice.dart';
+import '../models/Invoice.dart';
 
 class OneInivoicePage extends StatefulWidget {
   final BigInvoice invoice;
@@ -37,7 +35,7 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
-          backgroundColor: app_colors.green,
+          backgroundColor: app_colors.darkGrey,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(30),
@@ -49,7 +47,7 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
             onPressed: () {
               Navigator.pop(context);
             },
-            icon: const Icon(Icons.arrow_back_ios, color: app_colors.orange),
+            icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
           ),
           title: Image.asset(
             "assets/images/2....2.png",

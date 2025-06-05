@@ -39,7 +39,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
             }
             if (state is StudentAddedSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+                const SnackBar(
                   content: Text('Student added successfully!'),
                   backgroundColor: Colors.green,
                   duration: Duration(seconds: 2),
@@ -87,115 +87,112 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                     ),
                   ),
                   width: double.infinity,
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(2.0),
-                        child: Container(
-                          color: Colors.transparent,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.only(top: 20, left: 0),
-                                    child: Text(
-                                      textAlign: TextAlign.start,
-                                      '''  A D D 
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: Container(
+                        color: Colors.transparent,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.only(top: 20, left: 0),
+                                  child: Text(
+                                    textAlign: TextAlign.start,
+                                    '''  A D D 
   Y O U R  S T U D E N T S''',
-                                      style: GoogleFonts.oswald(
-                                        fontSize: 30,
-                                        color: app_colors.green,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                    style: GoogleFonts.oswald(
+                                      fontSize: 30,
+                                      color: app_colors.darkGrey,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  const Spacer(),
-                                ],
-                              ),
-                              const Divider(
-                                color: app_colors.orange,
-                                thickness: 4,
-                              ),
-                              SizedBox(
-                                height: 240, // or any other bounded height
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Center(
-                                        child: Text(" Pick the days ")),
-                                    Expanded(
-                                      child: PickGroupRow(context),
-                                    ),
-                                  ],
                                 ),
-                              ),
-                              const Divider(
-                                color: app_colors.orange,
-                                thickness: 4,
-                              ),
-                              const SizedBox(
-                                height: 15,
-                              ),
-                              TextFormFields(context),
-                              const Divider(
-                                color: app_colors.orange,
-                                thickness: 4,
-                              ),
-                              const SizedBox(
-                                height: 15,
-                              ),
-                              MaleOrFemalePart(context),
-                              const SizedBox(
-                                height: 15,
-                              ),
-                              const Divider(
-                                color: app_colors.orange,
-                                thickness: 4,
-                              ),
-                              const SizedBox(
-                                height: 15,
-                              ),
-                              paymentsPart(context),
-                              const SizedBox(
-                                height: 10,
-                              ),
-                              const Divider(
-                                color: app_colors.orange,
-                                thickness: 4,
-                              ),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              // note part
-                              NotesPart(context),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                              Row(
+                                const Spacer(),
+                              ],
+                            ),
+                            const Divider(
+                              color: app_colors.green,
+                              thickness: 4,
+                            ),
+                            SizedBox(
+                              height: 240, // or any other bounded height
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  const Center(
+                                      child: Text(" Pick the days ")),
                                   Expanded(
-                                      child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      foregroundColor: app_colors.orange,
-                                      backgroundColor:
-                                          app_colors.green, // text color
-                                    ),
-                                    onPressed: () async {
-                                    await  cubit.addStudent(context,widget.level);
-                                    },
-                                    child: const Text(" Add "),
-                                  )),
+                                    child: PickGroupRow(context),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(
-                                height: 200,
-                              ),
-                            ],
-                          ),
+                            ),
+                            const Divider(
+                              color: app_colors.green,
+                              thickness: 4,
+                            ),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            TextFormFields(context),
+                            const Divider(
+                              color: app_colors.green,
+                              thickness: 4,
+                            ),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            MaleOrFemalePart(context),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            const Divider(
+                              color: app_colors.green,
+                              thickness: 4,
+                            ),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            paymentsPart(context),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            const Divider(
+                              color: app_colors.green,
+                              thickness: 4,
+                            ),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            // note part
+                            NotesPart(context),
+                            const SizedBox(
+                              height: 20,
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                    child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: app_colors.green,
+                                    backgroundColor:
+                                        app_colors.darkGrey, // text color
+                                  ),
+                                  onPressed: () async {
+                                  await  cubit.addStudent(context,widget.level);
+                                  },
+                                  child: const Text(" Add "),
+                                )),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 200,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -214,10 +211,10 @@ class _AddStudentTabState extends State<AddStudentScreen> {
       children: [
         Expanded(
             child: cubit.hisGroups.isEmpty
-                ? Center(
+                ? const Center(
                 child: Text(
                   "You did not choose any group yet",
-                  style: TextStyle(color: app_colors.orange),
+                  style: TextStyle(color: app_colors.green),
                 ))
                 : ListView.builder(
               itemCount: cubit.hisGroups.length,
@@ -252,9 +249,9 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         // First Day Button
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            side: const BorderSide(color: app_colors.orange, width: 1),
-            foregroundColor: app_colors.orange,
-            backgroundColor: app_colors.green, // text color
+            side: const BorderSide(color: app_colors.green, width: 1),
+            foregroundColor: app_colors.green,
+            backgroundColor: app_colors.darkGrey, // text color
           ),
           onPressed: () {
             Navigator.push(
@@ -285,11 +282,11 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         decoration: BoxDecoration(
-          border: Border.all(color: app_colors.green, width: 1),
+          border: Border.all(color: app_colors.darkGrey, width: 1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: DropdownButton<bool>(
-          dropdownColor: app_colors.green,
+          dropdownColor: app_colors.darkGrey,
           value: selectedValue,
           isExpanded: true,
           items: const [
@@ -324,7 +321,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
       padding: const EdgeInsets.all(8),
       child: Container(
         decoration: BoxDecoration(
-          color: app_colors.orange,
+          color: app_colors.green,
           borderRadius: BorderRadius.circular(25),
         ),
         width: 5,
@@ -339,16 +336,16 @@ class _AddStudentTabState extends State<AddStudentScreen> {
     InputDecoration getInputDecoration(String label) {
       return InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 25, color: app_colors.orange),
+        labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.green, width: 2.0),
+          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.green, width: 2.0),
+          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
       );
@@ -405,38 +402,38 @@ class _AddStudentTabState extends State<AddStudentScreen> {
       children: [
         Container(
             decoration: BoxDecoration(
-              border: Border.all(color: app_colors.green, width: 1),
+              border: Border.all(color: app_colors.darkGrey, width: 1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: DropdownButton<String>(
-              dropdownColor: app_colors.green,
+              dropdownColor: app_colors.darkGrey,
               value: cubit.selectedGender ?? "Male",
               isExpanded: true,
               items: const [
                 DropdownMenuItem(
                   value: "Male",
                   child:
-                  Text("Male", style: TextStyle(color: app_colors.orange)),
+                  Text("Male", style: TextStyle(color: app_colors.green)),
                 ),
                 DropdownMenuItem(
                   value: "Female",
                   child: Text("Female",
-                      style: TextStyle(color: app_colors.orange)),
+                      style: TextStyle(color: app_colors.green)),
                 ),
               ],
               onChanged: (value) {
                 cubit.changeValueOfGenderDropDown(value);
               },
               elevation: 8,
-              style: const TextStyle(color: app_colors.orange),
+              style: const TextStyle(color: app_colors.green),
               icon: const Icon(Icons.arrow_forward_ios_outlined,
-                  color: app_colors.orange),
+                  color: app_colors.green),
               iconSize: 24,
               hint: Padding(
                 padding: const EdgeInsets.only(left: 10),
                 child: Text(
                   cubit.selectedGender ?? "Select a gender",
-                  style: const TextStyle(color: app_colors.orange),
+                  style: const TextStyle(color: app_colors.green),
                 ),
               ),
             )),
@@ -449,13 +446,13 @@ class _AddStudentTabState extends State<AddStudentScreen> {
           spacing: 8,
           children: [
             Chip(
-              backgroundColor: app_colors.green,
+              backgroundColor: app_colors.darkGrey,
               label: Text(cubit.selectedGender!,
-                  style: const TextStyle(color: app_colors.orange)),
+                  style: const TextStyle(color: app_colors.green)),
               deleteIcon: const Icon(Icons.cancel,
-                  size: 20, color: app_colors.orange),
+                  size: 20, color: app_colors.green),
               shape: const StadiumBorder(
-                  side: BorderSide(color: app_colors.orange)),
+                  side: BorderSide(color: app_colors.green)),
               onDeleted: () {
                 cubit.setTheSelectedGenderByNull();
               },
@@ -464,7 +461,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         )
             : const Center(
           child: Text("Select a gender",
-              style: TextStyle(color: app_colors.orange)),
+              style: TextStyle(color: app_colors.green)),
         ),
       ],
     );
@@ -575,16 +572,16 @@ class _AddStudentTabState extends State<AddStudentScreen> {
       },
       decoration: InputDecoration(
         labelText: "Add Note",
-        labelStyle: const TextStyle(fontSize: 25, color: app_colors.orange),
+        labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.green, width: 2.0),
+          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.green, width: 2.0),
+          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
         hintText: 'Type your note here...',

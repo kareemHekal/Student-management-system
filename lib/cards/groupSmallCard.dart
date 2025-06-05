@@ -55,9 +55,9 @@ class Groupsmallcard extends StatelessWidget {
             padding: const EdgeInsets.all(5.0), // increased padding
             child: Container(
               decoration: BoxDecoration(
-                color: app_colors.green,
+                color: app_colors.darkGrey,
                 border: Border.all(
-                  color: app_colors.orange,
+                  color: app_colors.green,
                   width: 2, // increased border width
                 ),
                 borderRadius: BorderRadius.circular(15), // increased radius
@@ -67,7 +67,7 @@ class Groupsmallcard extends StatelessWidget {
                 magmo3aModel?.days??"", // Display the full day name
                 style: const TextStyle(
                   fontSize: 22, // increased font size
-                  color: app_colors.orange,
+                  color: app_colors.green,
                 ),
               ),
             ),
@@ -93,14 +93,14 @@ class Groupsmallcard extends StatelessWidget {
                       text: "Grade: ",
                       style: TextStyle(
                         fontSize: 17,
-                        color: app_colors.green,
+                        color: app_colors.darkGrey,
                       ),
                     ),
                     TextSpan(
                       text: magmo3aModel?.grade ?? '',
                       style: const TextStyle(
                         fontSize: 20,
-                        color: app_colors.orange,
+                        color: app_colors.green,
                       ),
                     ),
                   ],
@@ -116,7 +116,7 @@ class Groupsmallcard extends StatelessWidget {
                       text: " Time : ",
                       style: TextStyle(
                         fontSize: 17,
-                        color: app_colors.green,
+                        color: app_colors.darkGrey,
                       ),
                     ),
                     TextSpan(
@@ -125,7 +125,7 @@ class Groupsmallcard extends StatelessWidget {
                           : '',
                       style: const TextStyle(
                         fontSize: 20,
-                        color: app_colors.orange,
+                        color: app_colors.green,
                       ),
                     ),
                   ],

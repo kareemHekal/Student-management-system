@@ -41,9 +41,9 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: Icon(Icons.arrow_back_ios, color: app_colors.orange),
+          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
         ),
-        backgroundColor: app_colors.green,
+        backgroundColor: app_colors.darkGrey,
         title: Image.asset(
           "assets/images/2....2.png",
           height: 100,
@@ -51,8 +51,10 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
         ),
         toolbarHeight: 120,
         bottom: TabBar(
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           controller: _tabController,
-          tabs: [
+          tabs:const [
             Tab(text: "Saturday"),
             Tab(text: "Sunday"),
             Tab(text: "Monday"),
@@ -62,8 +64,8 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
             Tab(text: "Friday"),
 
           ],
-          indicatorColor: app_colors.orange,
-          labelColor: app_colors.orange,
+          indicatorColor: app_colors.green,
+          labelColor: app_colors.green,
           unselectedLabelColor: app_colors.white,
         ),
       ),
@@ -90,30 +92,30 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
           padding: const EdgeInsets.symmetric(horizontal: 60),
           child: Center(child: Image.asset("assets/images/1......1.png")),
         ),
-        Container(
+        SizedBox(
           height: double.infinity,
           width: double.infinity,
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Text(
                   " Just Pick the Group ",
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: app_colors.green, fontSize: 30),
+                      color: app_colors.darkGrey, fontSize: 30),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 StreamBuilder<List<Magmo3amodel>>(
                   stream: FirebaseFunctions.getAllDocsFromDayWithGrade(day, widget.level ?? ""),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(
+                      return const Center(
                         child: DiscreteCircle(
-                          color: app_colors.green,
+                          color: app_colors.darkGrey,
                           size: 30,
                           secondCircleColor: app_colors.ligthGreen,
-                          thirdCircleColor: app_colors.orange,
+                          thirdCircleColor: app_colors.green,
                         ),
                       );
                     }
@@ -121,12 +123,12 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
                       return Center(
                         child: Column(
                           children: [
-                            Text("Something went wrong"),
+                            const Text("Something went wrong"),
                             ElevatedButton(
                               onPressed: () {
                                 // Optionally implement retry logic here
                               },
-                              child: Text('Try Again'),
+                              child: const Text('Try Again'),
                             ),
                           ],
                         ),
@@ -147,7 +149,7 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
 
                     return Expanded(
                       child: ListView.separated(
-                        separatorBuilder: (context, index) => SizedBox(
+                        separatorBuilder: (context, index) => const SizedBox(
                           height: 12,
                         ),
                         itemBuilder: (context, index) {

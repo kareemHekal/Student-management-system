@@ -67,7 +67,7 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                       height: 140,
                       width: double.infinity,
                       decoration: const BoxDecoration(
-                        color: app_colors.green,
+                        color: app_colors.darkGrey,
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(25),
                           bottomRight: Radius.circular(25),
@@ -105,7 +105,7 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                                   textOn: 'Large',
                                   textOff: 'Small',
                                   colorOn: app_colors.ligthGreen,
-                                  colorOff: app_colors.orange,
+                                  colorOff: app_colors.green,
                                   iconOn: Icons.done,
                                   iconOff: Icons.remove_circle_outline,
                                   textSize: 16.0,
@@ -125,34 +125,34 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                             padding: const EdgeInsets.symmetric(
                                 vertical: 10, horizontal: 10),
                             child: TextFormField(
-                              style: const TextStyle(color: app_colors.green),
+                              style: const TextStyle(color: app_colors.darkGrey),
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,
                                 hintText: 'Search',
                                 hintStyle:
-                                    const TextStyle(color: app_colors.green),
+                                    const TextStyle(color: app_colors.darkGrey),
                                 contentPadding: const EdgeInsets.symmetric(
                                     vertical: 15.0, horizontal: 20.0),
                                 enabledBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                      color: app_colors.orange, width: 2.0),
+                                      color: app_colors.green, width: 2.0),
                                   borderRadius: BorderRadius.circular(20.0),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                      color: app_colors.orange, width: 2.0),
+                                      color: app_colors.green, width: 2.0),
                                   borderRadius: BorderRadius.circular(20.0),
                                 ),
                                 suffixIcon: IconButton(
                                   icon: const Icon(Icons.clear,
-                                      color: app_colors.orange),
+                                      color: app_colors.green),
                                   onPressed: () {
                                     _searchController.clear();
                                   },
                                 ),
                               ),
-                              cursorColor: app_colors.green,
+                              cursorColor: app_colors.darkGrey,
                               controller: _searchController,
                             ),
                           ),

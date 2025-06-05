@@ -120,9 +120,9 @@ class Smallstydentcard extends StatelessWidget {
         Theme(
           data: Theme.of(context).copyWith(
             textSelectionTheme: TextSelectionThemeData(
-              selectionColor: app_colors.green.withOpacity(0.5),
+              selectionColor: app_colors.darkGrey.withOpacity(0.5),
               // Highlight (mark) color when selecting text
-              cursorColor: app_colors.green, // Cursor color
+              cursorColor: app_colors.darkGrey, // Cursor color
             ),
           ),
           child: SelectableText(

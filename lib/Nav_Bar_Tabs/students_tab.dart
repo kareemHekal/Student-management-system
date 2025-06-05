@@ -28,10 +28,10 @@ class StudentsTab extends StatelessWidget {
             body: Column(
               children: [
                 Container(
-                  color: app_colors.green,
+                  color: app_colors.darkGrey,
                   child: const TabBar(
-                    labelColor: app_colors.orange,
-                    indicatorColor: app_colors.orange,
+                    labelColor: app_colors.green,
+                    indicatorColor: app_colors.green,
                     indicatorWeight: 5,
                     dividerHeight: 2,
                     padding:EdgeInsets.all(0),

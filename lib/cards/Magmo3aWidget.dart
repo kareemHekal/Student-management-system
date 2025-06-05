@@ -179,7 +179,7 @@ class Magmo3aWidget extends StatelessWidget {
       padding: const EdgeInsets.only(left: 8),
       child: Container(
         decoration: BoxDecoration(
-          color: app_colors.orange,
+          color: app_colors.green,
           borderRadius: BorderRadius.circular(25),
         ),
         width: 5,
@@ -198,9 +198,9 @@ class Magmo3aWidget extends StatelessWidget {
             padding: const EdgeInsets.all(5.0), // increased padding
             child: Container(
               decoration: BoxDecoration(
-                color: app_colors.green,
+                color: app_colors.darkGrey,
                 border: Border.all(
-                  color: app_colors.orange,
+                  color: app_colors.green,
                   width: 2, // increased border width
                 ),
                 borderRadius: BorderRadius.circular(15), // increased radius
@@ -210,7 +210,7 @@ class Magmo3aWidget extends StatelessWidget {
                 magmo3aModel.days ?? "", // Display the full day name
                 style: TextStyle(
                   fontSize: 30, // increased font size
-                  color: app_colors.orange,
+                  color: app_colors.green,
                 ),
               ),
             ),
@@ -236,14 +236,14 @@ class Magmo3aWidget extends StatelessWidget {
                       text: "Grade: ",
                       style: TextStyle(
                         fontSize: 17,
-                        color: app_colors.green,
+                        color: app_colors.darkGrey,
                       ),
                     ),
                     TextSpan(
                       text: "${magmo3aModel.grade ?? ''}",
                       style: TextStyle(
                         fontSize: 20,
-                        color: app_colors.orange,
+                        color: app_colors.green,
                       ),
                     ),
                   ],
@@ -259,7 +259,7 @@ class Magmo3aWidget extends StatelessWidget {
                       text: " Time : ",
                       style: TextStyle(
                         fontSize: 17,
-                        color: app_colors.green,
+                        color: app_colors.darkGrey,
                       ),
                     ),
                     TextSpan(
@@ -268,7 +268,7 @@ class Magmo3aWidget extends StatelessWidget {
                           : '',
                       style: TextStyle(
                         fontSize: 20,
-                        color: app_colors.orange,
+                        color: app_colors.green,
                       ),
                     ),
                   ],
@@ -313,16 +313,16 @@ class Magmo3aWidget extends StatelessWidget {
           },
           icon: Container(
             decoration: BoxDecoration(
-              color: app_colors.green,
+              color: app_colors.darkGrey,
               border: Border.all(
-                color: app_colors.orange,
+                color: app_colors.green,
                 width: 1,
               ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               Icons.arrow_forward_ios,
-              color: app_colors.orange,
+              color: app_colors.green,
             ),
           ),
         ),

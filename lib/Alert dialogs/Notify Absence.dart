@@ -20,7 +20,7 @@ class SelectRecipientDialogContent extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
-          title: Text('Father',style: TextStyle(color: app_colors.orange),),
+          title: Text('Father',style: TextStyle(color: app_colors.green),),
           onTap: () {
             Navigator.of(context).pop();
             sendMessageToFather();
@@ -28,7 +28,7 @@ class SelectRecipientDialogContent extends StatelessWidget {
           },
         ),
         ListTile(
-          title: Text('Mother',style: TextStyle(color: app_colors.orange),),
+          title: Text('Mother',style: TextStyle(color: app_colors.green),),
           onTap: () {
             Navigator.of(context).pop();
             sendMessageToMother();
@@ -37,7 +37,7 @@ class SelectRecipientDialogContent extends StatelessWidget {
           },
         ),
         ListTile(
-          title: Text('Student',style: TextStyle(color: app_colors.orange),),
+          title: Text('Student',style: TextStyle(color: app_colors.green),),
           onTap: () {
             Navigator.of(context).pop();
             sendMessageToStudent();

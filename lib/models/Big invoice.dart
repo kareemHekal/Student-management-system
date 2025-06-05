@@ -1,5 +1,6 @@
 import 'package:fatma_elorbany/models/payment.dart';
-import 'package:fatma_elorbany/models/Invoice.dart';
+
+import 'Invoice.dart';
 
 
 class BigInvoice {

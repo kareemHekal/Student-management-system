@@ -57,10 +57,10 @@ class _LoginPageState extends State<LoginPage> {
         const Text(
           "Welcome Back",
           style: TextStyle(
-              fontSize: 40, fontWeight: FontWeight.bold, color: app_colors.orange),
+              fontSize: 40, fontWeight: FontWeight.bold, color: app_colors.green),
         ),
         const Text("Enter your credentials to login",
-            style: TextStyle(color: app_colors.green)),
+            style: TextStyle(color: app_colors.darkGrey)),
       ],
     );
   }
@@ -70,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
-          cursorColor: app_colors.orange, // Use your orange color
+          cursorColor: app_colors.green, // Use your orange color
           style: const TextStyle(color: Colors.black, fontSize: 20),
           controller: _emailController,
           decoration: InputDecoration(
@@ -78,9 +78,9 @@ class _LoginPageState extends State<LoginPage> {
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide.none),
-              fillColor: app_colors.orange.withOpacity(0.1), // Use your orange color
+              fillColor: app_colors.green.withOpacity(0.1), // Use your orange color
               filled: true,
-              prefixIcon: const Icon(Icons.email, color: app_colors.orange)), // Use your orange color
+              prefixIcon: const Icon(Icons.email, color: app_colors.green)), // Use your orange color
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Please enter your Email';
@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 10),
         TextFormField(
-          cursorColor: app_colors.orange, // Use your orange color
+          cursorColor: app_colors.green, // Use your orange color
           style: const TextStyle(color: Colors.black, fontSize: 20),
           controller: _passwordController,
           decoration: InputDecoration(
@@ -99,13 +99,13 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide.none,
             ),
-            fillColor: app_colors.orange.withOpacity(0.1), // Use your orange color
+            fillColor: app_colors.green.withOpacity(0.1), // Use your orange color
             filled: true,
-            prefixIcon: const Icon(Icons.password, color: app_colors.orange), // Use your orange color
+            prefixIcon: const Icon(Icons.password, color: app_colors.green), // Use your orange color
             suffixIcon: IconButton(
               icon: Icon(
                 _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                color: app_colors.orange, // Use your orange color
+                color: app_colors.green, // Use your orange color
               ),
               onPressed: () {
                 setState(() {
@@ -197,11 +197,11 @@ class _LoginPageState extends State<LoginPage> {
           style: ElevatedButton.styleFrom(
             shape: const StadiumBorder(),
             padding: const EdgeInsets.symmetric(vertical: 16),
-            backgroundColor: app_colors.green, // Use your green color
+            backgroundColor: app_colors.darkGrey, // Use your green color
           ),
           child: const Text(
             "Login",
-            style: TextStyle(fontSize: 20, color: app_colors.orange),
+            style: TextStyle(fontSize: 20, color: app_colors.green),
           ),
         ),
       ],
@@ -215,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
       },
       child: const Text(
         "Forgot password?",
-        style: TextStyle(color: app_colors.orange), // Use your orange color
+        style: TextStyle(color: app_colors.green), // Use your orange color
       ),
     );
   }
@@ -234,7 +234,7 @@ class _LoginPageState extends State<LoginPage> {
             },
             child: const Text(
               "Sign Up",
-              style: TextStyle(color: app_colors.orange), // Use your orange color
+              style: TextStyle(color: app_colors.green), // Use your orange color
             ),
           ),
         ],

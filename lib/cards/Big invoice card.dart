@@ -1,8 +1,8 @@
-  import 'package:fatma_elorbany/colors_app.dart';
-  import 'package:fatma_elorbany/pages/one%20invoice%20page.dart';
   import 'package:flutter/material.dart';
-  import '../models/Big invoice.dart';
-  import '../pages/pdfGnerator.dart';
+  import '../colors_app.dart';
+import '../models/Big invoice.dart';
+  import '../pages/one invoice page.dart';
+import '../pages/pdfGnerator.dart';
 
   class BigInvoiceCard extends StatefulWidget {
     final BigInvoice invoice;
@@ -53,7 +53,7 @@
                         Text(widget.invoice.date, style: const TextStyle(fontSize: 16)),
                         Text(widget.invoice.day, style: const TextStyle(fontSize: 16)),
                         IconButton(
-                          icon: const Icon(Icons.print, size: 24, color: app_colors.orange),
+                          icon: const Icon(Icons.print, size: 24, color: app_colors.green),
                           onPressed: () async {
                             await generateBigInvoicePDF(widget.invoice);
                           },
@@ -91,7 +91,7 @@
             "\$${amount.toStringAsFixed(2)}",
             style: const TextStyle(
               fontSize: 15,
-              color: app_colors.orange,
+              color: app_colors.green,
             ),
           ),
         ],

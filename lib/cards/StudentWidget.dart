@@ -113,7 +113,7 @@ class StudentWidget extends StatelessWidget {
                           builder: (context) => AlertDialog(
                             backgroundColor: app_colors.ligthGreen,
                             title: const Text(
-                              'Who would you like to send the message to?',style: TextStyle(color: app_colors.green),),
+                              'Who would you like to send the message to?',style: TextStyle(color: app_colors.darkGrey),),
                             content: SelectRecipientDialogContent(
                               sendMessageToFather: () => _sendMessageToParent('father'),
                               sendMessageToMother: () => _sendMessageToParent('mother'),
@@ -130,7 +130,7 @@ class StudentWidget extends StatelessWidget {
                                     Navigator.of(context).pop();
                                   },
                                   style: TextButton.styleFrom(
-                                    backgroundColor: app_colors.orange, // Set background color
+                                    backgroundColor: app_colors.green, // Set background color
                                     foregroundColor: Colors.white, // Set text color for contrast
                                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Optional: Adjust padding
                                   ),
@@ -204,7 +204,7 @@ class StudentWidget extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: app_colors.green,
+              color: app_colors.darkGrey,
               fontSize: 18,
             ),
           ),
@@ -213,8 +213,8 @@ class StudentWidget extends StatelessWidget {
             child: Theme(
               data: Theme.of(context).copyWith(
                 textSelectionTheme: TextSelectionThemeData(
-                  selectionColor: app_colors.green.withOpacity(0.5),
-                  cursorColor: app_colors.green,
+                  selectionColor: app_colors.darkGrey.withOpacity(0.5),
+                  cursorColor: app_colors.darkGrey,
                 ),
               ),
               child: GestureDetector(
@@ -224,7 +224,7 @@ class StudentWidget extends StatelessWidget {
                   child: Text(
                     value,
                     style: const TextStyle(
-                      color: app_colors.orange,
+                      color: app_colors.green,
                       fontSize: 25,
                     ),
                   ),
@@ -248,7 +248,7 @@ class StudentWidget extends StatelessWidget {
 
 
 أطيب التحيات،
-فاطمة العرباني
+حنان خالد
       """;
     }
     else if (parentRole == 'mother') {
@@ -258,7 +258,7 @@ class StudentWidget extends StatelessWidget {
  
 
 أطيب التحيات،
-فاطمة العرباني
+حنان خالد
       """;
     }
     else {
@@ -266,7 +266,7 @@ class StudentWidget extends StatelessWidget {
 عزيزي ${studentModel.name}،
 
 أطيب التحيات،
-فاطمة العرباني
+حنان خالد
       """;
     }
 
@@ -329,7 +329,7 @@ class StudentWidget extends StatelessWidget {
         const Text(
           "Student Days:",
           style: TextStyle(
-            color: app_colors.green,
+            color: app_colors.darkGrey,
             fontSize: 18,
           ),
         ),
@@ -355,19 +355,19 @@ class StudentWidget extends StatelessWidget {
                           Text(
                             day,
                             style: const TextStyle(
-                              color: app_colors.orange,
+                              color: app_colors.green,
                             ),
                           ),
                           Text(
                             timeString,
                             style: const TextStyle(
-                              color: app_colors.orange,
+                              color: app_colors.green,
                               fontSize: 12, // Smaller font for time
                             ),
                           ),
                         ],
                       ),
-                      backgroundColor: app_colors.green,
+                      backgroundColor: app_colors.darkGrey,
                     ),
                     const SizedBox(width: 8),
                     // Add some space between each day

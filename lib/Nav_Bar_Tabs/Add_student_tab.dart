@@ -1,7 +1,6 @@
+import 'package:fatma_elorbany/firebase/firebase_functions.dart';
 import 'package:flutter/material.dart';
-import '../Appbar_TAbs/1s to Add Student.dart';
-import '../Appbar_TAbs/2s to Add Student.dart';
-import '../Appbar_TAbs/3s to Add Students.dart';
+import '../add_student_widget.dart';
 import '../colors_app.dart';
 
 class AddStudentTab extends StatefulWidget {
@@ -12,53 +11,66 @@ class AddStudentTab extends StatefulWidget {
 }
 
 class _AddStudentTabState extends State<AddStudentTab> {
+  String? grade;
+  List<String>? grades;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchGrades();
+  }
+
+  Future<void> fetchGrades() async {
+    List<String> fetchedGrades = await FirebaseFunctions.getGradesList();
+    setState(() {
+      grades = fetchedGrades;
+      if (grades!.isNotEmpty) {
+        grade = grades![0]; // Default to the first grade
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 60),
-          child: Center(child: Image.asset("assets/images/1......1.png")),
+    if (grades == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (grades!.isEmpty) {
+      return const Center(
+        child: Text(
+          "There are no grades, you must add one first.",
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 50),
-        DefaultTabController(
-          length: 3,
-          child: Scaffold(
-            body: Column(
-              children: [
-                Container(
-                  color: app_colors.green,
-                  child:  const TabBar(
-                    labelColor: app_colors.orange,
-                    indicatorColor: app_colors.orange,
-                    indicatorWeight: 5,
-                    indicatorSize:TabBarIndicatorSize.tab,
-                    unselectedLabelColor: Colors.white,
-                    tabs:[
-                      Tab(
-                        child: Text(" 1 S"),
-                      ),
-                      Tab(
-                        child: Text(" 2 S"),
-                      ),
-                      Tab(
-                        child: Text(" 3 S"),
-                      ),
-                    ],
-                  ),
-                ),
-                const Expanded(
-                  child: TabBarView(children: [
-                    one(),
-                    two(),
-                    three(),
-                  ]),
-                )
-              ],
+      );
+    }
+
+    return DefaultTabController(
+      length: grades!.length,
+      child: Scaffold(
+        body: Column(
+          children: [
+            Container(
+              color: app_colors.darkGrey,
+              child: TabBar(
+                labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                dividerColor: Colors.transparent,
+                onTap: (index) {
+                  setState(() {
+                    grade = grades![index];
+                  });
+                },
+                isScrollable: false,
+                indicatorColor: app_colors.green,
+                labelColor: app_colors.green,
+                unselectedLabelColor: Colors.white,
+                tabs: grades!.map((g) => Tab(text: g)).toList(),
+              ),
             ),
-          ),
+            Expanded(child: AddStudentScreen(level: grade)),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

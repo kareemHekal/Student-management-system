@@ -46,7 +46,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
       appBar: AppBar(
         actions: [
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: app_colors.orange),
+            icon: const Icon(Icons.picture_as_pdf, color: app_colors.green),
             onPressed: () async {
               await _generatePdf(
                   context); // Call the modified PDF generation method
@@ -58,9 +58,9 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.orange),
+          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
         ),
-        backgroundColor: app_colors.green,
+        backgroundColor: app_colors.darkGrey,
         title: Image.asset(
           "assets/images/2....2.png",
           height: 100,
@@ -87,7 +87,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                       width: double.infinity,
                       // Ensures the container takes the full width
                       decoration: const BoxDecoration(
-                        color: app_colors.green,
+                        color: app_colors.darkGrey,
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(25),
                           bottomRight: Radius.circular(25),
@@ -98,35 +98,35 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                             vertical: 10, horizontal: 10),
                         // Add some padding to prevent the field from touching edges
                         child: TextFormField(
-                          style: const TextStyle(color: app_colors.green),
+                          style: const TextStyle(color: app_colors.darkGrey),
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.white,
                             // Sets the background color to white
                             hintText: 'Search',
-                            hintStyle: const TextStyle(color: app_colors.green),
+                            hintStyle: const TextStyle(color: app_colors.darkGrey),
                             contentPadding: const EdgeInsets.symmetric(
                                 vertical: 15.0, horizontal: 20.0),
                             // Adjust the internal padding of the field
                             enabledBorder: OutlineInputBorder(
                               borderSide: const BorderSide(
-                                  color: app_colors.orange, width: 2.0),
+                                  color: app_colors.green, width: 2.0),
                               borderRadius: BorderRadius.circular(20.0),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderSide: const BorderSide(
-                                  color: app_colors.orange, width: 2.0),
+                                  color: app_colors.green, width: 2.0),
                               borderRadius: BorderRadius.circular(20.0),
                             ),
                             suffixIcon: IconButton(
                               icon: const Icon(Icons.clear,
-                                  color: app_colors.orange),
+                                  color: app_colors.green),
                               onPressed: () {
                                 _searchController.clear();
                               },
                             ),
                           ),
-                          cursorColor: app_colors.green,
+                          cursorColor: app_colors.darkGrey,
                           controller: _searchController,
                         ),
                       ),
@@ -144,10 +144,10 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                             ConnectionState.waiting) {
                           return const Center(
                             child: DiscreteCircle(
-                              color: app_colors.green,
+                              color: app_colors.darkGrey,
                               size: 30,
                               secondCircleColor: app_colors.ligthGreen,
-                              thirdCircleColor: app_colors.orange,
+                              thirdCircleColor: app_colors.green,
                             ),
                           );
                         }
@@ -246,12 +246,11 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
         pdf.addPage(
           pw.Page(
             pageFormat: PdfPageFormat.a4,
-            margin: pw.EdgeInsets.all(20),
+            margin: const pw.EdgeInsets.all(20),
             build: (pw.Context context) {
               return pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  // Group details at the top of the first page
                   if (page == 0 && showGroupInfo) ...[
                     pw.Text(
                       "Group time: $formattedTime",

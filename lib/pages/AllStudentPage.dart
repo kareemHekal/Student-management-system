@@ -1,17 +1,47 @@
-
-
 import 'package:flutter/material.dart';
-
 
 import '../Appbar_TAbs/All 1 S.dart';
 import '../Appbar_TAbs/All 2 S.dart';
 import '../Appbar_TAbs/All 3 S.dart';
 import '../colors_app.dart';
+import '../firebase/firebase_functions.dart';
+import '../studetnstreambuilder.dart';
 
-
-
-class AllStudentsTab extends StatelessWidget {
+class AllStudentsTab extends StatefulWidget {
   const AllStudentsTab({super.key});
+
+  @override
+  State<AllStudentsTab> createState() => _AllStudentsTabState();
+}
+
+String? grade;
+bool isLoading = true;
+List<String>? grades;
+late bool thereIsGrades;
+
+class _AllStudentsTabState extends State<AllStudentsTab> {
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () async {
+      await fetchGrades();
+      setState(() {
+        isLoading = false; // Stop loading after fetching
+      });
+    });
+  }
+
+  Future<void> fetchGrades() async {
+    List<String> fetchedGrades = await FirebaseFunctions.getGradesList();
+    setState(() {
+      grades = fetchedGrades;
+      if (fetchedGrades.isEmpty) {
+        thereIsGrades = false;
+      } else {
+        thereIsGrades = true;
+        grade = grades![0]; // Default to the first grade
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,17 +53,18 @@ class AllStudentsTab extends StatelessWidget {
         ),
         const SizedBox(height: 50),
         DefaultTabController(
-          length: 3,
+          length: grades?.length ?? 0,
           child: Scaffold(
             appBar: AppBar(
               centerTitle: true,
               leading: IconButton(
                 onPressed: () {
-                  Navigator.pushNamedAndRemoveUntil(context, '/HomeScreen',(route)=>false);
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/HomeScreen', (route) => false);
                 },
-                icon: const Icon(Icons.arrow_back_ios, color: app_colors.orange),
+                icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
               ),
-              backgroundColor: app_colors.green,
+              backgroundColor: app_colors.darkGrey,
               title: Image.asset(
                 "assets/images/2....2.png",
                 height: 100,
@@ -41,38 +72,39 @@ class AllStudentsTab extends StatelessWidget {
               ),
               toolbarHeight: 120,
             ),
-            body: Column(
-              children: [
-                Container(
-                  color: app_colors.green,
-                  child:  const TabBar(
-                    isScrollable: false,
-                    labelColor: app_colors.orange,
-                    indicatorColor: app_colors.orange,
-                    indicatorWeight: 5,
-                    indicatorSize:TabBarIndicatorSize.tab,
-                    unselectedLabelColor: Colors.white,
-                    tabs:[
-                      Tab(
-                        child: Text(" 1S"),
-                      ),
-                      Tab(
-                        child: Text(" 2S"),
-                      ),
-                      Tab(
-                        child: Text(" 3S"),
-                      ),
-                    ],
+            body: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Center(
+              child: thereIsGrades
+                  ? Column(
+                children: [
+                  Container(
+                    color: app_colors.darkGrey,
+                    child: TabBar(
+                      labelPadding:
+                      const EdgeInsets.symmetric(horizontal: 10),
+                      dividerColor: Colors.transparent,
+                      onTap: (index) {
+                        setState(() {
+                          grade = grades![index];
+                        });
+                      },
+                      isScrollable: false,
+                      indicatorColor: app_colors.green,
+                      labelColor: app_colors.green,
+                      unselectedLabelColor: Colors.white,
+                      tabs: grades!.map((g) => Tab(text: g)).toList(),
+                    ),
                   ),
-                ),
-                const Expanded(
-                  child: TabBarView(children: [
-                    FirstS(),
-                    SecondS(),
-                    ThirdS(),
-                  ]),
-                )
-              ],
+                  Expanded(
+                    child: StudentStreamBuilder(grade: grade ?? ""),
+                  ),
+                ],
+              )
+                  : const Text(
+                "There are no grades, you must add one first.",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ),

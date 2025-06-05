@@ -1,11 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fatma_elorbany/models/Invoice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/Big invoice.dart';
+import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Studentmodel.dart';
-import 'package:fatma_elorbany/models/payment.dart';
-
+import '../models/payment.dart';
 import '../models/usermodel.dart';
 
 class FirebaseFunctions {
@@ -108,7 +107,10 @@ class FirebaseFunctions {
   }
 
   static Future<void> resetAttendanceForAllStudents() async {
-    List<String> grades = ['1 secondary', '2 secondary', '3 secondary'];
+    List<String> grades = [];
+
+    List<String> fetchedGrades = await FirebaseFunctions.getGradesList();
+    grades = fetchedGrades;
 
     for (var grade in grades) {
       // Get the collection for each grade
@@ -159,18 +161,25 @@ class FirebaseFunctions {
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
-  /// Retrieves students filtered by first day ID
-  static Stream<QuerySnapshot<Studentmodel>> getStudentsByGroupId(
-      String grade,
-      String groupId // The group ID you want to check in the `hisGroups` list
-      ) {
-    var collection = getSecondaryCollection(grade); // Get the collection based on grade
-
-    return collection
-        .where("hisGroupsId", arrayContains: groupId) // Check if the hisGroups array contains the groupId
-        .snapshots();
+  static Future<List<Studentmodel>> getAllStudentsByGrade_future(String grade) async {
+    CollectionReference<Studentmodel> collection = getSecondaryCollection(grade);
+    QuerySnapshot<Studentmodel> snapshot = await collection.get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
+  /// Retrieves students filtered by first day ID
+  static Stream<QuerySnapshot<Studentmodel>> getStudentsByGroupId(String grade,
+      String groupId // The group ID you want to check in the `hisGroups` list
+      ) {
+    var collection =
+        getSecondaryCollection(grade); // Get the collection based on grade
+
+    return collection
+        .where("hisGroupsId",
+            arrayContains:
+                groupId) // Check if the hisGroups array contains the groupId
+        .snapshots();
+  }
 
   /// Returns a reference to the specific grade's collection
   static CollectionReference<Studentmodel> getSecondaryCollection(
@@ -192,6 +201,101 @@ class FirebaseFunctions {
     for (var doc in snapshot.docs) {
       await doc.reference.delete();
     }
+  }
+
+  static Future<void> addGradeToList(String newGrade) async {
+    try {
+      // Reference to the 'constants' collection and the 'grades' document
+      DocumentReference gradesDoc =
+          FirebaseFirestore.instance.collection('constants').doc('grades');
+
+      // Get the current document data
+      DocumentSnapshot snapshot = await gradesDoc.get();
+
+      if (snapshot.exists) {
+        // Get the current list of grades
+        List<dynamic> gradesList = List.from(snapshot[
+            'grades']); // Clone the list to prevent modification of the original one
+
+        // Add the new grade to the list
+        gradesList.add(newGrade);
+
+        // Update the 'grades' field in the document with the modified list
+        await gradesDoc.update({'grades': gradesList});
+
+        print("Grade added successfully.");
+      } else {
+        print("Document does not exist.");
+      }
+    } catch (e) {
+      print("Error adding grade: $e");
+    }
+  }
+
+  static Future<void> deleteGradeFromList(String grade) async {
+    try {
+      // Reference to the 'constants' collection and the 'grades' document
+      DocumentReference gradesDoc =
+          FirebaseFirestore.instance.collection('constants').doc('grades');
+
+      // Get the current document data
+      DocumentSnapshot snapshot = await gradesDoc.get();
+
+      if (snapshot.exists) {
+        // Get the current list of grades
+        List<dynamic> gradesList = snapshot['grades'];
+
+        // Remove the grade from the list
+        gradesList.remove(grade);
+
+        // Update the 'grades' field in the document with the modified list
+        await gradesDoc.update({'grades': gradesList});
+
+        print("Grade removed successfully.");
+      } else {
+        print("Document does not exist.");
+      }
+    } catch (e) {
+      print("Error deleting grade: $e");
+    }
+  }
+
+  static Future<List<String>> getGradesList() async {
+    try {
+      DocumentSnapshot<Map<String, dynamic>> docSnapshot =
+          await FirebaseFirestore.instance
+              .collection('constants')
+              .doc('grades')
+              .get();
+
+      if (docSnapshot.exists) {
+        List<dynamic> gradesDynamic = docSnapshot.data()?['grades'] ?? [];
+        List<String> grades =
+            gradesDynamic.map((grade) => grade.toString()).toList();
+        return grades;
+      } else {
+        print("Document does not exist.");
+        return [];
+      }
+    } catch (e) {
+      print("Error fetching grades: $e");
+      return [];
+    }
+  }
+
+  static Stream<List<String>> getGradesStream() {
+    return FirebaseFirestore.instance
+        .collection('constants')
+        .doc('grades')
+        .snapshots()
+        .map((docSnapshot) {
+      if (docSnapshot.exists) {
+        List<dynamic> gradesDynamic = docSnapshot.data()?['grades'] ?? [];
+        return gradesDynamic.map((grade) => grade.toString()).toList();
+      } else {
+        return [];
+      }
+    });
   }
 
   // =============================== Authentication Functions ===============================
@@ -261,6 +365,9 @@ class FirebaseFunctions {
         );
   }
 
+
+
+  //=============================== BigInvoices Functions ===============================
   static Future<void> createBigInvoiceCollection() async {
     // Get Firestore instance
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -278,7 +385,8 @@ class FirebaseFunctions {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
     // Reference to the collection
-    CollectionReference bigInvoicesCollection = firestore.collection('big_invoices');
+    CollectionReference bigInvoicesCollection =
+        firestore.collection('big_invoices');
 
     // Get all documents in the collection
     QuerySnapshot snapshot = await bigInvoicesCollection.get();
@@ -329,7 +437,8 @@ class FirebaseFunctions {
     required int paymentIndex, // Index of the payment in the list
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference invoicesCollection = firestore.collection('big_invoices');
+    CollectionReference invoicesCollection =
+        firestore.collection('big_invoices');
 
     // Fetch the BigInvoice document
     DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
@@ -351,13 +460,15 @@ class FirebaseFunctions {
     // Update the document in Firestore
     await invoicesCollection.doc(date).set(bigInvoice.toJson());
   }
+
   static Future<void> updateIncomeInBigInvoice({
     required String date, // Document ID
     required Invoice updatedIncome, // Updated income object
     required int incomeIndex, // Index of the income in the list
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference invoicesCollection = firestore.collection('big_invoices');
+    CollectionReference invoicesCollection =
+        firestore.collection('big_invoices');
 
     // Fetch the BigInvoice document
     DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
@@ -379,6 +490,4 @@ class FirebaseFunctions {
     // Update the document in Firestore
     await invoicesCollection.doc(date).set(bigInvoice.toJson());
   }
-
-
 }

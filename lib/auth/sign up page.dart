@@ -48,13 +48,13 @@ class _SignupPageState extends State<SignupPage> {
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
                           color: app_colors
-                              .orange // Change to black for better contrast
+                              .green // Change to black for better contrast
                           ),
                     ),
                     const SizedBox(height: 20),
                     Text(
                       "Create your account",
-                      style: TextStyle(fontSize: 15, color: app_colors.green),
+                      style: TextStyle(fontSize: 15, color: app_colors.darkGrey),
                     )
                   ],
                 ),
@@ -72,12 +72,12 @@ class _SignupPageState extends State<SignupPage> {
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide: BorderSide.none,
                               ),
-                              fillColor: app_colors.orange.withOpacity(0.1),
+                              fillColor: app_colors.green.withOpacity(0.1),
                               // Use your orange color
                               filled: true,
                               prefixIcon: const Icon(Icons.person,
                                   color: app_colors
-                                      .orange), // Use your orange color
+                                      .green), // Use your orange color
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -95,12 +95,12 @@ class _SignupPageState extends State<SignupPage> {
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide: BorderSide.none,
                               ),
-                              fillColor: app_colors.orange.withOpacity(0.1),
+                              fillColor: app_colors.green.withOpacity(0.1),
                               // Use your orange color
                               filled: true,
                               prefixIcon: const Icon(Icons.email,
                                   color: app_colors
-                                      .orange), // Use your orange color
+                                      .green), // Use your orange color
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -121,11 +121,11 @@ class _SignupPageState extends State<SignupPage> {
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide: BorderSide.none,
                               ),
-                              fillColor: app_colors.orange.withOpacity(0.1),
+                              fillColor: app_colors.green.withOpacity(0.1),
                               // Use your orange color
                               filled: true,
                               prefixIcon: const Icon(Icons.password,
-                                  color: app_colors.orange),
+                                  color: app_colors.green),
                               // Use your orange color
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -133,7 +133,7 @@ class _SignupPageState extends State<SignupPage> {
                                       ? Icons.visibility
                                       : Icons.visibility_off,
                                   color: app_colors
-                                      .orange, // Use your orange color
+                                      .green, // Use your orange color
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -162,11 +162,11 @@ class _SignupPageState extends State<SignupPage> {
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide: BorderSide.none,
                               ),
-                              fillColor: app_colors.orange.withOpacity(0.1),
+                              fillColor: app_colors.green.withOpacity(0.1),
                               // Use your orange color
                               filled: true,
                               prefixIcon: const Icon(Icons.password,
-                                  color: app_colors.orange),
+                                  color: app_colors.green),
                               // Use your orange color
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -174,7 +174,7 @@ class _SignupPageState extends State<SignupPage> {
                                       ? Icons.visibility
                                       : Icons.visibility_off,
                                   color: app_colors
-                                      .orange, // Use your orange color
+                                      .green, // Use your orange color
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -272,12 +272,12 @@ class _SignupPageState extends State<SignupPage> {
                     },
                     child: const Text(
                       "Sign up",
-                      style: TextStyle(fontSize: 20, color: app_colors.orange),
+                      style: TextStyle(fontSize: 20, color: app_colors.green),
                     ),
                     style: ElevatedButton.styleFrom(
                       shape: const StadiumBorder(),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: app_colors.green, // Use your green color
+                      backgroundColor: app_colors.darkGrey, // Use your green color
                     ),
                   ),
                 ),
@@ -292,7 +292,7 @@ class _SignupPageState extends State<SignupPage> {
                       child: const Text(
                         "Login",
                         style: TextStyle(
-                            color: app_colors.orange), // Use your orange color
+                            color: app_colors.green), // Use your orange color
                       ),
                     )
                   ],

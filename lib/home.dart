@@ -31,7 +31,7 @@ class _HomescreenState extends State<Homescreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         centerTitle: true,
-        backgroundColor: app_colors.green,
+        backgroundColor: app_colors.darkGrey,
         title: Image.asset(
           "assets/images/2....2.png",
           height: 100,
@@ -41,6 +41,7 @@ class _HomescreenState extends State<Homescreen> {
         leading: Builder(
           builder: (context) => IconButton(
             icon: Image.asset(
+              color: app_colors.blue,
               "assets/images/app.png", // Your icon image path
               height: 30, // Adjust the height as needed
               width: 30, // Adjust the width as needed
@@ -62,13 +63,13 @@ class _HomescreenState extends State<Homescreen> {
           });
         },
         backgroundColor: Colors.transparent,
-        color: app_colors.green,
+        color: app_colors.darkGrey,
         animationDuration: const Duration(seconds: 1),
         items: [
           Icon(Icons.home,
-              color: _currant_index == 0 ? app_colors.orange : Colors.white),
+              color: _currant_index == 0 ? app_colors.green : Colors.white),
           Icon(Icons.add,
-              color: _currant_index == 1 ? app_colors.orange : Colors.white),
+              color: _currant_index == 1 ? app_colors.green : Colors.white),
         ],
       ),
     );

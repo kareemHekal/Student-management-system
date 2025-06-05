@@ -24,7 +24,7 @@ class Magmo3as extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: Container(
                 decoration: BoxDecoration(
-                    color: app_colors.green,
+                    color: app_colors.darkGrey,
                     borderRadius: BorderRadius.circular(30)),
                 child: IconButton(
                   onPressed: () {
@@ -39,7 +39,7 @@ class Magmo3as extends StatelessWidget {
                             ));
                   },
                   icon: Icon(Icons.add),
-                  color: app_colors.orange,
+                  color: app_colors.green,
                   iconSize: 30,
                 ),
               ),
@@ -52,10 +52,10 @@ class Magmo3as extends StatelessWidget {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: DiscreteCircle(
-                  color: app_colors.green,
+                  color: app_colors.darkGrey,
                   size: 30,
                   secondCircleColor: app_colors.ligthGreen,
-                  thirdCircleColor: app_colors.orange,
+                  thirdCircleColor: app_colors.green,
                 ),
               );
             }

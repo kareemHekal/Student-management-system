@@ -37,12 +37,12 @@ dependencies:
   provider: ^6.0.0
   connectivity_plus: ^6.0.5
   cloud_firestore: ^5.2.1
+  flutter_slidable: ^4.0.0
   firebase_core: ^3.6.0
   flutter_launcher_icons: ^0.14.1
   printing: ^5.13.4
   pdf: ^3.11.1
   curved_navigation_bar: ^1.0.6
-  flutter_slidable: ^3.1.1
   url_launcher: ^6.3.1
   lite_rolling_switch: ^1.0.1
   intl: ^0.18.1
@@ -53,6 +53,7 @@ dependencies:
   chips_choice: ^3.0.1
   bloc: ^9.0.0
   flutter_bloc: ^9.0.0
+
 flutter_native_splash:
   color: "#D9EDBF"
   image: "assets/images/splash image.png"

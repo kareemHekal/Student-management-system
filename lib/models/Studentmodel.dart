@@ -1,5 +1,3 @@
-import 'package:fatma_elorbany/cards/groupSmallCard.dart';
-import 'package:flutter/material.dart';
 import 'Magmo3aModel.dart';
 
 /// A model representing a student and their associated data.

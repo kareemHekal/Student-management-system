@@ -1,9 +1,9 @@
-import 'package:fatma_elorbany/firebase/firebase_functions.dart';
-import 'package:fatma_elorbany/models/Invoice.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../colors_app.dart';
+import '../firebase/firebase_functions.dart';
+import '../models/Invoice.dart';
 
 class InvoiceWidget extends StatelessWidget {
   final Invoice invoice;
@@ -26,7 +26,7 @@ class InvoiceWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(context),
-              const Divider(color: app_colors.green, thickness: 1),
+              const Divider(color: app_colors.darkGrey, thickness: 1),
               const SizedBox(height: 8),
               _buildInfoRow(
                   context, false, "Student Name:", invoice.studentName),
@@ -60,7 +60,7 @@ class InvoiceWidget extends StatelessWidget {
         const Text(
           "InCome Details",
           style: TextStyle(
-            color: app_colors.green,
+            color: app_colors.darkGrey,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -70,7 +70,7 @@ class InvoiceWidget extends StatelessWidget {
             IconButton(
               icon: const Icon(
                 Icons.edit,
-                color: app_colors.orange,
+                color: app_colors.green,
               ),
               onPressed: () {
                 _showEditDialog(context); // Show the edit dialog
@@ -102,7 +102,7 @@ class InvoiceWidget extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: app_colors.green,
+              color: app_colors.darkGrey,
               fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
@@ -115,7 +115,7 @@ class InvoiceWidget extends StatelessWidget {
                 child: Text(
                   value,
                   style: TextStyle(
-                    color: isPhoneNumber ? app_colors.orange : app_colors.green,
+                    color: isPhoneNumber ? app_colors.green : app_colors.darkGrey,
                     fontSize: 16,
                     fontWeight:
                     isPhoneNumber ? FontWeight.bold : FontWeight.normal,

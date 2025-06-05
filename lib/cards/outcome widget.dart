@@ -1,8 +1,8 @@
-import 'package:fatma_elorbany/firebase/firebase_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../colors_app.dart';
-import 'package:fatma_elorbany/models/payment.dart';
+import '../firebase/firebase_functions.dart';
+import '../models/payment.dart';
 
 class PaymentWidget extends StatefulWidget {
   final Payment payment;
@@ -31,7 +31,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(context),
-              const Divider(color: app_colors.green, thickness: 1),
+              const Divider(color: app_colors.darkGrey, thickness: 1),
               const SizedBox(height: 8),
               _buildInfoRow(context, "Amount:",
                   "\$${widget.payment.amount.toStringAsFixed(2)}"),
@@ -61,7 +61,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
         const Text(
           "OutCome Details",
           style: TextStyle(
-            color: app_colors.green,
+            color: app_colors.darkGrey,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -69,7 +69,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
         IconButton(
           icon: const Icon(
             Icons.edit,
-            color: app_colors.orange,
+            color: app_colors.green,
             size: 30,
           ),
           onPressed: () {
@@ -89,7 +89,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
           Text(
             label,
             style: const TextStyle(
-              color: app_colors.green,
+              color: app_colors.darkGrey,
               fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
@@ -100,7 +100,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
               child: Text(
                 value,
                 style: const TextStyle(
-                  color: app_colors.green,
+                  color: app_colors.darkGrey,
                   fontSize: 16,
                 ),
               ),
