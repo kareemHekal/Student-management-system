@@ -266,13 +266,22 @@ print(selectedCategory);
       pw.MultiPage(
         build: (context) => [
           pw.Text(title, style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 10),
+
+          // البيانات المُفلترة
+          pw.Text("Grade: ${selectedSecondary ?? 'N/A'}", style: const pw.TextStyle(fontSize: 14)),
+          pw.Text("Month: ${selectedCategory ?? 'N/A'}", style: const pw.TextStyle(fontSize: 14)),
+          pw.Text("Total Students: ${students.length}", style: const pw.TextStyle(fontSize: 14)),
           pw.SizedBox(height: 20),
+
           pw.Table.fromTextArray(
             headers: ['Name', 'Phone Number'],
             data: students.map((student) => [
               student.name ?? 'Unknown',
               student.phoneNumber ?? 'No Phone',
             ]).toList(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            cellAlignment: pw.Alignment.centerLeft,
           ),
         ],
       ),
@@ -282,6 +291,7 @@ print(selectedCategory);
       onLayout: (PdfPageFormat format) async => pdf.save(),
     );
   }
+
   Widget _buildDropdown(String label, String hint, List<String> items,
       String? selectedValue, Function(String) onChanged) {
     return Column(
