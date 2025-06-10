@@ -53,6 +53,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
   ///=============================================================Functions===========================================================\\\
   ///============================================================================================================================\\\
   static StudentEditCubit get(context) => BlocProvider.of(context);
+
   initTheState() {
     getCurrentDate();
 
@@ -136,7 +137,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       context: context,
       builder: (BuildContext context) {
         return PopScope(
-canPop: false,
+          canPop: false,
           child: AlertDialog(
             title: const Text("Payment Changes Detected"),
             content: Form(
@@ -170,8 +171,10 @@ canPop: false,
               TextButton(
                 onPressed: () async {
                   FirebaseFirestore firestore = FirebaseFirestore.instance;
-                  DocumentSnapshot docSnapshot =
-                      await firestore.collection('big_invoices').doc(date).get();
+                  DocumentSnapshot docSnapshot = await firestore
+                      .collection('big_invoices')
+                      .doc(date)
+                      .get();
 
                   if (_formKey.currentState?.validate() ?? false) {
                     // If the form is valid, save the data
@@ -212,7 +215,8 @@ canPop: false,
                       BigInvoice bigInvoice = BigInvoice(
                         date: date ?? "",
                         day: Day ?? "",
-                        invoices: [newInvoice], // Add the new invoice to the list
+                        invoices: [newInvoice],
+                        // Add the new invoice to the list
                         payments: [], // Initialize payments as an empty list
                       );
 
@@ -368,7 +372,7 @@ canPop: false,
       );
       emit(StudentEditSuccess());
     } catch (e) {
-      print("Error: >>>>>>>>>>>  $e" );
+      print("Error: >>>>>>>>>>>  $e");
       emit(StudentEditFailure(errorMessage: e as String));
     }
 // Compare the old values with the new values to detect changes
@@ -403,15 +407,18 @@ canPop: false,
             : null // If changed to false, set to null
         : previousDate;
   }
-  void setTheSelectedGenderByNull(){
+
+  void setTheSelectedGenderByNull() {
     selectedGender = null;
     emit(StudentUpdatedInEditPage());
   }
+
   void changeValueOfGenderDropDown(value) {
     selectedGender = value as String;
     emit(StudentUpdatedInEditPage());
     print(selectedGender);
   }
+
   void changeFirstMonthValue(value) {
     firstMonth = value;
     emit(StudentUpdatedInEditPage());
