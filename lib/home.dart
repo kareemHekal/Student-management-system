@@ -41,7 +41,6 @@ class _HomescreenState extends State<Homescreen> {
         leading: Builder(
           builder: (context) => IconButton(
             icon: Image.asset(
-              color: app_colors.blue,
               "assets/images/app.png", // Your icon image path
               height: 30, // Adjust the height as needed
               width: 30, // Adjust the width as needed

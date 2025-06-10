@@ -135,106 +135,109 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       barrierDismissible: false, // Prevent dismissal by tapping outside
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Payment Changes Detected"),
-          content: Form(
-            key: _formKey, // GlobalKey<FormState>
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: totalAmountController,
-                  decoration: const InputDecoration(
-                    labelText: "Total Amount",
+        return PopScope(
+canPop: false,
+          child: AlertDialog(
+            title: const Text("Payment Changes Detected"),
+            content: Form(
+              key: _formKey, // GlobalKey<FormState>
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: totalAmountController,
+                    decoration: const InputDecoration(
+                      labelText: "Total Amount",
+                    ),
+                    keyboardType: TextInputType.number, // Ensure numeric input
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Total Amount cannot be empty'; // Show error if empty
+                      }
+                      return null; // Return null if validation passes
+                    },
                   ),
-                  keyboardType: TextInputType.number, // Ensure numeric input
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Total Amount cannot be empty'; // Show error if empty
-                    }
-                    return null; // Return null if validation passes
-                  },
-                ),
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: "Description",
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: "Description",
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () async {
-                FirebaseFirestore firestore = FirebaseFirestore.instance;
-                DocumentSnapshot docSnapshot =
-                    await firestore.collection('big_invoices').doc(date).get();
+            actions: <Widget>[
+              TextButton(
+                onPressed: () async {
+                  FirebaseFirestore firestore = FirebaseFirestore.instance;
+                  DocumentSnapshot docSnapshot =
+                      await firestore.collection('big_invoices').doc(date).get();
 
-                if (_formKey.currentState?.validate() ?? false) {
-                  // If the form is valid, save the data
-                  totalAmount =
-                      double.tryParse(totalAmountController.text) ?? 0.0;
-                  description = descriptionController.text;
+                  if (_formKey.currentState?.validate() ?? false) {
+                    // If the form is valid, save the data
+                    totalAmount =
+                        double.tryParse(totalAmountController.text) ?? 0.0;
+                    description = descriptionController.text;
 
-                  // Create a new invoice object
-                  Invoice newInvoice = Invoice(
-                    studentName: name_controller.text,
-                    studentPhoneNumber: studentNumberController.text,
-                    momPhoneNumber: motherNumberController.text,
-                    dadPhoneNumber: fatherNumberController.text,
-                    grade: student.grade ?? "",
-                    amount: totalAmount,
-                    description: description,
-                    dateTime: DateTime.now(),
-                  );
-
-                  if (docSnapshot.exists) {
-                    // If the document exists, retrieve the existing data
-                    Map<String, dynamic> data =
-                        docSnapshot.data() as Map<String, dynamic>;
-
-                    // Parse the existing document into a BigInvoice object
-                    BigInvoice bigInvoice = BigInvoice.fromJson(data);
-
-                    // Add the new invoice to the existing list of invoices
-                    bigInvoice.invoices.add(newInvoice);
-
-                    // Update the Firestore document
-                    await firestore
-                        .collection('big_invoices')
-                        .doc(date)
-                        .update(bigInvoice.toJson());
-                  } else {
-                    // If the document does not exist, create it with the new invoice in the `invoices` list
-                    BigInvoice bigInvoice = BigInvoice(
-                      date: date ?? "",
-                      day: Day ?? "",
-                      invoices: [newInvoice], // Add the new invoice to the list
-                      payments: [], // Initialize payments as an empty list
+                    // Create a new invoice object
+                    Invoice newInvoice = Invoice(
+                      studentName: name_controller.text,
+                      studentPhoneNumber: studentNumberController.text,
+                      momPhoneNumber: motherNumberController.text,
+                      dadPhoneNumber: fatherNumberController.text,
+                      grade: student.grade ?? "",
+                      amount: totalAmount,
+                      description: description,
+                      dateTime: DateTime.now(),
                     );
 
-                    // Save the new document to Firestore
-                    await firestore
-                        .collection('big_invoices')
-                        .doc(date)
-                        .set(bigInvoice.toJson());
-                  }
+                    if (docSnapshot.exists) {
+                      // If the document exists, retrieve the existing data
+                      Map<String, dynamic> data =
+                          docSnapshot.data() as Map<String, dynamic>;
 
-                  // Navigate to the Home Screen
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => AllStudentsTab()),
-                    (Route<dynamic> route) => false,
-                  );
-                } else {
-                  // If validation fails, don't do anything
-                  return;
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
+                      // Parse the existing document into a BigInvoice object
+                      BigInvoice bigInvoice = BigInvoice.fromJson(data);
+
+                      // Add the new invoice to the existing list of invoices
+                      bigInvoice.invoices.add(newInvoice);
+
+                      // Update the Firestore document
+                      await firestore
+                          .collection('big_invoices')
+                          .doc(date)
+                          .update(bigInvoice.toJson());
+                    } else {
+                      // If the document does not exist, create it with the new invoice in the `invoices` list
+                      BigInvoice bigInvoice = BigInvoice(
+                        date: date ?? "",
+                        day: Day ?? "",
+                        invoices: [newInvoice], // Add the new invoice to the list
+                        payments: [], // Initialize payments as an empty list
+                      );
+
+                      // Save the new document to Firestore
+                      await firestore
+                          .collection('big_invoices')
+                          .doc(date)
+                          .set(bigInvoice.toJson());
+                    }
+
+                    // Navigate to the Home Screen
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => AllStudentsTab()),
+                      (Route<dynamic> route) => false,
+                    );
+                  } else {
+                    // If validation fails, don't do anything
+                    return;
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
         );
       },
     );
