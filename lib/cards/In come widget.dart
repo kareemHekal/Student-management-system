@@ -33,11 +33,8 @@ class InvoiceWidget extends StatelessWidget {
               _buildInfoRow(
                   context, true, "Student Phone:", invoice.studentPhoneNumber),
               _buildInfoRow(
-                  context, true, "Mom's Phone:", invoice.momPhoneNumber),
-              _buildInfoRow(
-                  context, true, "Dad's Phone:", invoice.dadPhoneNumber),
+                  context, true, "Parent's Phone:", invoice.momPhoneNumber),
               _buildInfoRow(context, false, "Grade:", invoice.grade),
-              const SizedBox(height: 8),
               _buildInfoRow(context, false, "Amount:",
                   "\$${invoice.amount.toStringAsFixed(2)}"),
               _buildInfoRow(

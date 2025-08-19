@@ -43,7 +43,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
   bool? reviewNote;
   TextEditingController name_controller = TextEditingController();
   TextEditingController studentNumberController = TextEditingController();
-  TextEditingController fatherNumberController = TextEditingController();
   TextEditingController motherNumberController = TextEditingController();
   TextEditingController noteController = TextEditingController();
   List<Magmo3amodel>? hisGroups = [];
@@ -70,8 +69,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
     noteController.text = student.note ?? "";
     name_controller.text = student.name ?? "";
     studentNumberController.text = student.phoneNumber ?? "";
-    fatherNumberController.text = student.fatherPhone ?? "";
-    motherNumberController.text = student.motherPhone ?? "";
+    motherNumberController.text = student.ParentPhone ?? "";
 
     // Initialize months and notes
     firstMonth = student.firstMonth;
@@ -187,7 +185,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
                       studentName: name_controller.text,
                       studentPhoneNumber: studentNumberController.text,
                       momPhoneNumber: motherNumberController.text,
-                      dadPhoneNumber: fatherNumberController.text,
+                      dadPhoneNumber: "00000000000",
                       grade: student.grade ?? "",
                       amount: totalAmount,
                       description: description,
@@ -268,19 +266,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       return;
     }
 
-    if (fatherNumberController.text.isEmpty) {
-      emit(StudentValidationError("Please enter the father\'s number"));
-
-      return;
-    }
-
-    // Validate that father's number is exactly 11 digits
-    if (!RegExp(r'^\d{11}$').hasMatch(fatherNumberController.text)) {
-      emit(
-          StudentValidationError("Father\'s number must be exactly 11 digits"));
-      return;
-    }
-
     if (motherNumberController.text.isEmpty) {
       emit(StudentValidationError("Please enter the mother\'s number"));
       return;
@@ -351,8 +336,8 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       explainingNote: explainingNote,
       reviewNote: reviewNote,
       phoneNumber: studentNumberController.text,
-      motherPhone: motherNumberController.text,
-      fatherPhone: fatherNumberController.text,
+      ParentPhone: motherNumberController.text,
+      fatherPhone: "00000000000",
       dateOfFirstMonthPaid: dateOfFirstMonthPaid,
       dateOfSecondMonthPaid: dateOfSecondMonthPaid,
       dateOfThirdMonthPaid: dateOfThirdMonthPaid,

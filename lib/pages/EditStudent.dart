@@ -750,16 +750,11 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           label: "Student Number",
           keyboardType: TextInputType.number,
         ),
-        const SizedBox(height: 15),
-        buildTextFormField(
-          controller: cubit.fatherNumberController,
-          label: "Father's Number",
-          keyboardType: TextInputType.phone,
-        ),
+
         const SizedBox(height: 15),
         buildTextFormField(
           controller: cubit.motherNumberController,
-          label: "Mother's Number",
+          label: "Parent's Number",
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 15),

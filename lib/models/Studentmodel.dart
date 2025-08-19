@@ -8,7 +8,7 @@ class Studentmodel {
   String? grade; // Grade/level of the student
   String? gender; // Gender of the student (e.g., male, female)
   String? phoneNumber; // Student's phone number
-  String? motherPhone; // Mother's phone number
+  String? ParentPhone; // Mother's phone number
   String? fatherPhone; // Father's phone number
 
   // List of groups the student belongs to
@@ -52,7 +52,7 @@ class Studentmodel {
     this.explainingNote,
     this.reviewNote,
     this.phoneNumber,
-    this.motherPhone,
+    this.ParentPhone,
     this.fatherPhone,
     this.firstMonth,
     this.secondMonth,
@@ -79,7 +79,7 @@ class Studentmodel {
     return Studentmodel(
       id: json['id'] ?? "",
       name: json['name'],
-      motherPhone: json['mothernumber'],
+      ParentPhone: json['mothernumber'],
       phoneNumber: json['phonenumber'],
       explainingNote: json['explainingnote'],
       reviewNote: json['reviewnote'],
@@ -130,7 +130,7 @@ class Studentmodel {
       'thirdmonth': thirdMonth,
       'fourthmonth': fourthMonth,
       'fifthMonth': fifthMonth,
-      'mothernumber': motherPhone,
+      'mothernumber': ParentPhone,
       'phonenumber': phoneNumber,
       'explainingnote': explainingNote,
       'reviewnote': reviewNote,

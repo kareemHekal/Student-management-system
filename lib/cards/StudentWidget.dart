@@ -15,7 +15,11 @@ class StudentWidget extends StatelessWidget {
   final Studentmodel studentModel;
   final String? grade;
 
-  StudentWidget({required this.studentModel, required this.IsComingFromGroup,required this.grade, super.key});
+  StudentWidget(
+      {required this.studentModel,
+      required this.IsComingFromGroup,
+      required this.grade,
+      super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,58 +27,62 @@ class StudentWidget extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: GestureDetector(
         onLongPress: () {
-          IsComingFromGroup==true?null: showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: ColorScheme.fromSwatch().copyWith(
-                    primary: Colors.red, // Primary color for the dialog
-                  ),
-                ),
-                child: AlertDialog(
-                  backgroundColor: Colors.red[100], // Light red background
-                  title: Text(
-                    "Delete Student",
-                    style: TextStyle(
-                      color: Colors.red[900], // Darker red for title
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  content: Text(
-                    "Are you sure you want to delete this student?",
-                    style: TextStyle(
-                        color:
-                            Colors.red[800]), // Slightly darker red for content
-                  ),
-                  actions: [
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red[900], // Dark red for text
+          IsComingFromGroup == true
+              ? null
+              : showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.fromSwatch().copyWith(
+                          primary: Colors.red, // Primary color for the dialog
+                        ),
                       ),
-                      child: Text("Cancel"),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.red[
-                            700], // Darker red background for delete button
+                      child: AlertDialog(
+                        backgroundColor:
+                            Colors.red[100], // Light red background
+                        title: Text(
+                          "Delete Student",
+                          style: TextStyle(
+                            color: Colors.red[900], // Darker red for title
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        content: Text(
+                          "Are you sure you want to delete this student?",
+                          style: TextStyle(
+                              color: Colors
+                                  .red[800]), // Slightly darker red for content
+                        ),
+                        actions: [
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor:
+                                  Colors.red[900], // Dark red for text
+                            ),
+                            child: Text("Cancel"),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.red[
+                                  700], // Darker red background for delete button
+                            ),
+                            child: Text("Delete"),
+                            onPressed: () {
+                              FirebaseFunctions.deleteStudentFromHisCollection(
+                                  studentModel.grade ?? "", studentModel.id);
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
                       ),
-                      child: Text("Delete"),
-                      onPressed: () {
-                        FirebaseFunctions.deleteStudentFromHisCollection(
-                            studentModel.grade??"", studentModel.id);
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
+                    );
+                  },
+                );
         },
         onTap: () {
           Navigator.push(
@@ -82,11 +90,13 @@ class StudentWidget extends StatelessWidget {
             MaterialPageRoute(
               builder: (context) => BlocProvider(
                 create: (context) => StudentEditCubit(studentModel),
-                child: EditStudentScreen(grade: grade,student:studentModel,),
+                child: EditStudentScreen(
+                  grade: grade,
+                  student: studentModel,
+                ),
               ),
             ),
           );
-
         },
         child: Card(
           elevation: 5,
@@ -100,7 +110,6 @@ class StudentWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-
                   children: [
                     Text("${studentModel.dateofadd}"),
                     Spacer(),
@@ -113,26 +122,38 @@ class StudentWidget extends StatelessWidget {
                           builder: (context) => AlertDialog(
                             backgroundColor: app_colors.ligthGreen,
                             title: const Text(
-                              'Who would you like to send the message to?',style: TextStyle(color: app_colors.darkGrey),),
+                              'Who would you like to send the message to?',
+                              style: TextStyle(color: app_colors.darkGrey),
+                            ),
                             content: SelectRecipientDialogContent(
-                              sendMessageToFather: () => _sendMessageToParent('father'),
-                              sendMessageToMother: () => _sendMessageToParent('mother'),
-                              sendMessageToStudent: () => _sendMessageToParent('student'),
+                              sendMessageToMother: () =>
+                                  _sendMessageToParent('mother'),
+                              sendMessageToStudent: () =>
+                                  _sendMessageToParent('student'),
                             ),
                             actions: [
                               Material(
-                                color: Colors.transparent, // Make the material background transparent
-                                elevation: 10, // Set elevation for the shadow effect
-                                shadowColor: Colors.black.withOpacity(0.5), // Set shadow color
-                                borderRadius: BorderRadius.circular(10), // Optional: Add rounded corners
+                                color: Colors.transparent,
+                                // Make the material background transparent
+                                elevation: 10,
+                                // Set elevation for the shadow effect
+                                shadowColor: Colors.black.withOpacity(0.5),
+                                // Set shadow color
+                                borderRadius: BorderRadius.circular(10),
+                                // Optional: Add rounded corners
                                 child: TextButton(
                                   onPressed: () {
                                     Navigator.of(context).pop();
                                   },
                                   style: TextButton.styleFrom(
-                                    backgroundColor: app_colors.green, // Set background color
-                                    foregroundColor: Colors.white, // Set text color for contrast
-                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16), // Optional: Adjust padding
+                                    backgroundColor: app_colors.green,
+                                    // Set background color
+                                    foregroundColor: Colors.white,
+                                    // Set text color for contrast
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                        horizontal:
+                                            16), // Optional: Adjust padding
                                   ),
                                   child: const Text('Cancel'),
                                 ),
@@ -161,18 +182,16 @@ class StudentWidget extends StatelessWidget {
                   ],
                 ),
 
-
                 const SizedBox(height: 10),
 
-                _buildInfoRow(context, false,"Name:", studentModel.name ?? 'N/A'),
-                _buildInfoRow(context, true,"Phone Number:",
+                _buildInfoRow(
+                    context, false, "Name:", studentModel.name ?? 'N/A'),
+                _buildInfoRow(context, true, "Phone Number:",
                     studentModel.phoneNumber ?? 'N/A'),
-                _buildInfoRow(context,true, "Mother Number:",
-                    studentModel.motherPhone ?? 'N/A'),
-                _buildInfoRow(context, true,"Father Number:",
-                    studentModel.fatherPhone ?? 'N/A'),
-
-                _buildInfoRow(context,false, "Grade:", studentModel.grade ?? 'N/A'),
+                _buildInfoRow(context, true, "Parent Number:",
+                    studentModel.ParentPhone ?? 'N/A'),
+                _buildInfoRow(
+                    context, false, "Grade:", studentModel.grade ?? 'N/A'),
                 const SizedBox(height: 10),
 
                 // Display days from Magmo3amodel
@@ -186,7 +205,8 @@ class StudentWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, bool isnumber, String label, String value) {
+  Widget _buildInfoRow(
+      BuildContext context, bool isnumber, String label, String value) {
     void _launchPhoneNumber(String phoneNumber) async {
       final String phoneUrl = 'tel:$phoneNumber';
       if (await canLaunchUrlString(phoneUrl)) {
@@ -218,7 +238,8 @@ class StudentWidget extends StatelessWidget {
                 ),
               ),
               child: GestureDetector(
-                onLongPress: isnumber ? () => _launchPhoneNumber(value) : null, // Check isnumber
+                onLongPress: isnumber ? () => _launchPhoneNumber(value) : null,
+                // Check isnumber
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Text(
@@ -241,85 +262,63 @@ class StudentWidget extends StatelessWidget {
     String genderSpecificMessage;
 
     // Determine the parent's role and customize the message
-    if (parentRole == 'father') {
+    if (parentRole == 'mother') {
       genderSpecificMessage = """
-عزيزي والد ${studentModel.name} 
-
-
-
+عزيزي ولي أمر ${studentModel.name}
 أطيب التحيات،
-حنان خالد
-      """;
-    }
-    else if (parentRole == 'mother') {
-      genderSpecificMessage = """
-عزيزتي والدة ${studentModel.name}  
-
- 
-
-أطيب التحيات،
-حنان خالد
-      """;
+ فاطمة العرباني
+""";
     }
     else {
       genderSpecificMessage = """
 عزيزي ${studentModel.name}،
 
 أطيب التحيات،
-حنان خالد
+فاطمة العرباني
       """;
     }
 
-    // Send the message based on the parent's role
-    if (parentRole == 'father') {
-      _sendWhatsAppMessage(studentModel.fatherPhone!, genderSpecificMessage);
-    } else if (parentRole == 'mother') {
-      _sendWhatsAppMessage(studentModel.motherPhone!, genderSpecificMessage);
+    if (parentRole == 'mother') {
+      _sendWhatsAppMessage(studentModel.ParentPhone!, genderSpecificMessage);
     } else {
       _sendWhatsAppMessage(studentModel.phoneNumber!, genderSpecificMessage);
     }
   }
-  Future<void> _sendWhatsAppMessage(String phoneNumber, String message) async {
-    // Format the phone number
-    final String formattedPhone = phoneNumber.startsWith('0')
-        ? '+20${phoneNumber.substring(1)}'
-        : phoneNumber;
-
-    // Print the formatted phone number
-    print("Formatted Phone Number: $formattedPhone");
-
-    // Encode the message
+  Future<void> _sendWhatsAppMessage(String rawPhone, String message) async {
+    final cleanedPhone = rawPhone.replaceAll('+', '').replaceAll(' ', '');
+    final String formattedPhone = cleanedPhone.startsWith('0')
+        ? '20${cleanedPhone.substring(1)}'
+        : cleanedPhone;
     final String encodedMessage = Uri.encodeComponent(message);
 
-    // Build the WhatsApp URL
-    final Uri url = Uri.parse(
-        'whatsapp://send?phone=$formattedPhone&text=$encodedMessage');
+    // Build the URL with the message
+    final String url = 'https://wa.me/$formattedPhone?text=$encodedMessage';
 
-    // Print the WhatsApp URL for debugging
-    print("WhatsApp URL: $url");
+    print("Sending to: $formattedPhone");
+    print("Message: $encodedMessage");
+    print("URL: $url");
 
-    try {
-      // Check if WhatsApp can be launched
-      bool canLaunch = await canLaunchUrl(url);
-      if (canLaunch) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        print("WhatsApp is not installed or cannot be opened.");
-      }
-    } catch (e) {
-      print("Error launching WhatsApp: $e");
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      print("WhatsApp is not installed or cannot be opened.");
     }
   }
+
+
   Widget _buildStudentDaysList() {
     // Assuming `studentModel.hisGroups` is a list of Magmo3amodel
-    List<Map<String, dynamic>> daysWithTimes = studentModel.hisGroups?.map((group) {
-      return {
-        'day': group.days, // Group days as a string (e.g., "Monday, Wednesday")
-        'time': group.time != null
-            ? {'hour': group.time?.hour, 'minute': group.time?.minute}
-            : null,
-      };
-    }).toList() ?? [];
+    List<Map<String, dynamic>> daysWithTimes =
+        studentModel.hisGroups?.map((group) {
+              return {
+                'day': group
+                    .days, // Group days as a string (e.g., "Monday, Wednesday")
+                'time': group.time != null
+                    ? {'hour': group.time?.hour, 'minute': group.time?.minute}
+                    : null,
+              };
+            }).toList() ??
+            [];
 
     // Remove entries where day is null
     daysWithTimes.removeWhere((entry) => entry['day'] == null);
@@ -341,11 +340,14 @@ class StudentWidget extends StatelessWidget {
               children: daysWithTimes.map((entry) {
                 String day = entry['day'] ?? '';
                 TimeOfDay? time = entry['time'] != null
-                    ? TimeOfDay(hour: entry['time']['hour'], minute: entry['time']['minute'])
+                    ? TimeOfDay(
+                        hour: entry['time']['hour'],
+                        minute: entry['time']['minute'])
                     : null;
 
                 // Convert TimeOfDay to 12-hour format with AM/PM
-                String timeString = time != null ? _formatTime12Hour(time) : 'No Time';
+                String timeString =
+                    time != null ? _formatTime12Hour(time) : 'No Time';
 
                 return Row(
                   children: [
@@ -398,6 +400,7 @@ class StudentWidget extends StatelessWidget {
       ],
     );
   }
+
 // Helper function to format TimeOfDay to 12-hour format with AM/PM
   String _formatTime12Hour(TimeOfDay time) {
     final int hour = time.hourOfPeriod == 0
