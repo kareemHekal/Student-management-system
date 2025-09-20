@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../firebase/firebase_functions.dart';
 import '../../home.dart';
 import '../../models/Magmo3aModel.dart';
@@ -37,6 +38,7 @@ class StudentCubit extends Cubit<StudentState> {
   bool? reviewNote;
   TextEditingController name_controller = TextEditingController();
   TextEditingController studentNumberController = TextEditingController();
+  TextEditingController fatherNumberController = TextEditingController();
   TextEditingController motherNumberController = TextEditingController();
   TextEditingController noteController = TextEditingController();
   List<Magmo3amodel> hisGroups = [];
@@ -67,6 +69,19 @@ class StudentCubit extends Cubit<StudentState> {
     }
     if (!RegExp(r'^\d{11}$').hasMatch(studentNumberController.text)) {
       emit(StudentValidationError("Student number must be exactly 11 digits"));
+      return;
+    }
+
+    if (fatherNumberController.text.isEmpty) {
+      emit(StudentValidationError("Please enter the father\'s number"));
+
+      return;
+    }
+
+    // Validate that father's number is exactly 11 digits
+    if (!RegExp(r'^\d{11}$').hasMatch(fatherNumberController.text)) {
+      emit(
+          StudentValidationError("Father\'s number must be exactly 11 digits"));
       return;
     }
 
@@ -118,8 +133,8 @@ class StudentCubit extends Cubit<StudentState> {
       explainingNote: explainingNote,
       reviewNote: reviewNote,
       phoneNumber: studentNumberController.text,
-      ParentPhone: motherNumberController.text,
-      fatherPhone: "00000000000",
+      motherPhone: motherNumberController.text,
+      fatherPhone: fatherNumberController.text,
       dateOfFirstMonthPaid: dateOfFirstMonthPaid,
       dateOfSecondMonthPaid: dateOfSecondMonthPaid,
       dateOfThirdMonthPaid: dateOfThirdMonthPaid,

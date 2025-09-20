@@ -1,17 +1,17 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:loader_overlay/loader_overlay.dart';
+
 import '../Alert dialogs/RemoveFromGroupsListDialog.dart';
 import '../bloc/Edit Student/edit_student_cubit.dart';
 import '../bloc/Edit Student/edit_student_state.dart';
 import '../cards/groupSmallCard.dart';
 import '../colors_app.dart';
-import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
-import 'AllStudentPage.dart';
 import 'Pick Groups Page.dart';
 import 'all_bills_for_student.dart';
 
@@ -267,6 +267,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                               mainAxisAlignment:
                                                   MainAxisAlignment.spaceEvenly,
                                               children: [
+                                                "First month",
                                                 showDateOfPaidMonth(
                                                     "First month",
                                                     widget.student
@@ -808,8 +809,14 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
         ),
         const SizedBox(height: 15),
         buildTextFormField(
+          controller: cubit.fatherNumberController,
+          label: "Father's Number",
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 15),
+        buildTextFormField(
           controller: cubit.motherNumberController,
-          label: "Parent's Number",
+          label: "Mother's Number",
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 15),

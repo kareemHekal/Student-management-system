@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+
 import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
@@ -38,8 +39,10 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                   context, false, "Student Name:", widget.invoice.studentName),
               _buildInfoRow(context, true, "Student Phone:",
                   widget.invoice.studentPhoneNumber),
-              _buildInfoRow(context, true, "Parent's Phone:",
-                  widget.invoice.momPhoneNumber),
+              _buildInfoRow(
+                  context, true, "Mom's Phone:", invoice.momPhoneNumber),
+              _buildInfoRow(
+                  context, true, "Dad's Phone:", invoice.dadPhoneNumber),
               _buildInfoRow(context, false, "Grade:", widget.invoice.grade),
               _buildInfoRow(context, false, "Amount:",
                   "\$${widget.invoice.amount.toStringAsFixed(2)}"),

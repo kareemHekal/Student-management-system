@@ -1,9 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:loader_overlay/loader_overlay.dart';
+
 import 'Alert dialogs/RemoveFromGroupsListDialog.dart';
 import 'bloc/AddStudent/add_student_cubit.dart';
 import 'bloc/AddStudent/add_student_state.dart';
@@ -370,8 +370,14 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         ),
         const SizedBox(height: 15),
         buildTextFormField(
+          controller: cubit.fatherNumberController,
+          label: "Father's Number",
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 15),
+        buildTextFormField(
           controller: cubit.motherNumberController,
-          label: "Parent Number",
+          label: "Mother's Number",
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 15),

@@ -1,12 +1,12 @@
 import 'package:fatma_elorbany/models/Studentmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../home.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 class PaymentCheckPage extends StatefulWidget {
   const PaymentCheckPage({super.key});
 
@@ -262,49 +262,32 @@ print(selectedCategory);
 
   Future<void> generatePdf(List<Studentmodel> students, String title) async {
     final pdf = pw.Document();
-    final arabicFont = pw.Font.ttf(
-      await rootBundle.load('fonts/NotoKufiArabic-Regular.ttf'),
-    );
 
     pdf.addPage(
       pw.MultiPage(
-        textDirection: pw.TextDirection.rtl, // <<< دا مهم جداً
         build: (context) => [
-          pw.Text(
-            title,
-            style: pw.TextStyle(
-              fontSize: 24,
-              fontWeight: pw.FontWeight.bold,
-              font: arabicFont,
-            ),
-          ),
+          pw.Text(title,
+              style:
+                  pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 10),
-          pw.Text(
-            "المرحلة: ${selectedSecondary ?? 'غير محدد'}",
-            style: pw.TextStyle(fontSize: 14, font: arabicFont),
-          ),
-          pw.Text(
-            "الشهر: ${selectedCategory ?? 'غير محدد'}",
-            style: pw.TextStyle(fontSize: 14, font: arabicFont),
-          ),
-          pw.Text(
-            "عدد الطلاب: ${students.length}",
-            style: pw.TextStyle(fontSize: 14, font: arabicFont),
-          ),
+
+          // البيانات المُفلترة
+          pw.Text("Grade: ${selectedSecondary ?? 'N/A'}",
+              style: const pw.TextStyle(fontSize: 14)),
+          pw.Text("Month: ${selectedCategory ?? 'N/A'}",
+              style: const pw.TextStyle(fontSize: 14)),
+          pw.Text("Total Students: ${students.length}",
+              style: const pw.TextStyle(fontSize: 14)),
           pw.SizedBox(height: 20),
+
           pw.Table.fromTextArray(
-            headers: ['رقم الهاتف', 'الاسم'], // عكس الترتيب
+            headers: ['Name', 'Phone Number'],
             data: students.map((student) => [
-              student.phoneNumber ?? 'لا يوجد',
-              student.name ?? 'غير معروف',
-            ]).toList(),
-            headerStyle: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              font: arabicFont,
-            ),
-            cellStyle: pw.TextStyle(font: arabicFont),
-            cellAlignment: pw.Alignment.centerRight,
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                      student.name ?? 'Unknown',
+                      student.phoneNumber ?? 'No Phone',
+                    ]).toList(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            cellAlignment: pw.Alignment.centerLeft,
           ),
         ],
       ),

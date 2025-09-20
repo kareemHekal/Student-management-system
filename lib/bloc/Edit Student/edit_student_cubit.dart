@@ -1,6 +1,6 @@
-import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
 import '../../models/Studentmodel.dart';
@@ -42,6 +42,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
   bool? reviewNote;
   TextEditingController name_controller = TextEditingController();
   TextEditingController studentNumberController = TextEditingController();
+  TextEditingController fatherNumberController = TextEditingController();
   TextEditingController motherNumberController = TextEditingController();
   TextEditingController noteController = TextEditingController();
   List<Magmo3amodel>? hisGroups = [];
@@ -68,7 +69,8 @@ class StudentEditCubit extends Cubit<StudentEditState> {
     noteController.text = student.note ?? "";
     name_controller.text = student.name ?? "";
     studentNumberController.text = student.phoneNumber ?? "";
-    motherNumberController.text = student.ParentPhone ?? "";
+    fatherNumberController.text = student.fatherPhone ?? "";
+    motherNumberController.text = student.motherPhone ?? "";
 
     // Initialize months and notes
     firstMonth = student.firstMonth;
@@ -286,6 +288,19 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       return;
     }
 
+    if (fatherNumberController.text.isEmpty) {
+      emit(StudentValidationError("Please enter the father\'s number"));
+
+      return;
+    }
+
+    // Validate that father's number is exactly 11 digits
+    if (!RegExp(r'^\d{11}$').hasMatch(fatherNumberController.text)) {
+      emit(
+          StudentValidationError("Father\'s number must be exactly 11 digits"));
+      return;
+    }
+
     if (motherNumberController.text.isEmpty) {
       emit(StudentValidationError("Please enter the mother\'s number"));
       return;
@@ -356,8 +371,8 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       explainingNote: explainingNote,
       reviewNote: reviewNote,
       phoneNumber: studentNumberController.text,
-      ParentPhone: motherNumberController.text,
-      fatherPhone: "00000000000",
+      motherPhone: motherNumberController.text,
+      fatherPhone: fatherNumberController.text,
       dateOfFirstMonthPaid: dateOfFirstMonthPaid,
       dateOfSecondMonthPaid: dateOfSecondMonthPaid,
       dateOfThirdMonthPaid: dateOfThirdMonthPaid,
@@ -423,6 +438,12 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       }
       Navigator.pop(context); // close edit page
     }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        backgroundColor: Colors.green,
+        content: Text('Student Edited successfully!'),
+      ),
+    );
   }
 
   String? getPaymentDate(bool? currentValue, bool? previousValue,

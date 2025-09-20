@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+
 import '../Alert dialogs/Notify Absence.dart';
 import '../bloc/Edit Student/edit_student_cubit.dart';
 import '../colors_app.dart';
@@ -126,6 +127,8 @@ class StudentWidget extends StatelessWidget {
                               style: TextStyle(color: app_colors.darkGrey),
                             ),
                             content: SelectRecipientDialogContent(
+                              sendMessageToFather: () =>
+                                  _sendMessageToParent('father'),
                               sendMessageToMother: () =>
                                   _sendMessageToParent('mother'),
                               sendMessageToStudent: () =>
@@ -188,8 +191,11 @@ class StudentWidget extends StatelessWidget {
                     context, false, "Name:", studentModel.name ?? 'N/A'),
                 _buildInfoRow(context, true, "Phone Number:",
                     studentModel.phoneNumber ?? 'N/A'),
-                _buildInfoRow(context, true, "Parent Number:",
-                    studentModel.ParentPhone ?? 'N/A'),
+                _buildInfoRow(context, true, "Mother Number:",
+                    studentModel.motherPhone ?? 'N/A'),
+                _buildInfoRow(context, true, "Father Number:",
+                    studentModel.fatherPhone ?? 'N/A'),
+
                 _buildInfoRow(
                     context, false, "Grade:", studentModel.grade ?? 'N/A'),
                 const SizedBox(height: 10),
@@ -262,9 +268,21 @@ class StudentWidget extends StatelessWidget {
     String genderSpecificMessage;
 
     // Determine the parent's role and customize the message
-    if (parentRole == 'mother') {
+    if (parentRole == 'father') {
       genderSpecificMessage = """
-عزيزي ولي أمر ${studentModel.name}
+عزيزي والد ${studentModel.name} 
+
+
+
+أطيب التحيات،
+ فاطمة العرباني
+      """;
+    } else if (parentRole == 'mother') {
+      genderSpecificMessage = """
+عزيزتي والدة ${studentModel.name}  
+
+ 
+
 أطيب التحيات،
  فاطمة العرباني
 """;
@@ -278,8 +296,11 @@ class StudentWidget extends StatelessWidget {
       """;
     }
 
-    if (parentRole == 'mother') {
-      _sendWhatsAppMessage(studentModel.ParentPhone!, genderSpecificMessage);
+    // Send the message based on the parent's role
+    if (parentRole == 'father') {
+      _sendWhatsAppMessage(studentModel.fatherPhone!, genderSpecificMessage);
+    } else if (parentRole == 'mother') {
+      _sendWhatsAppMessage(studentModel.motherPhone!, genderSpecificMessage);
     } else {
       _sendWhatsAppMessage(studentModel.phoneNumber!, genderSpecificMessage);
     }
@@ -304,8 +325,6 @@ class StudentWidget extends StatelessWidget {
       print("WhatsApp is not installed or cannot be opened.");
     }
   }
-
-
   Widget _buildStudentDaysList() {
     // Assuming `studentModel.hisGroups` is a list of Magmo3amodel
     List<Map<String, dynamic>> daysWithTimes =
@@ -400,7 +419,6 @@ class StudentWidget extends StatelessWidget {
       ],
     );
   }
-
 // Helper function to format TimeOfDay to 12-hour format with AM/PM
   String _formatTime12Hour(TimeOfDay time) {
     final int hour = time.hourOfPeriod == 0

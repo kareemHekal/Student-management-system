@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+
 import '../cards/StudentWidget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
@@ -83,7 +84,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                 child: Column(
                   children: [
                     Container(
-                      height: 130,
+                      height: 80,
                       width: double.infinity,
                       // Ensures the container takes the full width
                       decoration: const BoxDecoration(
@@ -93,52 +94,43 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                           bottomRight: Radius.circular(25),
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 10),
-                            // Add some padding to prevent the field from touching edges
-                            child: TextFormField(
-                              style: const TextStyle(color: app_colors.darkGrey),
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                // Sets the background color to white
-                                hintText: 'Search',
-                                hintStyle: const TextStyle(color: app_colors.darkGrey),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 15.0, horizontal: 20.0),
-                                // Adjust the internal padding of the field
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                      color: app_colors.green, width: 2.0),
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                      color: app_colors.green, width: 2.0),
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: const Icon(Icons.clear,
-                                      color: app_colors.green),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                  },
-                                ),
-                              ),
-                              cursorColor: app_colors.darkGrey,
-                              controller: _searchController,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 10),
+                        // Add some padding to prevent the field from touching edges
+                        child: TextFormField(
+                          style: const TextStyle(color: app_colors.darkGrey),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            // Sets the background color to white
+                            hintText: 'Search',
+                            hintStyle:
+                                const TextStyle(color: app_colors.darkGrey),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 15.0, horizontal: 20.0),
+                            // Adjust the internal padding of the field
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                  color: app_colors.green, width: 2.0),
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                  color: app_colors.green, width: 2.0),
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.clear,
+                                  color: app_colors.green),
+                              onPressed: () {
+                                _searchController.clear();
+                              },
                             ),
                           ),
-                          Text("Number of students in this group is : ${allStudents.length}",
-                              style: TextStyle(
-                                color: app_colors.green,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ))
-                        ],
+                          cursorColor: app_colors.darkGrey,
+                          controller: _searchController,
+                        ),
                       ),
                     ),
                     const SizedBox(
