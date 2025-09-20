@@ -11,7 +11,9 @@ import '../cards/groupSmallCard.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
+import 'AllStudentPage.dart';
 import 'Pick Groups Page.dart';
+import 'all_bills_for_student.dart';
 
 class EditStudentScreen extends StatefulWidget {
   Studentmodel student;
@@ -23,41 +25,84 @@ class EditStudentScreen extends StatefulWidget {
   State<EditStudentScreen> createState() => _EditStudentScreenState();
 }
 
-
 class _EditStudentScreenState extends State<EditStudentScreen> {
-
   @override
   Widget build(BuildContext context) {
-    final cubit = StudentEditCubit.get(context);
     return Material(
-      child: Scaffold(
-          appBar: AppBar(
-            elevation: 10,
-            shadowColor: Colors.yellow,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+      child: BlocProvider(
+        create: (context) =>
+            StudentEditCubit(student: widget.student)..initTheState(),
+        child: Scaffold(
+            appBar: AppBar(
+              elevation: 10,
+              shadowColor: Colors.yellow,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
               ),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                    onPressed: () {
+                      StudentEditCubit.get(context).showPaymentDialog(
+                        context: context,
+                        grade: widget.grade ?? "",
+                        title: "Add Payment to Student",
+                        dismissible: true,
+                        onSave: ({
+                          required amount,
+                          required description,
+                          required date,
+                          required day,
+                        }) async {
+                          await StudentEditCubit.get(context)
+                              .addInvoiceToBigInvoices(
+                            date: date,
+                            day: day,
+                            grade: widget.grade ?? "",
+                            amount: amount,
+                            description: description,
+                          );
+                        },
+                      );
+                    },
+                    icon: Icon(
+                      Icons.add_box,
+                      size: 30,
+                      color: app_colors.green,
+                    )),
+                IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => AllBillsForStudent(
+                                    studentId: widget.student.id,
+                                  )));
+                    },
+                    icon: Icon(
+                      Icons.list_alt,
+                      size: 30,
+                      color: app_colors.green,
+                    )),
+              ],
+              leading: IconButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+              ),
+              backgroundColor: app_colors.darkGrey,
+              title: Image.asset(
+                "assets/images/2....2.png",
+                height: 100,
+                width: 90,
+              ),
+              toolbarHeight: 180,
             ),
-            centerTitle: true,
-            leading: IconButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
-            ),
-            backgroundColor: app_colors.darkGrey,
-            title: Image.asset(
-              "assets/images/2....2.png",
-              height: 100,
-              width: 90,
-            ),
-            toolbarHeight: 180,
-          ),
-          body: LoaderOverlay(
-            child: BlocProvider(
-              create: (context) => StudentEditCubit(widget.student)..initTheState(),
+            body: LoaderOverlay(
               child: BlocConsumer<StudentEditCubit, StudentEditState>(
                 listener: (context, state) {
                   // Show loader overlay while fetching sources or news
@@ -69,7 +114,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                   if (state is StudentEditSuccess) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Student added successfully!'),
+                        content: Text('Student Edited successfully!'),
                         backgroundColor: Colors.green,
                         duration: Duration(seconds: 2),
                       ),
@@ -96,7 +141,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                       ),
                     );
                   }
-
                 },
                 builder: (context, state) {
                   if (state is StudentEditLoading) {
@@ -109,10 +153,12 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 60),
-                        child: Center(child: Image.asset("assets/images/1......1.png")),
+                        child: Center(
+                            child: Image.asset("assets/images/1......1.png")),
                       ),
                       Padding(
-                          padding: const EdgeInsets.only(left: 20, right: 20, top: 17),
+                          padding: const EdgeInsets.only(
+                              left: 20, right: 20, top: 17),
                           child: Container(
                             decoration: BoxDecoration(
                               color: app_colors.white.withOpacity(0.3),
@@ -130,7 +176,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                   child: Container(
                                     color: Colors.transparent,
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -156,12 +203,15 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                           thickness: 4,
                                         ),
                                         SizedBox(
-                                          height: 240, // or any other bounded height
+                                          height: 240,
+                                          // or any other bounded height
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               const Center(
-                                                  child: Text(" Pick the days ")),
+                                                  child:
+                                                      Text(" Pick the days ")),
                                               Expanded(
                                                 child: PickGroupRow(context),
                                               ),
@@ -215,16 +265,16 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                           children: [
                                             Row(
                                               mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
+                                                  MainAxisAlignment.spaceEvenly,
                                               children: [
                                                 showDateOfPaidMonth(
                                                     "First month",
-                                                    widget
-                                                        .student.dateOfFirstMonthPaid),
+                                                    widget.student
+                                                        .dateOfFirstMonthPaid),
                                                 showDateOfPaidMonth(
                                                     "Second month",
-                                                    widget
-                                                        .student.dateOfSecondMonthPaid),
+                                                    widget.student
+                                                        .dateOfSecondMonthPaid),
                                               ],
                                             ),
                                             const SizedBox(
@@ -232,16 +282,16 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                             ),
                                             Row(
                                               mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
+                                                  MainAxisAlignment.spaceEvenly,
                                               children: [
                                                 showDateOfPaidMonth(
                                                     "Third month",
-                                                    widget
-                                                        .student.dateOfThirdMonthPaid),
+                                                    widget.student
+                                                        .dateOfThirdMonthPaid),
                                                 showDateOfPaidMonth(
                                                     "Fourth month",
-                                                    widget
-                                                        .student.dateOfFourthMonthPaid),
+                                                    widget.student
+                                                        .dateOfFourthMonthPaid),
                                               ],
                                             ),
                                             const SizedBox(
@@ -249,12 +299,12 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                             ),
                                             Row(
                                               mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
+                                                  MainAxisAlignment.spaceEvenly,
                                               children: [
                                                 showDateOfPaidMonth(
                                                     "Fifth month",
-                                                    widget
-                                                        .student.dateOfFifthMonthPaid),
+                                                    widget.student
+                                                        .dateOfFifthMonthPaid),
                                               ],
                                             ),
                                             const SizedBox(
@@ -262,7 +312,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                             ),
                                             Row(
                                               mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
+                                                  MainAxisAlignment.spaceEvenly,
                                               children: [
                                                 showDateOfPaidMonth(
                                                     "Explaining Note",
@@ -288,13 +338,16 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                         ),
                                         Row(
                                           mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
+                                              MainAxisAlignment.spaceEvenly,
                                           children: [
                                             showNumberOfAbsenceAndPresence(
                                                 "AttendantDays",
-                                                widget.student.numberOfAttendantDays),
-                                            showNumberOfAbsenceAndPresence("AbsentDays",
-                                                widget.student.numberOfAbsentDays)
+                                                widget.student
+                                                    .numberOfAttendantDays),
+                                            showNumberOfAbsenceAndPresence(
+                                                "AbsentDays",
+                                                widget
+                                                    .student.numberOfAbsentDays)
                                           ],
                                         ),
                                         const Divider(
@@ -313,12 +366,14 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                             Expanded(
                                               child: ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
-                                                  foregroundColor: app_colors.green,
-                                                  backgroundColor:
-                                                  app_colors.darkGrey, // text color
+                                                  foregroundColor:
+                                                      app_colors.green,
+                                                  backgroundColor: app_colors
+                                                      .darkGrey, // text color
                                                 ),
                                                 onPressed: () async {
-                                                  await cubit.EditStudent(context, widget.grade);
+                                                  await cubit.EditStudent(
+                                                      context, widget.grade);
                                                 },
                                                 child: const Text(" Edit "),
                                               ),
@@ -339,12 +394,10 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                   );
                 },
               ),
-            ),
-          )),
+            )),
+      ),
     );
   }
-
-
 
   Widget showDateOfPaidMonth(
     String label,
@@ -395,46 +448,47 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       ],
     );
   }
+
   Widget PickGroupRow(BuildContext context) {
     final cubit = StudentEditCubit.get(context);
     return Column(
       children: [
         Expanded(
-            child: cubit.hisGroups==[]
+            child: cubit.hisGroups == []
                 ? Center(
-                child: Text(
-                  "You did not choose any group yet",
-                  style: TextStyle(color: app_colors.green),
-                ))
+                    child: Text(
+                    "You did not choose any group yet",
+                    style: TextStyle(color: app_colors.green),
+                  ))
                 : ListView.builder(
-              itemCount: cubit.hisGroups?.length,
-              itemBuilder: (context, index) {
-                // Get the current Magmo3amodel
-                final magmo3aModel = cubit.hisGroups?[index];
-                // Return the Groupsmallcard widget for each Magmo3aModel
-                return GestureDetector(
-                    onLongPress: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return RemoveFromGroupsListDialog(
-                            title: "Remove Group",
-                            content:
-                            "Are you sure you want to remove this group ?",
-                            onConfirm: () async {
-                              await Future.delayed(
-                                  Duration(milliseconds: 1));
-                              cubit.hisGroups?.removeAt(index);
-                              cubit.hisGroupsId?.removeAt(index);
-                              setState(() {});
-                            },
-                          );
-                        },
-                      );
+                    itemCount: cubit.hisGroups?.length,
+                    itemBuilder: (context, index) {
+                      // Get the current Magmo3amodel
+                      final magmo3aModel = cubit.hisGroups?[index];
+                      // Return the Groupsmallcard widget for each Magmo3aModel
+                      return GestureDetector(
+                          onLongPress: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return RemoveFromGroupsListDialog(
+                                  title: "Remove Group",
+                                  content:
+                                      "Are you sure you want to remove this group ?",
+                                  onConfirm: () async {
+                                    await Future.delayed(
+                                        Duration(milliseconds: 1));
+                                    cubit.hisGroups?.removeAt(index);
+                                    cubit.hisGroupsId?.removeAt(index);
+                                    setState(() {});
+                                  },
+                                );
+                              },
+                            );
+                          },
+                          child: Groupsmallcard(magmo3aModel: magmo3aModel));
                     },
-                    child: Groupsmallcard(magmo3aModel: magmo3aModel));
-              },
-            )),
+                  )),
         const SizedBox(height: 10), // Space between the list and the button
         // First Day Button
         ElevatedButton(
@@ -447,7 +501,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ChoosedaysToAttend(level:widget.grade),
+                builder: (context) => ChoosedaysToAttend(level: widget.grade),
               ),
             ).then((result) {
               if (result != null) {
@@ -505,6 +559,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       ),
     );
   }
+
   Widget NotesPart(BuildContext context) {
     final cubit = StudentEditCubit.get(context);
 
@@ -536,6 +591,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       ),
     );
   }
+
   Widget paymentsPart(BuildContext context) {
     final cubit = StudentEditCubit.get(context);
     return Padding(
@@ -606,9 +662,9 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                     children: [
                       const Text("Explaining Note :"),
                       buildDropdown("Explaining Note", cubit.explainingNote,
-                              (value) {
-                            cubit.changeExplainingNoteValue(value);
-                          }),
+                          (value) {
+                        cubit.changeExplainingNoteValue(value);
+                      }),
                     ],
                   ),
                   const SizedBox(width: 16.0),
@@ -648,8 +704,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                 ),
                 DropdownMenuItem(
                   value: "Female",
-                  child: Text("Female",
-                      style: TextStyle(color: app_colors.green)),
+                  child:
+                      Text("Female", style: TextStyle(color: app_colors.green)),
                 ),
               ],
               onChanged: (value) {
@@ -750,7 +806,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           label: "Student Number",
           keyboardType: TextInputType.number,
         ),
-
         const SizedBox(height: 15),
         buildTextFormField(
           controller: cubit.motherNumberController,

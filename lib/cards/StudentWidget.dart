@@ -89,7 +89,7 @@ class StudentWidget extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => BlocProvider(
-                create: (context) => StudentEditCubit(studentModel),
+                create: (context) => StudentEditCubit(student: studentModel),
                 child: EditStudentScreen(
                   grade: grade,
                   student: studentModel,

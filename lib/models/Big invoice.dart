@@ -19,17 +19,17 @@ class BigInvoice {
   // From JSON
   factory BigInvoice.fromJson(Map<String, dynamic> json) {
     return BigInvoice(
-      date: json['date'], // Directly take the date as a String
-      day: json['day'],
-
-      invoices: (json['invoices'] as List)
+      date: json['date'] ?? "",
+      day: json['day'] ?? "",
+      invoices: (json['invoices'] as List? ?? [])
           .map((invoiceJson) => Invoice.fromJson(invoiceJson))
           .toList(),
-      payments: (json['payments'] as List)
+      payments: (json['payments'] as List? ?? [])
           .map((paymentJson) => Payment.fromJson(paymentJson))
           .toList(),
     );
   }
+
 
   // To JSON
   Map<String, dynamic> toJson() {

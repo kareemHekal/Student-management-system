@@ -1,23 +1,24 @@
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../firebase/firebase_functions.dart';
-import '../../models/Big invoice.dart';
-import '../../models/Invoice.dart';
 import '../../models/Magmo3aModel.dart';
 import '../../models/Studentmodel.dart';
 import '../../pages/AllStudentPage.dart';
 import 'edit_student_state.dart';
 
 class StudentEditCubit extends Cubit<StudentEditState> {
-  Studentmodel student;
+  final Studentmodel student;
 
-  StudentEditCubit(this.student) : super(StudentEditInitial());
+  StudentEditCubit({required this.student}) : super(StudentEditInitial());
 
   ///============================================================================================================================\\\
   ///=============================================================Variables===========================================================\\\
   ///============================================================================================================================\\\
+  final TextEditingController dismissibleAmountController =
+      TextEditingController();
+  final TextEditingController dismissibleDescController =
+      TextEditingController();
 
   String? dateOfFirstMonthPaid; // Date when the first month was paid
   String? dateOfSecondMonthPaid; // Date when the second month was paid
@@ -26,8 +27,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
   String? dateOfFifthMonthPaid; // Date when the fifth month was paid
   String? dateOfExplainingNotePaid; // Date when the explaining note was paid
   String? dateOfReviewingNotePaid;
-  late double totalAmount; // The total amount for the payment
-  late String description; // The description of the payment
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   TextEditingController totalAmountController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
@@ -129,111 +128,132 @@ class StudentEditCubit extends Cubit<StudentEditState> {
     }
   }
 
-  Future<void> showPaymentChangeDialog(BuildContext context) async {
+  Future<void> addInvoiceToBigInvoices({
+    required String date,
+    required String day,
+    required String grade,
+    required double amount,
+    required String description,
+  }) async {
+    try {
+      FirebaseFunctions.addInvoiceToBigInvoices(
+        date: date,
+        day: day,
+        amount: amount,
+        description: description,
+        grade: student.grade ?? "",
+        ParentPhone: student.ParentPhone ?? "",
+        phoneNumber: student.phoneNumber ?? "",
+        studentId: student.id,
+        studentName: student.name ?? "",
+      );
+    } catch (e) {
+      emit(StudentValidationError(e.toString()));
+    }
+  }
+
+  Future<void> showPaymentDialog({
+    required BuildContext context,
+    required String grade,
+    required String title,
+    required bool dismissible,
+    Studentmodel? studentModel, // optional for update
+    required Future<void> Function({
+      required double amount,
+      required String description,
+      required String date,
+      required String day,
+    }) onSave,
+  }) async {
+    final _formKey = GlobalKey<FormState>();
     showDialog(
-      barrierDismissible: false, // Prevent dismissal by tapping outside
+      barrierDismissible: dismissible,
       context: context,
       builder: (BuildContext context) {
         return PopScope(
-          canPop: false,
+          canPop: dismissible, // prevent back press if not dismissible
           child: AlertDialog(
-            title: const Text("Payment Changes Detected"),
+            title: Text(title),
             content: Form(
-              key: _formKey, // GlobalKey<FormState>
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: totalAmountController,
-                    decoration: const InputDecoration(
-                      labelText: "Total Amount",
+              key: _formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: dismissible
+                          ? dismissibleAmountController
+                          : totalAmountController,
+                      decoration: const InputDecoration(
+                        labelText: "Total Amount",
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Total Amount cannot be empty';
+                        }
+                        return null;
+                      },
                     ),
-                    keyboardType: TextInputType.number, // Ensure numeric input
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Total Amount cannot be empty'; // Show error if empty
-                      }
-                      return null; // Return null if validation passes
-                    },
-                  ),
-                  TextField(
-                    controller: descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: "Description",
+                    TextField(
+                      controller: dismissible
+                          ? dismissibleDescController
+                          : descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: "Description",
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             actions: <Widget>[
+              if (dismissible)
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
               TextButton(
                 onPressed: () async {
-                  FirebaseFirestore firestore = FirebaseFirestore.instance;
-                  DocumentSnapshot docSnapshot = await firestore
-                      .collection('big_invoices')
-                      .doc(date)
-                      .get();
-
                   if (_formKey.currentState?.validate() ?? false) {
-                    // If the form is valid, save the data
-                    totalAmount =
-                        double.tryParse(totalAmountController.text) ?? 0.0;
-                    description = descriptionController.text;
+                    final double totalAmount = double.tryParse(dismissible
+                            ? dismissibleAmountController.text
+                            : totalAmountController.text) ??
+                        0.0;
+                    final String description = dismissible
+                        ? dismissibleDescController.text
+                        : descriptionController.text;
+                    final now = DateTime.now();
+                    final date =
+                        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+                    final day = [
+                      "Sunday",
+                      "Monday",
+                      "Tuesday",
+                      "Wednesday",
+                      "Thursday",
+                      "Friday",
+                      "Saturday"
+                    ][now.weekday % 7];
 
-                    // Create a new invoice object
-                    Invoice newInvoice = Invoice(
-                      studentName: name_controller.text,
-                      studentPhoneNumber: studentNumberController.text,
-                      momPhoneNumber: motherNumberController.text,
-                      dadPhoneNumber: "00000000000",
-                      grade: student.grade ?? "",
-                      amount: totalAmount,
-                      description: description,
-                      dateTime: DateTime.now(),
-                    );
-
-                    if (docSnapshot.exists) {
-                      // If the document exists, retrieve the existing data
-                      Map<String, dynamic> data =
-                          docSnapshot.data() as Map<String, dynamic>;
-
-                      // Parse the existing document into a BigInvoice object
-                      BigInvoice bigInvoice = BigInvoice.fromJson(data);
-
-                      // Add the new invoice to the existing list of invoices
-                      bigInvoice.invoices.add(newInvoice);
-
-                      // Update the Firestore document
-                      await firestore
-                          .collection('big_invoices')
-                          .doc(date)
-                          .update(bigInvoice.toJson());
-                    } else {
-                      // If the document does not exist, create it with the new invoice in the `invoices` list
-                      BigInvoice bigInvoice = BigInvoice(
-                        date: date ?? "",
-                        day: Day ?? "",
-                        invoices: [newInvoice],
-                        // Add the new invoice to the list
-                        payments: [], // Initialize payments as an empty list
+                    try {
+                      emit(StudentEditLoading());
+                      await onSave(
+                        amount: totalAmount,
+                        description: description,
+                        date: date,
+                        day: day,
                       );
-
-                      // Save the new document to Firestore
-                      await firestore
-                          .collection('big_invoices')
-                          .doc(date)
-                          .set(bigInvoice.toJson());
+                      emit(StudentEditSuccess());
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => AllStudentsTab()),
+                        (Route<dynamic> route) => false,
+                      );
+                    } catch (e) {
+                      emit(StudentEditFailure(errorMessage: e.toString()));
                     }
-
-                    // Navigate to the Home Screen
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => AllStudentsTab()),
-                      (Route<dynamic> route) => false,
-                    );
-                  } else {
-                    // If validation fails, don't do anything
-                    return;
                   }
                 },
                 child: const Text('Save'),
@@ -348,19 +368,8 @@ class StudentEditCubit extends Cubit<StudentEditState> {
     );
 
     // Update the student in Firestore
-    try {
-      emit(StudentEditLoading());
-      FirebaseFunctions.updateStudentInCollection(
-        student.grade ?? "",
-        student.id,
-        submodel,
-      );
-      emit(StudentEditSuccess());
-    } catch (e) {
-      print("Error: >>>>>>>>>>>  $e");
-      emit(StudentEditFailure(errorMessage: e as String));
-    }
-// Compare the old values with the new values to detect changes
+
+    // detect payment/note changes
     bool isMonthOrNoteChanged =
         (student.firstMonth == false && firstMonth == true) ||
             (student.secondMonth == false && secondMonth == true) ||
@@ -370,18 +379,50 @@ class StudentEditCubit extends Cubit<StudentEditState> {
             (student.explainingNote == false && explainingNote == true) ||
             (student.reviewNote == false && reviewNote == true);
 
-    // If changes detected, show the dialog
     if (isMonthOrNoteChanged) {
-      await showPaymentChangeDialog(context);
+      await showPaymentDialog(
+        context: context,
+        grade: level,
+        title: "Payment Changes Detected",
+        dismissible: false,
+        onSave: ({
+          required double amount,
+          required String description,
+          required String date,
+          required String day,
+        }) async {
+          try {
+            FirebaseFunctions.updateStudentInCollection(
+              student.grade ?? "",
+              student.id,
+              submodel,
+            );
+            await addInvoiceToBigInvoices(
+              date: date,
+              day: day,
+              grade: level,
+              amount: amount,
+              description: description,
+            );
+          } catch (e) {
+            emit(StudentEditFailure(errorMessage: e.toString()));
+          }
+        },
+      );
     } else {
-      Navigator.pop(context);
+      try {
+        emit(StudentEditLoading());
+        FirebaseFunctions.updateStudentInCollection(
+          student.grade ?? "",
+          student.id,
+          submodel,
+        );
+        emit(StudentEditSuccess());
+      } catch (e) {
+        emit(StudentEditFailure(errorMessage: e.toString()));
+      }
+      Navigator.pop(context); // close edit page
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Colors.green,
-        content: Text('Student Edited successfully!'),
-      ),
-    );
   }
 
   String? getPaymentDate(bool? currentValue, bool? previousValue,

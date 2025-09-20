@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Invoice.dart';
 
-class InvoiceWidget extends StatelessWidget {
+class InvoiceWidget extends StatefulWidget {
   final Invoice invoice;
-  int incomeIndex;
-  InvoiceWidget({required this.incomeIndex,required this.invoice, super.key});
 
+  InvoiceWidget({required this.invoice, super.key});
+
+  @override
+  State<InvoiceWidget> createState() => _InvoiceWidgetState();
+}
+
+class _InvoiceWidgetState extends State<InvoiceWidget> {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -29,20 +35,20 @@ class InvoiceWidget extends StatelessWidget {
               const Divider(color: app_colors.darkGrey, thickness: 1),
               const SizedBox(height: 8),
               _buildInfoRow(
-                  context, false, "Student Name:", invoice.studentName),
-              _buildInfoRow(
-                  context, true, "Student Phone:", invoice.studentPhoneNumber),
-              _buildInfoRow(
-                  context, true, "Parent's Phone:", invoice.momPhoneNumber),
-              _buildInfoRow(context, false, "Grade:", invoice.grade),
+                  context, false, "Student Name:", widget.invoice.studentName),
+              _buildInfoRow(context, true, "Student Phone:",
+                  widget.invoice.studentPhoneNumber),
+              _buildInfoRow(context, true, "Parent's Phone:",
+                  widget.invoice.momPhoneNumber),
+              _buildInfoRow(context, false, "Grade:", widget.invoice.grade),
               _buildInfoRow(context, false, "Amount:",
-                  "\$${invoice.amount.toStringAsFixed(2)}"),
+                  "\$${widget.invoice.amount.toStringAsFixed(2)}"),
               _buildInfoRow(
-                  context, false, "Description:", invoice.description),
+                  context, false, "Description:", widget.invoice.description),
               _buildInfoRow(context, false, "Date:",
-                  DateFormat('yyyy-MM-dd').format(invoice.dateTime)),
+                  DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime)),
               _buildInfoRow(context, false, "Time:",
-                  DateFormat('hh:mm a').format(invoice.dateTime)),
+                  DateFormat('hh:mm a').format(widget.invoice.dateTime)),
             ],
           ),
         ),
@@ -70,10 +76,14 @@ class InvoiceWidget extends StatelessWidget {
                 color: app_colors.green,
               ),
               onPressed: () {
-                _showEditDialog(context); // Show the edit dialog
+                showVerifyPasswordDialog(
+                    context: context,
+                    onVerified: () {
+                      _showEditDialog(context);
+                    });
+                // Show the edit dialog
               },
             ),
-
           ],
         ),
       ],
@@ -112,10 +122,11 @@ class InvoiceWidget extends StatelessWidget {
                 child: Text(
                   value,
                   style: TextStyle(
-                    color: isPhoneNumber ? app_colors.green : app_colors.darkGrey,
+                    color:
+                        isPhoneNumber ? app_colors.green : app_colors.darkGrey,
                     fontSize: 16,
                     fontWeight:
-                    isPhoneNumber ? FontWeight.bold : FontWeight.normal,
+                        isPhoneNumber ? FontWeight.bold : FontWeight.normal,
                     decoration: isPhoneNumber
                         ? TextDecoration.underline
                         : TextDecoration.none,
@@ -131,9 +142,9 @@ class InvoiceWidget extends StatelessWidget {
 
   void _showEditDialog(BuildContext context) {
     final amountController =
-    TextEditingController(text: invoice.amount.toStringAsFixed(2));
+        TextEditingController(text: widget.invoice.amount.toStringAsFixed(2));
     final descriptionController =
-    TextEditingController(text: invoice.description);
+        TextEditingController(text: widget.invoice.description);
 
     showDialog(
       context: context,
@@ -164,26 +175,33 @@ class InvoiceWidget extends StatelessWidget {
             TextButton(
               onPressed: () {
                 String formattedDate =
-                DateFormat('yyyy-MM-dd').format(invoice.dateTime);
+                    DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime);
                 // Parse the new amount
-                double parsedAmount =
-                    double.tryParse(amountController.text) ?? invoice.amount;
+                double parsedAmount = double.tryParse(amountController.text) ??
+                    widget.invoice.amount;
 
                 // Create an updated Invoice object
                 Invoice updatedInvoice = Invoice(
+                  studentId: widget.invoice.studentId,
+                  id: widget.invoice.id,
                   amount: parsedAmount,
                   description: descriptionController.text,
-                  dateTime: invoice.dateTime, // Keep the same date and time
-                  studentName: invoice.studentName,
-                  studentPhoneNumber: invoice.studentPhoneNumber,
-                  momPhoneNumber: invoice.momPhoneNumber,
-                  dadPhoneNumber: invoice.dadPhoneNumber,
-                  grade: invoice.grade,
+                  dateTime: widget.invoice.dateTime,
+                  // Keep the same date and time
+                  studentName: widget.invoice.studentName,
+                  studentPhoneNumber: widget.invoice.studentPhoneNumber,
+                  momPhoneNumber: widget.invoice.momPhoneNumber,
+                  dadPhoneNumber: widget.invoice.dadPhoneNumber,
+                  grade: widget.invoice.grade,
                 );
 
-                 FirebaseFunctions.updateIncomeInBigInvoice(date: formattedDate, updatedIncome: updatedInvoice, incomeIndex: incomeIndex);
-                 Navigator.of(context).pop(); // Close the dialog after updating
-
+                FirebaseFunctions.updateInvoiceInBigInvoices(
+                  updatedInvoice: updatedInvoice,
+                  date: formattedDate,
+                );
+                Navigator.of(context).pop();
+                setState(() {});
+                // Close the dialog after updating
               },
               child: const Text("OK"),
               style: TextButton.styleFrom(

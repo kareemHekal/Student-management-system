@@ -1,3 +1,4 @@
+import 'package:fatma_elorbany/Alert%20dialogs/verifiy_password.dart';
 import 'package:flutter/material.dart';
 import '../Alert dialogs/DeleteIncomeBillDialog.dart';
 import '../Alert dialogs/DeleteOutcomeBillDialog.dart';
@@ -16,6 +17,7 @@ class OneInivoicePage extends StatefulWidget {
   @override
   State<OneInivoicePage> createState() => _OneInivoicePageState();
 }
+
 class _OneInivoicePageState extends State<OneInivoicePage> {
   final TextEditingController _incomeSearchController = TextEditingController();
 
@@ -60,7 +62,8 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -115,8 +118,8 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                         // Filter income invoices based on student name
                         filteredIncomeInvoices = widget.invoice.invoices
                             .where((invoice) => invoice.studentName
-                            .toLowerCase()
-                            .contains(value.toLowerCase()))
+                                .toLowerCase()
+                                .contains(value.toLowerCase()))
                             .toList();
                       });
                     },
@@ -126,30 +129,36 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                   child: ListView.builder(
                     itemCount: filteredIncomeInvoices.length,
                     itemBuilder: (context, filteredIndex) {
-                      // Find the real index in the original list based on the filtered index
-                      int realIndex = widget.invoice.invoices.indexOf(filteredIncomeInvoices[filteredIndex]);
-
                       return GestureDetector(
                         onLongPress: () {
-                          showDialog(
+                          showVerifyPasswordDialog(
                             context: context,
-                            builder: (BuildContext context) {
-                              return DeleteIncomeBillDialog(
-                                onConfirm: () async {
-                                  widget.invoice.invoices.remove(widget.invoice.invoices[realIndex]);
-                                  await FirebaseFunctions.updateBigInvoice(widget.invoice.date, widget.invoice);
-                                  setState(() {});
-                                  print("Income bill deleted");
+                            onVerified: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return DeleteIncomeBillDialog(
+                                    onConfirm: () async {
+                                      await FirebaseFunctions
+                                          .deleteInvoiceFromBigInvoices(
+                                              date: widget.invoice.date,
+                                              invoiceId: widget.invoice
+                                                  .invoices[filteredIndex].id);
+                                      setState(() {});
+                                      print("Income bill deleted");
+                                    },
+                                    title: 'Delete Income Bill',
+                                    content:
+                                        'Are you sure you want to delete this income bill?',
+                                  );
                                 },
-                                title: 'Delete Income Bill',
-                                content: 'Are you sure you want to delete this income bill?',
                               );
                             },
                           );
                         },
                         child: InvoiceWidget(
-                          incomeIndex: realIndex, // Pass the real index
-                          invoice: filteredIncomeInvoices[filteredIndex], // Pass the filtered invoice
+                          invoice: filteredIncomeInvoices[
+                              filteredIndex], // Pass the filtered invoice
                         ),
                       );
                     },
@@ -176,24 +185,30 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onLongPress: () async {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return DeleteOutcomeBillDialog(
-                                title: 'Delete Outcome Bill',
-                                content:
-                                'Are you sure you want to delete this outcome bill?',
-                                onConfirm: () async {
-                                  widget.invoice.payments
-                                      .remove(widget.invoice.payments[index]);
-                                  await FirebaseFunctions.updateBigInvoice(
-                                      widget.invoice.date, widget.invoice);
-                                  setState(() {});
-                                  print("Outcome bill deleted");
-                                },
-                              );
-                            },
-                          );
+                          showVerifyPasswordDialog(
+                              context: context,
+                              onVerified: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return DeleteOutcomeBillDialog(
+                                      title: 'Delete Outcome Bill',
+                                      content:
+                                          'Are you sure you want to delete this outcome bill?',
+                                      onConfirm: () async {
+                                        widget.invoice.payments.remove(
+                                            widget.invoice.payments[index]);
+                                        await FirebaseFunctions
+                                            .updateBigInvoice(
+                                                widget.invoice.date,
+                                                widget.invoice);
+                                        setState(() {});
+                                        print("Outcome bill deleted");
+                                      },
+                                    );
+                                  },
+                                );
+                              });
                         },
                         child: PaymentWidget(
                           paymentIndex: index,

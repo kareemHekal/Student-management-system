@@ -1,3 +1,4 @@
+import 'package:fatma_elorbany/Alert%20dialogs/verifiy_password.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../colors_app.dart';
@@ -73,7 +74,12 @@ class _PaymentWidgetState extends State<PaymentWidget> {
             size: 30,
           ),
           onPressed: () {
-            _showEditDialog(context);
+            showVerifyPasswordDialog(
+              context: context,
+              onVerified: () {
+                _showEditDialog(context);
+              },
+            );
           },
         ),
       ],
@@ -146,8 +152,9 @@ class _PaymentWidgetState extends State<PaymentWidget> {
             TextButton(
               onPressed: () async {
                 String formattedDate =
-                DateFormat('yyyy-MM-dd').format(widget.payment.dateTime);
-                double parsedAmount = double.tryParse(amountController.text) ?? widget.payment.amount;
+                    DateFormat('yyyy-MM-dd').format(widget.payment.dateTime);
+                double parsedAmount = double.tryParse(amountController.text) ??
+                    widget.payment.amount;
 
                 // Create the updated payment object
                 Payment updatedPayment = Payment(
@@ -171,7 +178,6 @@ class _PaymentWidgetState extends State<PaymentWidget> {
 
                 // Close the dialog
               },
-
               child: const Text("OK"),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,

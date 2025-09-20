@@ -75,37 +75,39 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
             body: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : Center(
-              child: thereIsGrades
-                  ? Column(
-                children: [
-                  Container(
-                    color: app_colors.darkGrey,
-                    child: TabBar(
-                      labelPadding:
-                      const EdgeInsets.symmetric(horizontal: 10),
-                      dividerColor: Colors.transparent,
-                      onTap: (index) {
-                        setState(() {
-                          grade = grades![index];
-                        });
-                      },
-                      isScrollable: false,
-                      indicatorColor: app_colors.green,
-                      labelColor: app_colors.green,
-                      unselectedLabelColor: Colors.white,
-                      tabs: grades!.map((g) => Tab(text: g)).toList(),
-                    ),
+                    child: thereIsGrades
+                        ? Column(
+                            children: [
+                              Container(
+                                color: app_colors.darkGrey,
+                                child: TabBar(
+                                  labelPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  dividerColor: Colors.transparent,
+                                  onTap: (index) {
+                                    setState(() {
+                                      grade = grades![index];
+                                    });
+                                  },
+                                  isScrollable: false,
+                                  indicatorColor: app_colors.green,
+                                  labelColor: app_colors.green,
+                                  unselectedLabelColor: Colors.white,
+                                  tabs:
+                                      grades!.map((g) => Tab(text: g)).toList(),
+                                ),
+                              ),
+                              Expanded(
+                                child: StudentStreamBuilder(grade: grade ?? ""),
+                              ),
+                            ],
+                          )
+                        : const Text(
+                            "There are no grades, you must add one first.",
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                   ),
-                  Expanded(
-                    child: StudentStreamBuilder(grade: grade ?? ""),
-                  ),
-                ],
-              )
-                  : const Text(
-                "There are no grades, you must add one first.",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
           ),
         ),
       ],

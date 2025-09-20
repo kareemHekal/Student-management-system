@@ -18,11 +18,11 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16), // Rounded corners
       ),
-      backgroundColor: Colors.blue[50], // Light blue background for contrast
+      backgroundColor: Colors.red[50], // Light red background for contrast
       title: Text(
         title,
         style: TextStyle(
-          color: Colors.blue[900], // Darker blue for the title
+          color: Colors.red[900], // Darker red for the title
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
@@ -34,7 +34,7 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
           Text(
             content,
             style: TextStyle(
-              color: Colors.blue[700], // Slightly darker blue for content
+              color: Colors.red[700], // Slightly darker red for content
               fontSize: 16,
             ),
           ),
@@ -43,11 +43,11 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
       actions: [
         TextButton(
           style: TextButton.styleFrom(
-            foregroundColor: Colors.blue[900],
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            textStyle: TextStyle(fontWeight: FontWeight.bold),
+            foregroundColor: Colors.red[900],
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            textStyle: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          child: Text("Cancel"),
+          child: const Text("Cancel"),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -55,14 +55,14 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
-            backgroundColor: Colors.blue[600], // White text on blue button
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            backgroundColor: Colors.red[600], // White text on red button
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
             elevation: 5, // Subtle shadow for depth
           ),
-          child: Text("Sure!"),
+          child: const Text("Sure!"),
           onPressed: () async {
             await onConfirm();
             Navigator.pop(context);

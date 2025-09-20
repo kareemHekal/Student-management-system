@@ -31,7 +31,7 @@ class _InvoicespageState extends State<Invoicespage> {
       setState(() {
         // Convert documents to BigInvoice model
         allInvoices = snapshot.docs.map((doc) {
-          return BigInvoice.fromJson(doc.data() as Map<String, dynamic>);
+          return BigInvoice.fromJson(doc.data() );
         }).toList();
 
         // Initially, we set filteredInvoices to allInvoices (no filtering)

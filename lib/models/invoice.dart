@@ -1,5 +1,7 @@
 class Invoice {
   final String studentName;
+  final String id;
+  String studentId;
   final String studentPhoneNumber;
   final String momPhoneNumber;
   final String dadPhoneNumber;
@@ -9,6 +11,8 @@ class Invoice {
   final DateTime dateTime;
 
   Invoice({
+    required this.studentId,
+    required this.id,
     required this.studentName,
     required this.studentPhoneNumber,
     required this.momPhoneNumber,
@@ -22,21 +26,30 @@ class Invoice {
   // From JSON
   factory Invoice.fromJson(Map<String, dynamic> json) {
     return Invoice(
-      studentName: json['studentName'],
-      studentPhoneNumber: json['studentPhoneNumber'],
-      momPhoneNumber: json['momPhoneNumber'],
-      dadPhoneNumber: json['dadPhoneNumber'],
-      grade: json['grade'],
-      amount: json['amount'].toDouble(),
-      description: json['description'],
-      dateTime: DateTime.parse(json['dateTime']),
+      id: json['id'] ?? "",
+      // safe default
+      studentId: json['studentId'] ?? "",
+      // safe default
+      studentName: json['studentName'] ?? "",
+      studentPhoneNumber: json['studentPhoneNumber'] ?? "",
+      momPhoneNumber: json['momPhoneNumber'] ?? "",
+      dadPhoneNumber: json['dadPhoneNumber'] ?? "",
+      grade: json['grade'] ?? "",
+      amount: (json['amount'] ?? 0).toDouble(),
+      // handles int or null
+      description: json['description'] ?? "",
+      dateTime: json['dateTime'] != null
+          ? DateTime.tryParse(json['dateTime']) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 
   // To JSON
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'studentName': studentName,
+      'studentId': studentId,
       'studentPhoneNumber': studentPhoneNumber,
       'momPhoneNumber': momPhoneNumber,
       'dadPhoneNumber': dadPhoneNumber,

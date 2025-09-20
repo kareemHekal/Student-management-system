@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../Alert dialogs/Delete diaolog.dart';
 import '../Alert dialogs/ResetAbscenceMonthDialog.dart';
+import '../Alert dialogs/change_password.dart';
+import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Big invoice.dart';
@@ -322,6 +324,25 @@ class _CustomDrawerState extends State<CustomDrawer> {
                         "Payment Check",
                         style:
                             TextStyle(color: app_colors.green, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      showVerifyPasswordDialog(
+                        context: context,
+                        onVerified: () {
+                          // open change password dialog if verified
+                          showChangePasswordDialog(context);
+                        },
+                      );
+                    },
+                    child:  ListTile(
+                      leading:  Icon(Icons.lock),
+                      title: const Text(
+                        "Change Password",
+                        style:
+                        TextStyle(color: app_colors.green, fontSize: 15),
                       ),
                     ),
                   ),

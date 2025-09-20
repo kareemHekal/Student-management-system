@@ -1,10 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../home.dart';
-import '../../models/Big invoice.dart';
-import '../../models/Invoice.dart';
 import '../../models/Magmo3aModel.dart';
 import '../../models/Studentmodel.dart';
 import 'add_student_state.dart';
@@ -21,7 +19,7 @@ class StudentCubit extends Cubit<StudentState> {
   TextEditingController totalAmountController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   late String? date;
-  late String? Day;
+  late String? day;
   String? dateOfFirstMonthPaid;
   String? dateOfSecondMonthPaid;
   String? dateOfThirdMonthPaid;
@@ -54,35 +52,30 @@ class StudentCubit extends Cubit<StudentState> {
   }
 
   Future<void> addStudent(BuildContext context, level) async {
-    if (hisGroups == []) {
+    if (hisGroups.isEmpty) {
       emit(StudentValidationError("Please pick at least one group"));
-      return; // Early return to prevent further actions
+      return;
     }
 
     if (name_controller.text.isEmpty) {
-      emit(StudentValidationError("Please enter the student\'s name"));
+      emit(StudentValidationError("Please enter the student's name"));
       return;
     }
     if (studentNumberController.text.isEmpty) {
       emit(StudentValidationError("Please enter the student number"));
       return;
     }
-
-    // Validate that student number is exactly 11 digits
     if (!RegExp(r'^\d{11}$').hasMatch(studentNumberController.text)) {
       emit(StudentValidationError("Student number must be exactly 11 digits"));
       return;
     }
 
     if (motherNumberController.text.isEmpty) {
-      emit(StudentValidationError("Please enter the mother\'s number"));
+      emit(StudentValidationError("Please enter the mother's number"));
       return;
     }
-
-    // Validate that mother's number is exactly 11 digits
     if (!RegExp(r'^\d{11}$').hasMatch(motherNumberController.text)) {
-      emit(
-          StudentValidationError("Mother\'s number must be exactly 11 digits"));
+      emit(StudentValidationError("Mother's number must be exactly 11 digits"));
       return;
     }
 
@@ -90,20 +83,23 @@ class StudentCubit extends Cubit<StudentState> {
       emit(StudentValidationError("Please select a gender"));
       return;
     }
+
     if (firstMonth == null ||
         secondMonth == null ||
         thirdMonth == null ||
-        fifthMonth == null ||
-        fourthMonth == null) {
+        fourthMonth == null ||
+        fifthMonth == null) {
       emit(StudentValidationError(
           "Please select payment status for all months"));
       return;
     }
+
     if (explainingNote == null || reviewNote == null) {
       emit(StudentValidationError(
           "Please select notes for explaining and reviewing"));
       return;
     }
+
     updatePaymentDates();
 
     Studentmodel submodel = Studentmodel(
@@ -132,29 +128,34 @@ class StudentCubit extends Cubit<StudentState> {
       dateOfExplainingNotePaid: dateOfExplainingNotePaid,
       dateOfReviewingNotePaid: dateOfReviewingNotePaid,
     );
-    try {
-      emit(StudentLoading());
-      FirebaseFunctions.addStudentToCollection(level ?? "", submodel);
-      emit(StudentAddedSuccess());
-      reviewNote == true ||
-          explainingNote == true ||
-          firstMonth == true ||
-          secondMonth == true ||
-          thirdMonth == true ||
-          fourthMonth == true ||
-          fifthMonth == true
-          ? await showPaymentChangeDialog(context, level)
-          : Navigator.pushAndRemoveUntil(
+
+    // Check if any payment/note is true
+    bool hasPayment = reviewNote == true ||
+        explainingNote == true ||
+        firstMonth == true ||
+        secondMonth == true ||
+        thirdMonth == true ||
+        fourthMonth == true ||
+        fifthMonth == true;
+
+    if (hasPayment) {
+      // show dialog and wait until Save pressed
+      await showPaymentChangeDialog(context, level, submodel);
+    } else {
+      // no payment -> just add directly
+      try {
+        emit(StudentLoading());
+        await FirebaseFunctions.addStudentToCollection(level ?? "", submodel);
+        emit(StudentAddedSuccess());
+        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (context) => Homescreen(),
-          ),
-              (route) => false);
-    } catch (e) {
-      emit(StudentAddedFailure(e as String));
+          MaterialPageRoute(builder: (context) => Homescreen()),
+              (route) => false,
+        );
+      } catch (e) {
+        emit(StudentAddedFailure(e.toString()));
+      }
     }
-
-
   }
 
   void updatePaymentDates() {
@@ -168,10 +169,93 @@ class StudentCubit extends Cubit<StudentState> {
     dateOfReviewingNotePaid = reviewNote == true ? date : null;
   }
 
+  Future<void> showPaymentChangeDialog(BuildContext context, level,
+      Studentmodel submodel) async {
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            title: const Text("Payment Changes Detected"),
+            content: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: totalAmountController,
+                    decoration: const InputDecoration(
+                      labelText: "Total Amount",
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Total Amount cannot be empty';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: "Description",
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () async {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    totalAmount =
+                        double.tryParse(totalAmountController.text) ?? 0.0;
+                    description = descriptionController.text;
+
+                    // ✅ Add student only after Save
+                    try {
+                      emit(StudentLoading());
+                      String studentId =
+                      await FirebaseFunctions.addStudentToCollection(
+                          level ?? "", submodel);
+                      emit(StudentAddedSuccess());
+
+
+                      FirebaseFunctions.addInvoiceToBigInvoices(
+                        date: date??"",
+                        day: day??"",
+                        amount: totalAmount,
+                        description: description,
+                        grade:level,
+                        ParentPhone:motherNumberController.text,
+                        phoneNumber:studentNumberController.text,
+                        studentId:studentId,
+                        studentName:name_controller.text,
+                      );
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/HomeScreen',
+                            (route) => false,
+                      );
+                    } catch (e) {
+                      emit(StudentAddedFailure(e.toString()));
+                    }
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void updateGroup(BuildContext context, Magmo3amodel? result) {
     if (result != null) {
-      bool groupExists =
-          hisGroups.any((group) => group.id == result.id) ?? false;
+      bool groupExists = hisGroups.any((group) => group.id == result.id);
 
       if (!groupExists) {
         hisGroups.add(result);
@@ -190,139 +274,39 @@ class StudentCubit extends Cubit<StudentState> {
         );
       }
 
-      print('His Groups: ${hisGroups?.length}');
+      print('His Groups: ${hisGroups.length}');
     }
-  }
-
-  Future<void> showPaymentChangeDialog(BuildContext context, level) async {
-    showDialog(
-      barrierDismissible: false, // Prevent dismissal by tapping outside
-      context: context,
-      builder: (BuildContext context) {
-        return PopScope(
-          canPop: false,
-          child: AlertDialog(
-            title: const Text("Payment Changes Detected"),
-            content: Form(
-              key: _formKey, // GlobalKey<FormState>
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: totalAmountController,
-                    decoration: const InputDecoration(
-                      labelText: "Total Amount",
-                    ),
-                    keyboardType: TextInputType.number, // Ensure numeric input
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Total Amount cannot be empty'; // Show error if empty
-                      }
-                      return null; // Return null if validation passes
-                    },
-                  ),
-                  TextField(
-                    controller: descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: "Description",
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () async {
-                  FirebaseFirestore firestore = FirebaseFirestore.instance;
-                  DocumentSnapshot docSnapshot =
-                      await firestore.collection('big_invoices').doc(date).get();
-
-                  if (_formKey.currentState?.validate() ?? false) {
-                    // If the form is valid, save the data
-                    totalAmount =
-                        double.tryParse(totalAmountController.text) ?? 0.0;
-                    description = descriptionController.text;
-
-                    // Create a new invoice object
-                    Invoice newInvoice = Invoice(
-                      studentName: name_controller.text,
-                      studentPhoneNumber: studentNumberController.text,
-                      momPhoneNumber: motherNumberController.text,
-                      dadPhoneNumber: "00000000000",
-                      grade: level ?? "",
-                      amount: totalAmount,
-                      description: description,
-                      dateTime: DateTime.now(),
-                    );
-
-                    if (docSnapshot.exists) {
-                      Map<String, dynamic> data =
-                          docSnapshot.data() as Map<String, dynamic>;
-                      BigInvoice bigInvoice = BigInvoice.fromJson(data);
-                      bigInvoice.invoices.add(newInvoice);
-                      await firestore
-                          .collection('big_invoices')
-                          .doc(date)
-                          .update(bigInvoice.toJson());
-                    } else {
-                      BigInvoice bigInvoice = BigInvoice(
-                        date: date ?? "",
-                        day: Day ?? "",
-                        invoices: [newInvoice],
-                        payments: [],
-                      );
-                      await firestore
-                          .collection('big_invoices')
-                          .doc(date)
-                          .set(bigInvoice.toJson());
-                    }
-
-                    // Navigate to the Home Screen
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/HomeScreen',
-                      (route) => false,
-                    );
-                  } else {
-                    // If validation fails, don't do anything
-                    return;
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   void getCurrentDate() {
     DateTime now = DateTime.now();
     date = now.toIso8601String().substring(0, 10); // yyyy-mm-dd
-    Day = now.weekday == 1
+    day = now.weekday == 1
         ? 'Monday'
         : now.weekday == 2
-            ? 'Tuesday'
-            : now.weekday == 3
-                ? 'Wednesday'
-                : now.weekday == 4
-                    ? 'Thursday'
-                    : now.weekday == 5
-                        ? 'Friday'
-                        : now.weekday == 6
-                            ? 'Saturday'
-                            : 'Sunday';
+        ? 'Tuesday'
+        : now.weekday == 3
+        ? 'Wednesday'
+        : now.weekday == 4
+        ? 'Thursday'
+        : now.weekday == 5
+        ? 'Friday'
+        : now.weekday == 6
+        ? 'Saturday'
+        : 'Sunday';
   }
-void setTheSelectedGenderByNull(){
-  selectedGender = null;
-  emit(StudentUpdated());
-}
+
+  void setTheSelectedGenderByNull() {
+    selectedGender = null;
+    emit(StudentUpdated());
+  }
+
   void changeValueOfGenderDropDown(value) {
     selectedGender = value as String;
     emit(StudentUpdated());
     print(selectedGender);
   }
+
   void changeFirstMonthValue(value) {
     firstMonth = value;
     emit(StudentUpdated());
@@ -364,5 +348,4 @@ void setTheSelectedGenderByNull(){
     emit(StudentUpdated());
     print(reviewNote);
   }
-
 }

@@ -23,7 +23,6 @@ class AddStudentScreen extends StatefulWidget {
 class _AddStudentTabState extends State<AddStudentScreen> {
   _AddStudentTabState();
 
-
   @override
   Widget build(BuildContext context) {
     return LoaderOverlay(
@@ -67,7 +66,6 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                 ),
               );
             }
-
           },
           builder: (context, state) {
             if (state is StudentLoading) {
@@ -121,10 +119,10 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                             SizedBox(
                               height: 240, // or any other bounded height
                               child: Column(
+                                spacing: 15,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Center(
-                                      child: Text(" Pick the days ")),
+                                  const Center(child: Text(" Pick the days ")),
                                   Expanded(
                                     child: PickGroupRow(context),
                                   ),
@@ -135,27 +133,15 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                               color: app_colors.green,
                               thickness: 4,
                             ),
-                            const SizedBox(
-                              height: 15,
-                            ),
                             TextFormFields(context),
                             const Divider(
                               color: app_colors.green,
                               thickness: 4,
                             ),
-                            const SizedBox(
-                              height: 15,
-                            ),
                             MaleOrFemalePart(context),
-                            const SizedBox(
-                              height: 15,
-                            ),
                             const Divider(
                               color: app_colors.green,
                               thickness: 4,
-                            ),
-                            const SizedBox(
-                              height: 15,
                             ),
                             paymentsPart(context),
                             const SizedBox(
@@ -183,7 +169,8 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                                         app_colors.darkGrey, // text color
                                   ),
                                   onPressed: () async {
-                                  await  cubit.addStudent(context,widget.level);
+                                    await cubit.addStudent(
+                                        context, widget.level);
                                   },
                                   child: const Text(" Add "),
                                 )),
@@ -204,7 +191,6 @@ class _AddStudentTabState extends State<AddStudentScreen> {
     );
   }
 
-
   Widget PickGroupRow(BuildContext context) {
     final cubit = StudentCubit.get(context);
     return Column(
@@ -212,39 +198,39 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         Expanded(
             child: cubit.hisGroups.isEmpty
                 ? const Center(
-                child: Text(
-                  "You did not choose any group yet",
-                  style: TextStyle(color: app_colors.green),
-                ))
+                    child: Text(
+                    "You did not choose any group yet",
+                    style: TextStyle(color: app_colors.green),
+                  ))
                 : ListView.builder(
-              itemCount: cubit.hisGroups.length,
-              itemBuilder: (context, index) {
-                // Get the current Magmo3amodel
-                final magmo3aModel = cubit.hisGroups[index];
-                // Return the Groupsmallcard widget for each Magmo3aModel
-                return GestureDetector(
-                    onLongPress: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return RemoveFromGroupsListDialog(
-                            title: "Remove Group",
-                            content:
-                            "Are you sure you want to remove this group ?",
-                            onConfirm: () async {
-                              await Future.delayed(
-                                  Duration(milliseconds: 1));
-                              cubit.hisGroups.removeAt(index);
-                              cubit.hisGroupsId.removeAt(index);
-                              setState(() {});
-                            },
-                          );
-                        },
-                      );
+                    itemCount: cubit.hisGroups.length,
+                    itemBuilder: (context, index) {
+                      // Get the current Magmo3amodel
+                      final magmo3aModel = cubit.hisGroups[index];
+                      // Return the Groupsmallcard widget for each Magmo3aModel
+                      return GestureDetector(
+                          onLongPress: () {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return RemoveFromGroupsListDialog(
+                                  title: "Remove Group",
+                                  content:
+                                      "Are you sure you want to remove this group ?",
+                                  onConfirm: () async {
+                                    await Future.delayed(
+                                        Duration(milliseconds: 1));
+                                    cubit.hisGroups.removeAt(index);
+                                    cubit.hisGroupsId.removeAt(index);
+                                    setState(() {});
+                                  },
+                                );
+                              },
+                            );
+                          },
+                          child: Groupsmallcard(magmo3aModel: magmo3aModel));
                     },
-                    child: Groupsmallcard(magmo3aModel: magmo3aModel));
-              },
-            )),
+                  )),
         const SizedBox(height: 10), // Space between the list and the button
         // First Day Button
         ElevatedButton(
@@ -272,10 +258,10 @@ class _AddStudentTabState extends State<AddStudentScreen> {
   }
 
   Widget buildDropdown(
-      String hint,
-      bool? selectedValue,
-      ValueChanged<bool?> onChanged,
-      ) {
+    String hint,
+    bool? selectedValue,
+    ValueChanged<bool?> onChanged,
+  ) {
     return SizedBox(
       width: 200, // specify a width
       child: Container(
@@ -350,6 +336,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         ),
       );
     }
+
     Widget buildTextFormField({
       required TextEditingController controller,
       required String label,
@@ -365,21 +352,22 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         },
         decoration: getInputDecoration(label),
         keyboardType: keyboardType,
-        inputFormatters:
-        keyboardType == TextInputType.number ? [FilteringTextInputFormatter.digitsOnly] : null,
+        inputFormatters: keyboardType == TextInputType.number
+            ? [FilteringTextInputFormatter.digitsOnly]
+            : null,
       );
     }
 
     return Column(
       children: [
-        buildTextFormField(controller: cubit.name_controller, label: "Student Name"),
+        buildTextFormField(
+            controller: cubit.name_controller, label: "Student Name"),
         const SizedBox(height: 15),
         buildTextFormField(
           controller: cubit.studentNumberController,
           label: "Student Number",
           keyboardType: TextInputType.number,
         ),
-
         const SizedBox(height: 15),
         buildTextFormField(
           controller: cubit.motherNumberController,
@@ -408,12 +396,12 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                 DropdownMenuItem(
                   value: "Male",
                   child:
-                  Text("Male", style: TextStyle(color: app_colors.green)),
+                      Text("Male", style: TextStyle(color: app_colors.green)),
                 ),
                 DropdownMenuItem(
                   value: "Female",
-                  child: Text("Female",
-                      style: TextStyle(color: app_colors.green)),
+                  child:
+                      Text("Female", style: TextStyle(color: app_colors.green)),
                 ),
               ],
               onChanged: (value) {
@@ -437,27 +425,27 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         ),
         cubit.selectedGender != null
             ? Wrap(
-          direction: Axis.horizontal,
-          spacing: 8,
-          children: [
-            Chip(
-              backgroundColor: app_colors.darkGrey,
-              label: Text(cubit.selectedGender!,
-                  style: const TextStyle(color: app_colors.green)),
-              deleteIcon: const Icon(Icons.cancel,
-                  size: 20, color: app_colors.green),
-              shape: const StadiumBorder(
-                  side: BorderSide(color: app_colors.green)),
-              onDeleted: () {
-                cubit.setTheSelectedGenderByNull();
-              },
-            ),
-          ],
-        )
+                direction: Axis.horizontal,
+                spacing: 8,
+                children: [
+                  Chip(
+                    backgroundColor: app_colors.darkGrey,
+                    label: Text(cubit.selectedGender!,
+                        style: const TextStyle(color: app_colors.green)),
+                    deleteIcon: const Icon(Icons.cancel,
+                        size: 20, color: app_colors.green),
+                    shape: const StadiumBorder(
+                        side: BorderSide(color: app_colors.green)),
+                    onDeleted: () {
+                      cubit.setTheSelectedGenderByNull();
+                    },
+                  ),
+                ],
+              )
             : const Center(
-          child: Text("Select a gender",
-              style: TextStyle(color: app_colors.green)),
-        ),
+                child: Text("Select a gender",
+                    style: TextStyle(color: app_colors.green)),
+              ),
       ],
     );
   }
@@ -532,9 +520,9 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                     children: [
                       const Text("Explaining Note :"),
                       buildDropdown("Explaining Note", cubit.explainingNote,
-                              (value) {
-                            cubit.changeExplainingNoteValue(value);
-                          }),
+                          (value) {
+                        cubit.changeExplainingNoteValue(value);
+                      }),
                     ],
                   ),
                   const SizedBox(width: 16.0),

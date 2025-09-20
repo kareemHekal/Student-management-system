@@ -95,15 +95,15 @@ class FirebaseFunctions {
   // =============================== Student Functions ===============================
 
   /// Adds a `StudentModel` to a specific grade's collection
-  static Future<void> addStudentToCollection(
+  static Future<String> addStudentToCollection(
       String grade, Studentmodel studentModel) async {
     CollectionReference<Studentmodel> collection =
         getSecondaryCollection(grade);
 
     DocumentReference<Studentmodel> newDocRef = collection.doc();
     studentModel.id = newDocRef.id;
-
     await newDocRef.set(studentModel);
+    return newDocRef.id;
   }
 
   static Future<void> resetAttendanceForAllStudents() async {
@@ -161,8 +161,10 @@ class FirebaseFunctions {
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
-  static Future<List<Studentmodel>> getAllStudentsByGrade_future(String grade) async {
-    CollectionReference<Studentmodel> collection = getSecondaryCollection(grade);
+  static Future<List<Studentmodel>> getAllStudentsByGrade_future(
+      String grade) async {
+    CollectionReference<Studentmodel> collection =
+        getSecondaryCollection(grade);
     QuerySnapshot<Studentmodel> snapshot = await collection.get();
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
@@ -365,8 +367,6 @@ class FirebaseFunctions {
         );
   }
 
-
-
   //=============================== BigInvoices Functions ===============================
   static Future<void> createBigInvoiceCollection() async {
     // Get Firestore instance
@@ -461,33 +461,212 @@ class FirebaseFunctions {
     await invoicesCollection.doc(date).set(bigInvoice.toJson());
   }
 
-  static Future<void> updateIncomeInBigInvoice({
-    required String date, // Document ID
-    required Invoice updatedIncome, // Updated income object
-    required int incomeIndex, // Index of the income in the list
-  }) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference invoicesCollection =
-        firestore.collection('big_invoices');
+  // ------------------ FIREBASE HELPERS ------------------
 
-    // Fetch the BigInvoice document
-    DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
+// 1. Get the current invoice ID
+  static Future<int> getNextInvoiceId() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    DocumentSnapshot docSnapshot =
+        await firestore.collection('constants').doc('bills_ids').get();
 
     if (!docSnapshot.exists) {
-      throw Exception("Document with date $date does not exist");
+      throw Exception("bills_ids document not found!");
     }
 
-    // Convert the document to a BigInvoice object
+    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+    return data['bills_ids'] ?? 0;
+  }
+
+// 2. Increment invoice ID after success
+  static Future<void> incrementInvoiceId(int newValue) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    await firestore
+        .collection('constants')
+        .doc('bills_ids')
+        .update({'bills_ids': newValue});
+  }
+
+// ------------------ MAIN FUNCTIONS ------------------
+
+// 3. Add Invoice to BigInvoice (invoices list only)
+  static Future<void> addInvoiceToBigInvoices({
+    required String date,
+    required String day,
+    required String grade,
+    required double amount,
+    required String description,
+    required String studentId,
+    required String studentName,
+    required String phoneNumber,
+    required String ParentPhone,
+  }) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Get next invoice ID
+    int invoiceId = await getNextInvoiceId();
+
+    // Create invoice with assigned ID
+    Invoice newInvoice = Invoice(
+      id: invoiceId.toString(),
+      studentId: studentId,
+      studentName: studentName,
+      studentPhoneNumber: phoneNumber,
+      momPhoneNumber: ParentPhone,
+      dadPhoneNumber: "00000000000",
+      grade: grade,
+      amount: amount,
+      description: description,
+      dateTime: DateTime.now(),
+    );
+
+    // Check if big invoice exists for this date
+    DocumentSnapshot docSnapshot =
+        await firestore.collection('big_invoices').doc(date).get();
+
+    if (docSnapshot.exists) {
+      Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+      BigInvoice bigInvoice = BigInvoice.fromJson(data);
+
+      // Add invoice to list
+      bigInvoice.invoices.add(newInvoice);
+
+      await firestore
+          .collection('big_invoices')
+          .doc(date)
+          .update(bigInvoice.toJson());
+    } else {
+      // Create new BigInvoice with this invoice
+      BigInvoice bigInvoice = BigInvoice(
+        date: date,
+        day: day,
+        invoices: [newInvoice],
+        payments: [],
+      );
+
+      await firestore
+          .collection('big_invoices')
+          .doc(date)
+          .set(bigInvoice.toJson());
+    }
+
+    // Increment invoice ID only after success
+    await incrementInvoiceId(invoiceId + 1);
+  }
+
+// 4. Update Invoice (by replacing it in invoices list)
+  static Future<void> updateInvoiceInBigInvoices({
+    required String date,
+    required Invoice updatedInvoice,
+  }) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    DocumentSnapshot docSnapshot =
+        await firestore.collection('big_invoices').doc(date).get();
+
+    if (!docSnapshot.exists) {
+      throw Exception("BigInvoice for $date not found");
+    }
+
     Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
     BigInvoice bigInvoice = BigInvoice.fromJson(data);
 
-    // Update the specific income in the list
-    if (incomeIndex < 0 || incomeIndex >= bigInvoice.invoices.length) {
-      throw Exception("Invalid income index");
-    }
-    bigInvoice.invoices[incomeIndex] = updatedIncome;
+    // Find invoice index by id
+    int index = bigInvoice.invoices
+        .indexWhere((invoice) => invoice.id == updatedInvoice.id);
 
-    // Update the document in Firestore
-    await invoicesCollection.doc(date).set(bigInvoice.toJson());
+    if (index == -1) {
+      throw Exception("Invoice with ID ${updatedInvoice.id} not found");
+    }
+
+    // Replace invoice
+    bigInvoice.invoices[index] = updatedInvoice;
+
+    await firestore
+        .collection('big_invoices')
+        .doc(date)
+        .update(bigInvoice.toJson());
   }
+  static Future<void> deleteInvoiceFromBigInvoices({
+    required String date,
+    required String invoiceId,
+  }) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    DocumentSnapshot docSnapshot =
+    await firestore.collection('big_invoices').doc(date).get();
+
+    if (!docSnapshot.exists) {
+      throw Exception("BigInvoice for $date not found");
+    }
+
+    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+    BigInvoice bigInvoice = BigInvoice.fromJson(data);
+
+    // Find invoice index by id
+    int index =
+    bigInvoice.invoices.indexWhere((invoice) => invoice.id == invoiceId);
+
+    if (index == -1) {
+      throw Exception("Invoice with ID $invoiceId not found");
+    }
+
+    // Remove invoice
+    bigInvoice.invoices.removeAt(index);
+
+    await firestore
+        .collection('big_invoices')
+        .doc(date)
+        .update(bigInvoice.toJson());
+  }
+  static Future<List<Invoice>> getInvoicesByStudentNumber(String studentNumber) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Get all big_invoices docs
+    QuerySnapshot snapshot = await firestore.collection('big_invoices').get();
+
+    List<Invoice> studentInvoices = [];
+
+    for (var doc in snapshot.docs) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      BigInvoice bigInvoice = BigInvoice.fromJson(data);
+
+      // Filter invoices for this student number
+      var matchingInvoices = bigInvoice.invoices
+          .where((invoice) => invoice.studentId == studentNumber)
+          .toList();
+
+      studentInvoices.addAll(matchingInvoices);
+    }
+
+    return studentInvoices;
+  }
+
+  // passwords============
+
+  static Future<bool> verifyPassword(String enteredPassword) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('constants')
+          .doc('password')
+          .get();
+      final savedPassword = doc.data()?['password'] ?? '';
+
+      return enteredPassword == savedPassword;
+    } catch (e) {
+      print('Error verifying password: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> changePassword(String newPassword) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('constants')
+          .doc('password')
+          .update({'password': newPassword});
+      return true;
+    } catch (e) {
+      print('Error changing password: $e');
+      return false;
+    }
+  }
+
 }

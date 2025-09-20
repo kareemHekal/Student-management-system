@@ -13,7 +13,7 @@ class DeleteIncomeBillDialog extends StatelessWidget {
     required this.content,
     required this.onConfirm,
     this.cancelButtonText = "Cancel",
-    this.confirmButtonText = "Sure!",
+    this.confirmButtonText = "Delete",
   }) : super(key: key);
 
   @override
@@ -22,11 +22,11 @@ class DeleteIncomeBillDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16), // Modern rounded corners
       ),
-      backgroundColor: Colors.blue[50], // Light blue background for contrast
+      backgroundColor: Colors.red[50], // Light red background
       title: Text(
         title,
         style: TextStyle(
-          color: Colors.blue[900], // Darker blue for the title for better readability
+          color: Colors.red[900], // Dark red for the title
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
@@ -38,7 +38,7 @@ class DeleteIncomeBillDialog extends StatelessWidget {
           Text(
             content,
             style: TextStyle(
-              color: Colors.blue[700], // Slightly darker blue for content
+              color: Colors.red[700], // Medium red for content text
               fontSize: 16,
             ),
           ),
@@ -47,9 +47,9 @@ class DeleteIncomeBillDialog extends StatelessWidget {
       actions: [
         TextButton(
           style: TextButton.styleFrom(
-            foregroundColor: Colors.blue[900],
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            textStyle: TextStyle(fontWeight: FontWeight.bold),
+            foregroundColor: Colors.red[900],
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            textStyle: const TextStyle(fontWeight: FontWeight.bold),
           ),
           child: Text(cancelButtonText),
           onPressed: () {
@@ -59,8 +59,8 @@ class DeleteIncomeBillDialog extends StatelessWidget {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
-            backgroundColor: Colors.blue[600], // White text on blue button
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            backgroundColor: Colors.red[600], // White text on red button
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
