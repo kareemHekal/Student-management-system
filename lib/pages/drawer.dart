@@ -3,11 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../Alert dialogs/Delete diaolog.dart';
 import '../Alert dialogs/ResetAbscenceMonthDialog.dart';
 import '../Alert dialogs/change_password.dart';
 import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
+import '../constants.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Big invoice.dart';
 import '../models/payment.dart';
@@ -87,7 +89,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                     width: 120,
                   ),
                   Text(
-                    "Fatma elorbany",
+                    Constants.teacherName,
                     style: GoogleFonts.qwitcherGrypen(
                         color: app_colors.ligthGreen, fontSize: 50),
                   ),

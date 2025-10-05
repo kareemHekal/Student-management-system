@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import '../Alert dialogs/Notify Absence.dart';
 import '../bloc/Edit Student/edit_student_cubit.dart';
 import '../colors_app.dart';
+import '../constants.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
 import '../pages/EditStudent.dart';
@@ -275,7 +276,7 @@ class StudentWidget extends StatelessWidget {
 
 
 أطيب التحيات،
- فاطمة العرباني
+ ${Constants.teacherName}
       """;
     } else if (parentRole == 'mother') {
       genderSpecificMessage = """
@@ -284,7 +285,7 @@ class StudentWidget extends StatelessWidget {
  
 
 أطيب التحيات،
- فاطمة العرباني
+ ${Constants.teacherName}
 """;
     }
     else {
@@ -292,7 +293,7 @@ class StudentWidget extends StatelessWidget {
 عزيزي ${studentModel.name}،
 
 أطيب التحيات،
-فاطمة العرباني
+${Constants.teacherName}
       """;
     }
 
