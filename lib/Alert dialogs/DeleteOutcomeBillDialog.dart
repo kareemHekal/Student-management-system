@@ -65,7 +65,9 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
           child: const Text("Sure!"),
           onPressed: () async {
             await onConfirm();
-            Navigator.pop(context);
+
+            Navigator.pushNamedAndRemoveUntil(
+                context, "/HomeScreen", (route) => false);
           },
         ),
       ],

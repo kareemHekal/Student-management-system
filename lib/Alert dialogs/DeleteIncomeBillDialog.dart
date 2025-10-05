@@ -22,7 +22,8 @@ class DeleteIncomeBillDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16), // Modern rounded corners
       ),
-      backgroundColor: Colors.red[50], // Light red background
+      backgroundColor: Colors.red[50],
+      // Light red background
       title: Text(
         title,
         style: TextStyle(
@@ -59,7 +60,8 @@ class DeleteIncomeBillDialog extends StatelessWidget {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
-            backgroundColor: Colors.red[600], // White text on red button
+            backgroundColor: Colors.red[600],
+            // White text on red button
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -69,7 +71,8 @@ class DeleteIncomeBillDialog extends StatelessWidget {
           child: Text(confirmButtonText),
           onPressed: () async {
             await onConfirm();
-            Navigator.pop(context);
+            Navigator.pushNamedAndRemoveUntil(
+                context, "/HomeScreen", (route) => false);
           },
         ),
       ],

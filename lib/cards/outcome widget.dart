@@ -1,6 +1,7 @@
 import 'package:fatma_elorbany/Alert%20dialogs/verifiy_password.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/payment.dart';
@@ -169,7 +170,9 @@ class _PaymentWidgetState extends State<PaymentWidget> {
                   updatedPayment: updatedPayment,
                   paymentIndex: widget.paymentIndex,
                 );
-                Navigator.of(context).pop();
+
+                Navigator.pushNamedAndRemoveUntil(
+                    context, "/HomeScreen", (route) => false);
                 // Update the local widget state
                 setState(() {
                   widget.payment.amount = updatedPayment.amount;

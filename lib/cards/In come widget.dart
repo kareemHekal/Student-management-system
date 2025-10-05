@@ -202,7 +202,9 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                   updatedInvoice: updatedInvoice,
                   date: formattedDate,
                 );
-                Navigator.of(context).pop();
+
+                Navigator.pushNamedAndRemoveUntil(
+                    context, "/HomeScreen", (route) => false);
                 setState(() {});
                 // Close the dialog after updating
               },
