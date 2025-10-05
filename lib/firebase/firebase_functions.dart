@@ -498,7 +498,8 @@ class FirebaseFunctions {
     required String studentId,
     required String studentName,
     required String phoneNumber,
-    required String ParentPhone,
+    required String motherPhone,
+    required String fatherPhone,
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -511,8 +512,8 @@ class FirebaseFunctions {
       studentId: studentId,
       studentName: studentName,
       studentPhoneNumber: phoneNumber,
-      momPhoneNumber: ParentPhone,
-      dadPhoneNumber: "00000000000",
+      momPhoneNumber: motherPhone,
+      dadPhoneNumber: fatherPhone,
       grade: grade,
       amount: amount,
       description: description,

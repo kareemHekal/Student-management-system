@@ -267,7 +267,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                               mainAxisAlignment:
                                                   MainAxisAlignment.spaceEvenly,
                                               children: [
-                                                "First month",
                                                 showDateOfPaidMonth(
                                                     "First month",
                                                     widget.student

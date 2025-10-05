@@ -40,9 +40,9 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
               _buildInfoRow(context, true, "Student Phone:",
                   widget.invoice.studentPhoneNumber),
               _buildInfoRow(
-                  context, true, "Mom's Phone:", invoice.momPhoneNumber),
+                  context, true, "Mom's Phone:", widget.invoice.momPhoneNumber),
               _buildInfoRow(
-                  context, true, "Dad's Phone:", invoice.dadPhoneNumber),
+                  context, true, "Dad's Phone:", widget.invoice.dadPhoneNumber),
               _buildInfoRow(context, false, "Grade:", widget.invoice.grade),
               _buildInfoRow(context, false, "Amount:",
                   "\$${widget.invoice.amount.toStringAsFixed(2)}"),
