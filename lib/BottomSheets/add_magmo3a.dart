@@ -1,81 +1,88 @@
+import 'package:fatma_elorbany/firebase/firebase_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../bloc/AddMogmo3a/add_mogmo3a_cubit.dart';
 import '../bloc/AddMogmo3a/add_mogmo3a_state.dart';
 import '../colors_app.dart';
+import '../models/Magmo3aModel.dart';
 
 class AddMagmo3a extends StatelessWidget {
-  const AddMagmo3a({super.key});
+  final Magmo3amodel? existingMagmo3a;
+  final String? oldDay;
+
+  const AddMagmo3a({super.key, this.existingMagmo3a, this.oldDay});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => Magmo3aCubit()..fetchGrades(),
+      create: (context) {
+        final cubit = Magmo3aCubit()..fetchGrades();
+        if (existingMagmo3a != null) {
+          cubit.initializeFromExisting(existingMagmo3a!);
+        }
+        return cubit;
+      },
       child: BlocConsumer<Magmo3aCubit, Magmo3aState>(
         listener: (context, state) {
           if (state is Magmo3aSuccess) {
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Added successfully'),
-                  backgroundColor: Colors.green),
+              SnackBar(
+                content: Text(existingMagmo3a == null
+                    ? 'Added successfully'
+                    : 'Edited successfully'),
+                backgroundColor: Colors.green,
+              ),
             );
           } else if (state is Magmo3aError) {
             showDialog(
               context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  title: const Text("Error"),
-                  content: Text(state.message),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Close the dialog
-                      },
-                      child: const Text("OK"),
-                    ),
-                  ],
-                );
-              },
+              builder: (context) => AlertDialog(
+                title: const Text("Error"),
+                content: Text(state.message),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
             );
           }
-
         },
         builder: (context, state) {
-          final cubit = context.read<Magmo3aCubit>();
-
+          final cubit = context.watch<Magmo3aCubit>();
           return Container(
             decoration: const BoxDecoration(
               color: app_colors.white,
               borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(25), topRight: Radius.circular(25)),
+                topLeft: Radius.circular(25),
+                topRight: Radius.circular(25),
+              ),
             ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // Day Picker
-                  _buildDropdown("D A Y S", "Select a day", cubit.days,
-                      cubit.chosenDay, (value) => cubit.selectDay(value)),
-
-                  const Divider(color: app_colors.darkGrey, thickness: 3),
-
-                  // Time Picker
-                  _buildTimePicker(context, cubit),
-
-                  const Divider(color: app_colors.darkGrey, thickness: 3),
-
-                  // Grade Picker
                   _buildDropdown(
-                      "G R A D E",
-                      "Select a secondary",
-                      cubit.secondaries,
-                      cubit.selectedSecondary,
-                      (value) => cubit.selectSecondary(value)),
-
+                    "D A Y S",
+                    "Select a day",
+                    cubit.days,
+                    cubit.chosenDay,
+                    (value) => cubit.selectDay(value),
+                  ),
+                  const Divider(color: app_colors.darkGrey, thickness: 3),
+                  _buildTimePicker(context, cubit),
+                  const Divider(color: app_colors.darkGrey, thickness: 3),
+                  _buildDropdown(
+                    "G R A D E",
+                    "Select a secondary",
+                    cubit.secondaries,
+                    cubit.selectedSecondary,
+                    (value) => cubit.selectSecondary(value),
+                  ),
                   const SizedBox(height: 30),
-
-                  // Add Button
                   state is Magmo3aLoading
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
@@ -83,8 +90,37 @@ class AddMagmo3a extends StatelessWidget {
                             foregroundColor: app_colors.green,
                             backgroundColor: app_colors.darkGrey,
                           ),
-                          onPressed: cubit.addMagmo3a,
-                          child: const Text("A D D"),
+                          onPressed: () async {
+                            if (existingMagmo3a == null) {
+                              cubit.addMagmo3a();
+                            } else {
+                              final updatedMagmo3a = Magmo3amodel(
+                                id: existingMagmo3a!.id,
+                                days: cubit.chosenDay,
+                                grade: cubit.selectedSecondary,
+                                time: cubit.timeOfDay,
+                                userid: existingMagmo3a!.userid,
+                              );
+
+                              await FirebaseFunctions.editMagmo3aInDay(
+                                oldDay ?? existingMagmo3a!.days!,
+                                existingMagmo3a!.grade!,
+                                updatedMagmo3a,
+                              );
+
+                              // ignore: use_build_context_synchronously
+                              Navigator.pop(context);
+                              // ignore: use_build_context_synchronously
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Edited successfully'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          },
+                          child: Text(
+                              existingMagmo3a == null ? "A D D" : "E D I T"),
                         ),
                 ],
               ),
@@ -109,15 +145,13 @@ class AddMagmo3a extends StatelessWidget {
           hint: Text(hint, style: const TextStyle(color: app_colors.darkGrey)),
           items: items.map((item) {
             return DropdownMenuItem(
-                value: item,
-                child: Text(item,
-                    style: const TextStyle(color: app_colors.green)));
+              value: item,
+              child:
+                  Text(item, style: const TextStyle(color: app_colors.green)),
+            );
           }).toList(),
           onChanged: (value) => onChanged(value!),
-          underline: Container(
-            height: 2,
-            color: app_colors.green,
-          ),
+          underline: Container(height: 2, color: app_colors.green),
           icon: const Icon(Icons.arrow_forward_ios_outlined,
               color: app_colors.green),
         ),

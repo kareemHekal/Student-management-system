@@ -6,6 +6,8 @@ abstract class Magmo3aState {}
 
 class Magmo3aInitial extends Magmo3aState {}
 
+class SecondaryFetched extends Magmo3aState {}
+
 class Magmo3aDaySelected extends Magmo3aState {
   final String day;
   Magmo3aDaySelected(this.day);

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../Alert dialogs/rename_grade.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 
@@ -76,7 +78,16 @@ class _AllgradesState extends State<Allgrades> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
+                          trailing: IconButton(
+                            icon:
+                                const Icon(Icons.edit, color: app_colors.green),
+                            onPressed: () {
+                              renameGrade(
+                                  context: context,
+                                  oldGrade: secondaries[index]);
+                            },
+                          ),
+                        ),
                 ),
               );
             },

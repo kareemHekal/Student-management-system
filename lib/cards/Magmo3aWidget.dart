@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+
+import '../BottomSheets/add_magmo3a.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Magmo3aModel.dart';
@@ -14,98 +16,107 @@ class Magmo3aWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 6),
-      child: Slidable(
-        startActionPane: ActionPane(
-          motion: DrawerMotion(),
-          extentRatio: 0.5,
-          children: [
-            SlidableAction(
-              borderRadius: BorderRadius.circular(30),
-              onPressed: (context) {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(16), // Modern rounded corners
-                      ),
-                      backgroundColor: Colors.red[50],
-                      // Light red background for contrast
-                      title: Text(
-                        'Start a New Month',
-                        style: TextStyle(
-                          color: Colors.red[900],
-                          // Darker red for the title for better readability
-                          fontSize: 20,
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          builder: (_) => AddMagmo3a(
+            existingMagmo3a: magmo3aModel,
+            oldDay: magmo3aModel.days,
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(left: 6),
+        child: Slidable(
+          startActionPane: ActionPane(
+            motion: DrawerMotion(),
+            extentRatio: 0.5,
+            children: [
+              SlidableAction(
+                borderRadius: BorderRadius.circular(30),
+                onPressed: (context) {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                              16), // Modern rounded corners
                         ),
-                      ),
-                      content: Text(
-                        'Are you sure you want to reset the attendance for all students?',
-                        style: TextStyle(
-                          color: Colors.red[700],
-                          // Slightly darker red for content
-                          fontSize: 16,
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.red[900],
-                            // Darker red text for cancel
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
-                            textStyle:
-                                const TextStyle(fontWeight: FontWeight.bold),
+                        backgroundColor: Colors.red[50],
+                        // Light red background for contrast
+                        title: Text(
+                          'Delete the group',
+                          style: TextStyle(
+                            color: Colors.red[900],
+                            // Darker red for the title for better readability
+                            fontSize: 20,
                           ),
-                          child: Text(
-                            'Cancel',
-                            style:
-                                TextStyle(color: Colors.red[900], fontSize: 16),
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context); // Close the dialog
-                          },
                         ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            // White text on the red button
-                            backgroundColor: Colors.red[600],
-                            // Dark red button color
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                  8), // Rounded corners for the button
+                        content: Text(
+                          'Are you sure you want to delete the group?',
+                          style: TextStyle(
+                            color: Colors.red[700],
+                            // Slightly darker red for content
+                            fontSize: 16,
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red[900],
+                              // Darker red text for cancel
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              textStyle:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            elevation: 5, // Subtle shadow for depth
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                  color: Colors.red[900], fontSize: 16),
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context); // Close the dialog
+                            },
                           ),
-                          child: const Text(
-                            'Confirm',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                          onPressed: () async {
-                            try {
-                              // Delete the Magmo3a from the day
-                              await FirebaseFunctions.deleteMagmo3aFromDay(
-                                  magmo3aModel.days ?? "", magmo3aModel.id);
-                              Navigator.pop(context);
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              // White text on the red button
+                              backgroundColor: Colors.red[600],
+                              // Dark red button color
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    8), // Rounded corners for the button
+                              ),
+                              elevation: 5, // Subtle shadow for depth
+                            ),
+                            child: const Text(
+                              'Confirm',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16),
+                            ),
+                            onPressed: () async {
+                              try {
+                                // Delete the Magmo3a from the day
+                                await FirebaseFunctions.deleteMagmo3aFromDay(
+                                    magmo3aModel.days ?? "", magmo3aModel.id);
+                                Navigator.pop(context);
 
-                              // Fetch students by group ID
-                              Stream<QuerySnapshot<Studentmodel>>
-                                  studentsStream =
-                                  FirebaseFunctions.getStudentsByGroupId(
-                                      magmo3aModel.grade ?? "",
-                                      magmo3aModel.id ?? "");
-                              print(studentsStream);
-                              studentsStream.listen((snapshot) async {
-                                for (var doc in snapshot.docs) {
-                                  var student = doc.data();
-                                  if (student != null) {
-                                    // Remove the group from the student's `hisGroups` list and the group ID from `hisGroupsId` list
+                                // Fetch students by group ID
+                                Stream<QuerySnapshot<Studentmodel>>
+                                    studentsStream =
+                                    FirebaseFunctions.getStudentsByGroupId(
+                                        magmo3aModel.grade ?? "",
+                                        magmo3aModel.id);
+                                print(studentsStream);
+                                studentsStream.listen((snapshot) async {
+                                  for (var doc in snapshot.docs) {
+                                    var student = doc.data();
                                     student.hisGroups?.removeWhere(
                                         (group) => group.id == magmo3aModel.id);
                                     student.hisGroupsId
@@ -119,53 +130,53 @@ class Magmo3aWidget extends StatelessWidget {
                                       student,
                                     );
                                   }
-                                }
-                              });
+                                });
 
-                              print('Delete button pressed');
-                            } catch (e) {
-                              print("Error deleting group: $e");
-                            }
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              backgroundColor: Color(0xFFFE4A49),
-              foregroundColor: Colors.white,
-              icon: Icons.delete,
-              label: 'Delete',
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Card(
-            elevation: 10,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            color: app_colors.ligthGreen,
-            child: Container(
-              height: 150,
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  _buildVerticalLine(),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _buildDaysList(),
-                        const SizedBox(height: 10),
-                        _buildGradeAndTimeAndType(),
-                      ],
+                                print('Delete button pressed');
+                              } catch (e) {
+                                print("Error deleting group: $e");
+                              }
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                backgroundColor: Color(0xFFFE4A49),
+                foregroundColor: Colors.white,
+                icon: Icons.delete,
+                label: 'Delete',
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              color: app_colors.ligthGreen,
+              child: Container(
+                height: 150,
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    _buildVerticalLine(),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _buildDaysList(),
+                          const SizedBox(height: 10),
+                          _buildGradeAndTimeAndType(),
+                        ],
+                      ),
                     ),
-                  ),
-                  _buildDetailsButton(context),
-                ],
+                    _buildDetailsButton(context),
+                  ],
+                ),
               ),
             ),
           ),

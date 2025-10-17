@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+
 import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
 import 'add_mogmo3a_state.dart';
@@ -23,14 +24,24 @@ class Magmo3aCubit extends Cubit<Magmo3aState> {
   Future<void> fetchGrades() async {
     List<String> fetchedGrades = await FirebaseFunctions.getGradesList();
     secondaries = fetchedGrades;
+    emit(SecondaryFetched());
+    print(secondaries);
     if (secondaries.isEmpty){
-      emit(Magmo3aError("there is noe grades so you cant put groups"));
+      emit(Magmo3aError("there is no grades so you can't put groups"));
     }
   }
 
   String? chosenDay;
   String? selectedSecondary;
   TimeOfDay timeOfDay = TimeOfDay.now();
+
+  void initializeFromExisting(Magmo3amodel existingMagmo3a) {
+    chosenDay = existingMagmo3a.days;
+    selectedSecondary = existingMagmo3a.grade;
+    timeOfDay = existingMagmo3a.time ?? TimeOfDay.now();
+
+    emit(Magmo3aInitial()); // or a custom state like Magmo3aPreFilled()
+  }
 
   void selectDay(String day) {
     chosenDay = day;

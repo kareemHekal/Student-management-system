@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../models/Big invoice.dart';
 import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
@@ -20,6 +21,59 @@ class FirebaseFunctions {
 
     // Save the document in Firestore
     await newDocRef.set(magmo3a);
+  }
+
+  static Future<void> editMagmo3aInDay(
+    String oldDay,
+    String oldGrade,
+    Magmo3amodel updatedMagmo3a,
+  ) async {
+    final newDay = updatedMagmo3a.days;
+
+    // 🧩 1️⃣ Move document if the day changed
+    if (newDay != oldDay) {
+      final oldDayCollection = getDayCollection(oldDay);
+      await oldDayCollection.doc(updatedMagmo3a.id).delete();
+
+      final newDayCollection = getDayCollection(newDay!);
+      await newDayCollection.doc(updatedMagmo3a.id).set(updatedMagmo3a);
+    } else {
+      final dayCollection = getDayCollection(newDay!);
+      await dayCollection.doc(updatedMagmo3a.id).set(updatedMagmo3a);
+    }
+
+    // 🧩 2️⃣ Fetch all students who have this group (from OLD grade)
+    final studentsSnapshot = await getStudentsByGroupId(
+      oldGrade, // you can replace with oldGrade if needed
+      updatedMagmo3a.id,
+    ).first;
+
+    // 🧩 3️⃣ Update their hisGroups
+    for (var doc in studentsSnapshot.docs) {
+      final data = doc.data();
+
+      // Make sure to handle both converter or raw JSON cases
+      final student = data is Studentmodel
+          ? data
+          : Studentmodel.fromJson(data as Map<String, dynamic>);
+
+      bool updated = false;
+
+      if (student.hisGroups != null) {
+        for (int i = 0; i < student.hisGroups!.length; i++) {
+          if (student.hisGroups![i].id == updatedMagmo3a.id) {
+            student.hisGroups![i] = updatedMagmo3a;
+            updated = true;
+          }
+        }
+      }
+
+      if (updated) {
+        await getSecondaryCollection(oldGrade).doc(student.id).update({
+          "hisGroups": student.hisGroups!.map((g) => g.toJson()).toList(),
+        });
+      }
+    }
   }
 
   /// Deletes a `Magmo3aModel` document from a specific day's collection
@@ -282,6 +336,75 @@ class FirebaseFunctions {
     } catch (e) {
       print("Error fetching grades: $e");
       return [];
+    }
+  }
+
+  static Future<void> renameGrade(String oldGrade, String newGrade) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      // 1️⃣ Update the grade name in constants/grades list
+      DocumentReference gradesDoc =
+          firestore.collection('constants').doc('grades');
+      DocumentSnapshot snapshot = await gradesDoc.get();
+
+      if (snapshot.exists) {
+        List<dynamic> gradesList = List.from(snapshot['grades']);
+        if (gradesList.contains(oldGrade)) {
+          int index = gradesList.indexOf(oldGrade);
+          gradesList[index] = newGrade;
+          await gradesDoc.update({'grades': gradesList});
+          print('✅ Grade name updated in constants.');
+        } else {
+          print('⚠️ Old grade not found in constants list.');
+        }
+      }
+
+      // 2️⃣ Copy all students from old collection to new collection, update grade field
+      final oldCollection = getSecondaryCollection(oldGrade);
+      final newCollection = getSecondaryCollection(newGrade);
+
+      final oldStudentsSnapshot = await oldCollection.get();
+      for (var doc in oldStudentsSnapshot.docs) {
+        Studentmodel student = doc.data();
+        student.grade = newGrade; // Update grade field
+        await newCollection.doc(student.id).set(student);
+      }
+
+      // 3️⃣ Delete old grade collection after copying
+      for (var doc in oldStudentsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      print('✅ Students moved and old collection deleted.');
+
+      // 4️⃣ Go through all day collections and update magmo3a documents that have this grade
+      final allDays = [
+        "Saturday",
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+      ];
+
+      for (var day in allDays) {
+        final dayCollection = getDayCollection(day);
+        final daySnapshot = await dayCollection.get();
+        for (var doc in daySnapshot.docs) {
+          Magmo3amodel magmo3a = doc.data();
+          if (magmo3a.grade == oldGrade) {
+            magmo3a.grade = newGrade;
+            await dayCollection.doc(magmo3a.id).set(magmo3a);
+          }
+        }
+      }
+
+      print('✅ All magmo3a groups updated to new grade.');
+
+      print('🎉 Grade renamed successfully from "$oldGrade" to "$newGrade".');
+    } catch (e) {
+      print('❌ Error renaming grade: $e');
     }
   }
 
@@ -586,13 +709,14 @@ class FirebaseFunctions {
         .doc(date)
         .update(bigInvoice.toJson());
   }
+
   static Future<void> deleteInvoiceFromBigInvoices({
     required String date,
     required String invoiceId,
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     DocumentSnapshot docSnapshot =
-    await firestore.collection('big_invoices').doc(date).get();
+        await firestore.collection('big_invoices').doc(date).get();
 
     if (!docSnapshot.exists) {
       throw Exception("BigInvoice for $date not found");
@@ -603,7 +727,7 @@ class FirebaseFunctions {
 
     // Find invoice index by id
     int index =
-    bigInvoice.invoices.indexWhere((invoice) => invoice.id == invoiceId);
+        bigInvoice.invoices.indexWhere((invoice) => invoice.id == invoiceId);
 
     if (index == -1) {
       throw Exception("Invoice with ID $invoiceId not found");
@@ -617,7 +741,9 @@ class FirebaseFunctions {
         .doc(date)
         .update(bigInvoice.toJson());
   }
-  static Future<List<Invoice>> getInvoicesByStudentNumber(String studentNumber) async {
+
+  static Future<List<Invoice>> getInvoicesByStudentNumber(
+      String studentNumber) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
     // Get all big_invoices docs
@@ -669,5 +795,4 @@ class FirebaseFunctions {
       return false;
     }
   }
-
 }
