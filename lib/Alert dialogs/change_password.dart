@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../firebase/firebase_functions.dart';
 
 Future<void> showChangePasswordDialog(BuildContext context) async {

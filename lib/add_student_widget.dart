@@ -255,9 +255,11 @@ class _AddStudentTabState extends State<AddStudentScreen> {
     );
   }
 
-  Widget buildDropdown(String hint,
-      bool? selectedValue,
-      ValueChanged<bool?> onChanged,) {
+  Widget buildDropdown(
+    String hint,
+    bool? selectedValue,
+    ValueChanged<bool?> onChanged,
+  ) {
     return SizedBox(
       width: 200,
       child: Container(

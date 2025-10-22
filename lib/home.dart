@@ -1,10 +1,18 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
-
 import 'Nav_Bar_Tabs/Add_student_tab.dart';
-import 'Nav_Bar_Tabs/students_tab.dart';
+import 'Nav_Bar_Tabs/groups_tab.dart';
 import 'colors_app.dart';
-import 'pages/drawertate<Homescreen> {
+import 'pages/drawer.dart';
+
+class Homescreen extends StatefulWidget {
+  const Homescreen({super.key});
+
+  @override
+  State<Homescreen> createState() => _HomescreenState();
+}
+
+class _HomescreenState extends State<Homescreen> {
   int _currant_index = 0;
   final List<Widget> _bodytabs = [
     const GroupsTab(),

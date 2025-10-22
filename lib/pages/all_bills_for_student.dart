@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import '../Alert dialogs/DeleteIncomeBillDialog.dart';
 import '../cards/In come widget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
-import '../models/Invoiceart';
+import '../models/Invoice.dart';
 
 class AllBillsForStudent extends StatefulWidget {
   final String studentId;

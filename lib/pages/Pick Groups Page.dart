@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../cards/magmo3afor display widget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loadingWidget.dart';
+import '../cards/magmo3afor display widget.dart';
 import '../models/Magmo3aModel.dart';
 
 class ChoosedaysToAttend extends StatefulWidget {

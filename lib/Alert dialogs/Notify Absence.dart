@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../colors_app.dart';
 
 class SelectRecipientDialogContent extends StatelessWidget {

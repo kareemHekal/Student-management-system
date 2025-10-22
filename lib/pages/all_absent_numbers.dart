@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../cards/absence_card.dart';
 import '../colors_app.dart';
 import '../models/absence_model.dart';

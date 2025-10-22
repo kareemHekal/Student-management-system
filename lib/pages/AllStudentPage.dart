@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../colors_app.dart';
+import '../firebase/firebase_functions.dart';
+import '../studetnstreambuilder.dart';
 
 class AllStudentsTab extends StatefulWidget {
   const AllStudentsTab({super.key});

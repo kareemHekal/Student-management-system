@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../firebase/firebase_functions.dart';
 
 class StartNewMonthDialog extends StatefulWidget {

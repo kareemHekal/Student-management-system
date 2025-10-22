@@ -164,11 +164,9 @@ class StudentCubit extends Cubit<StudentState> {
     dateOfReviewingNotePaid = reviewNote == true ? date : null;
   }
 
-  Future<void> showPaymentChangeDialog(
-    BuildContext context,
-    level,
-    Studentmodel submodel,
-  ) async {
+  Future<void> showPaymentChangeDialog(BuildContext context,
+      level,
+      Studentmodel submodel,) async {
     showDialog(
       barrierDismissible: false,
       context: context,

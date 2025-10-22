@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../Appbar_TAbs/days of home page/Friday.dart';
 import '../Appbar_TAbs/days of home page/Monday.dart';
 import '../Appbar_TAbs/days of home page/Saturday.dart';

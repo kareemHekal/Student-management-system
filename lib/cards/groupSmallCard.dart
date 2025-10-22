@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-
 import '../colors_app.dart';
 import '../models/Magmo3aModel.dart';
 
 class Groupsmallcard extends StatelessWidget {
   final Magmo3amodel? magmo3aModel;
-
   const Groupsmallcard({super.key, required this.magmo3aModel});
 
   @override

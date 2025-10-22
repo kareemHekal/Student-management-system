@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import '../colors_app.dart';
 
 class ForgetPasswordPage extends StatefulWidget {

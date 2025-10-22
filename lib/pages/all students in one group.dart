@@ -304,7 +304,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                         .map((student) => pw.Text(
                               student.name ?? 'بدون اسم',
                               textDirection: pw.TextDirection.rtl,
-                      style: pw.TextStyle(font: font, fontSize: 8),
+                              style: pw.TextStyle(font: font, fontSize: 8),
                     ))
                         .toList(),
                   ),
