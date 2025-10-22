@@ -6,7 +6,9 @@ import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Studentmodel.dart';
 import '../models/absence_model.dart';
+import '../models/grade_subscriptions_model.dart';
 import '../models/payment.dart';
+import '../models/subscription_fee.dart';
 import '../models/usermodel.dart';
 
 class FirebaseFunctions {
@@ -777,6 +779,114 @@ class FirebaseFunctions {
     }
 
     return studentInvoices;
+  }
+
+  //  ................===============     subscriptions   ==============........................
+
+  static Future<void> createGradeSubscriptionDoc(
+      GradeSubscriptionsModel model) async {
+    await FirebaseFirestore.instance
+        .collection('constants')
+        .doc('grades_subscriptions')
+        .collection('grades')
+        .doc(model.gradeName)
+        .set(model.toJson());
+  }
+
+  static Future<void> addSubscriptionToGrade(
+      String gradeName, SubscriptionFee newSubscription) async {
+    final docRef = FirebaseFirestore.instance
+        .collection('constants')
+        .doc('grades_subscriptions')
+        .collection('grades')
+        .doc(gradeName);
+
+    final doc = await docRef.get();
+
+    if (!doc.exists) {
+      // 🔹 Create the doc first if it doesn't exist
+      final newGrade = GradeSubscriptionsModel(
+        gradeName: gradeName,
+        subscriptions: [newSubscription],
+      );
+
+      await docRef.set(newGrade.toJson());
+      return;
+    }
+
+    // 🔹 If it already exists, just add the new subscription
+    final grade = GradeSubscriptionsModel.fromJson(doc.data()!);
+    grade.subscriptions.add(newSubscription);
+
+    await docRef.update({
+      'subscriptions': grade.subscriptions.map((e) => e.toJson()).toList(),
+    });
+  }
+
+  static Future<void> updateSubscriptionInGrade(
+    String gradeName,
+    String oldSubscriptionName,
+    SubscriptionFee updatedSubscription,
+  ) async {
+    final docRef = FirebaseFirestore.instance
+        .collection('constants')
+        .doc('grades_subscriptions')
+        .collection('grades')
+        .doc(gradeName);
+
+    final doc = await docRef.get();
+    if (!doc.exists) throw Exception("Grade '$gradeName' does not exist.");
+
+    final grade = GradeSubscriptionsModel.fromJson(doc.data()!);
+
+    // 👇 Find by the old name instead of the new one
+    final index = grade.subscriptions
+        .indexWhere((s) => s.subscriptionName == oldSubscriptionName);
+
+    if (index == -1) {
+      throw Exception("Subscription '$oldSubscriptionName' not found.");
+    }
+
+    // 👇 Replace it with the updated one
+    grade.subscriptions[index] = updatedSubscription;
+
+    await docRef.update({
+      'subscriptions': grade.subscriptions.map((e) => e.toJson()).toList(),
+    });
+  }
+
+  static Future<void> deleteSubscriptionFromGrade(
+      String gradeName, String subscriptionName) async {
+    final docRef = FirebaseFirestore.instance
+        .collection('constants')
+        .doc('grades_subscriptions')
+        .collection('grades')
+        .doc(gradeName);
+
+    final doc = await docRef.get();
+    if (!doc.exists) throw Exception("Grade '$gradeName' does not exist.");
+
+    final grade = GradeSubscriptionsModel.fromJson(doc.data()!);
+    grade.subscriptions
+        .removeWhere((s) => s.subscriptionName == subscriptionName);
+
+    await docRef.update({
+      'subscriptions': grade.subscriptions.map((e) => e.toJson()).toList(),
+    });
+  }
+
+  static Stream<GradeSubscriptionsModel?> getGradeSubscriptionsStream(
+      String gradeName) {
+    final docRef = FirebaseFirestore.instance
+        .collection('constants')
+        .doc('grades_subscriptions')
+        .collection('grades')
+        .doc(gradeName);
+
+    return docRef.snapshots().map((snapshot) {
+      if (!snapshot.exists || snapshot.data() == null) return null;
+      return GradeSubscriptionsModel.fromJson(snapshot.data()!);
+    });
   }
 
   // passwords============

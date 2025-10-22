@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../Alert dialogs/rename_grade.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
+import '../models/grade_subscriptions_model.dart';
+import 'subscriptions_for_grade.dart';
 
 class Allgrades extends StatefulWidget {
   const Allgrades({super.key});
@@ -20,7 +23,7 @@ class _AllgradesState extends State<Allgrades> {
             onPressed: () {
               showAddGradeDialog(context);
             },
-            icon: const Icon(Icons.add, size: 40, color: app_colors.blue),
+            icon: const Icon(Icons.add, size: 40, color: app_colors.green),
           )
         ],
         centerTitle: true,
@@ -55,44 +58,68 @@ class _AllgradesState extends State<Allgrades> {
           return secondaries.isEmpty
               ? const Center(child: Text("لا توجد صفوف متاحة."))
               : ListView.builder(
-            itemCount: secondaries.length,
-            itemBuilder: (context, index) {
-              return Card(
-                margin: const EdgeInsets.symmetric(
-                    vertical: 10, horizontal: 20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                elevation: 5,
-                child: GestureDetector(
-                  onLongPress: () {
-                    onLongPressDelete(context, secondaries[index]);
-                  },
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    leading:
-                    const Icon(Icons.school, color: app_colors.green),
-                    title: Text(
-                      secondaries[index],
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                  itemCount: secondaries.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
                       ),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.edit,
-                          color: app_colors.green),
-                      onPressed: () {
-                        renameGrade(
-                            context: context,
-                            oldGrade: secondaries[index]);
-                      },
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
+                      elevation: 5,
+                      child: GestureDetector(
+                        onLongPress: () {
+                          onLongPressDelete(context, secondaries[index]);
+                        },
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16),
+                          leading:
+                              const Icon(Icons.school, color: app_colors.green),
+                          title: Text(
+                            secondaries[index],
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            // important to prevent overflow
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit,
+                                    color: app_colors.green),
+                                onPressed: () {
+                                  renameGrade(
+                                      context: context,
+                                      oldGrade: secondaries[index]);
+                                },
+                              ),
+                              const SizedBox(
+                                  width: 10), // use SizedBox for spacing
+                              IconButton(
+                                icon: const Icon(
+                                    Icons.arrow_forward_ios_outlined,
+                                    color: app_colors.green),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          SubscriptionsForGrade(
+                                        gradeName: secondaries[index],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
         },
       ),
     );
@@ -162,6 +189,9 @@ class _AllgradesState extends State<Allgrades> {
                 String newGrade = gradeController.text.trim();
                 if (newGrade.isNotEmpty) {
                   await FirebaseFunctions.addGradeToList(newGrade);
+                  await FirebaseFunctions.createGradeSubscriptionDoc(
+                      GradeSubscriptionsModel(
+                          gradeName: newGrade, subscriptions: []));
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("تمت إضافة الصف بنجاح")),
