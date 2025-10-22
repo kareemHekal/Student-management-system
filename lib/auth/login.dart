@@ -1,9 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../provider.dart';
-import '../colors_app.dart'; // Import your app_colors
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
     var dataprovider = Provider.of<DataProvider>(context);
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView( // Make the body scrollable
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
@@ -31,17 +32,15 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _header(context),
-              const SizedBox(height: 50,),
+              const SizedBox(height: 50),
               _inputField(context, dataprovider),
-              const SizedBox(height: 30,),
-
+              const SizedBox(height: 30),
               _forgotPassword(context),
-              // Removed the signup section from here
             ],
           ),
         ),
       ),
-      bottomNavigationBar: _bottomNavigationBar(context), // Add the bottom navigation bar here
+      bottomNavigationBar: _bottomNavigationBar(context),
     );
   }
 
@@ -53,13 +52,13 @@ class _LoginPageState extends State<LoginPage> {
           height: 100,
           width: 90,
         ),
-        const SizedBox(height: 20,),
+        const SizedBox(height: 20),
         const Text(
-          "Welcome Back",
+          "مرحباً بعودتك",
           style: TextStyle(
               fontSize: 40, fontWeight: FontWeight.bold, color: app_colors.green),
         ),
-        const Text("Enter your credentials to login",
+        const Text("أدخل بياناتك لتسجيل الدخول",
             style: TextStyle(color: app_colors.darkGrey)),
       ],
     );
@@ -70,42 +69,42 @@ class _LoginPageState extends State<LoginPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
-          cursorColor: app_colors.green, // Use your orange color
+          cursorColor: app_colors.green,
           style: const TextStyle(color: Colors.black, fontSize: 20),
           controller: _emailController,
           decoration: InputDecoration(
-              hintText: "Email",
+              hintText: "البريد الإلكتروني",
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide.none),
-              fillColor: app_colors.green.withOpacity(0.1), // Use your orange color
+              fillColor: app_colors.green.withOpacity(0.1),
               filled: true,
-              prefixIcon: const Icon(Icons.email, color: app_colors.green)), // Use your orange color
+              prefixIcon: const Icon(Icons.email, color: app_colors.green)),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Please enter your Email';
+              return 'من فضلك أدخل البريد الإلكتروني';
             }
             return null;
           },
         ),
         const SizedBox(height: 10),
         TextFormField(
-          cursorColor: app_colors.green, // Use your orange color
+          cursorColor: app_colors.green,
           style: const TextStyle(color: Colors.black, fontSize: 20),
           controller: _passwordController,
           decoration: InputDecoration(
-            hintText: "Password",
+            hintText: "كلمة المرور",
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide.none,
             ),
-            fillColor: app_colors.green.withOpacity(0.1), // Use your orange color
+            fillColor: app_colors.green.withOpacity(0.1),
             filled: true,
-            prefixIcon: const Icon(Icons.password, color: app_colors.green), // Use your orange color
+            prefixIcon: const Icon(Icons.password, color: app_colors.green),
             suffixIcon: IconButton(
               icon: Icon(
                 _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                color: app_colors.green, // Use your orange color
+                color: app_colors.green,
               ),
               onPressed: () {
                 setState(() {
@@ -117,13 +116,12 @@ class _LoginPageState extends State<LoginPage> {
           obscureText: !_isPasswordVisible,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Please enter your password';
+              return 'من فضلك أدخل كلمة المرور';
             }
             return null;
           },
         ),
-        const SizedBox(height: 30,),
-
+        const SizedBox(height: 30),
         ElevatedButton(
           onPressed: () {
             FirebaseFunctions.login(
@@ -131,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text("Error"),
+                    title: const Text("خطأ"),
                     content: Text(
                       message,
                       style: const TextStyle(color: Colors.black),
@@ -141,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        child: const Text("OK"),
+                        child: const Text("حسناً"),
                       ),
                     ],
                   ),
@@ -150,29 +148,27 @@ class _LoginPageState extends State<LoginPage> {
               onSucsses: () {
                 User? user = FirebaseAuth.instance.currentUser;
                 if (user != null && !user.emailVerified) {
-                  // If the user's email is not verified, show a dialog to notify them
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text("Email Verification"),
+                      title: const Text("تأكيد البريد الإلكتروني"),
                       content: const Text(
-                        "Your email is not verified. Please verify your email before proceeding.",
+                        "بريدك الإلكتروني غير مفعل. يرجى تفعيله قبل المتابعة.",
                         style: TextStyle(color: Colors.black),
                       ),
                       actions: [
                         ElevatedButton(
                           onPressed: () async {
-                            // Send a verification email
                             await user.sendEmailVerification();
                             Navigator.pop(context);
                           },
-                          child: const Text("Send Verification Email"),
+                          child: const Text("إرسال رسالة التفعيل"),
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.pop(context); // Close the dialog
+                            Navigator.pop(context);
                           },
-                          child: const Text("Cancel"),
+                          child: const Text("إلغاء"),
                         ),
                       ],
                     ),
@@ -197,10 +193,10 @@ class _LoginPageState extends State<LoginPage> {
           style: ElevatedButton.styleFrom(
             shape: const StadiumBorder(),
             padding: const EdgeInsets.symmetric(vertical: 16),
-            backgroundColor: app_colors.darkGrey, // Use your green color
+            backgroundColor: app_colors.darkGrey,
           ),
           child: const Text(
-            "Login",
+            "تسجيل الدخول",
             style: TextStyle(fontSize: 20, color: app_colors.green),
           ),
         ),
@@ -214,8 +210,8 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushNamed(context, '/Forgetpasswordpage');
       },
       child: const Text(
-        "Forgot password?",
-        style: TextStyle(color: app_colors.green), // Use your orange color
+        "هل نسيت كلمة المرور؟",
+        style: TextStyle(color: app_colors.green),
       ),
     );
   }
@@ -226,15 +222,15 @@ class _LoginPageState extends State<LoginPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text("Don't have an account? ",
+          const Text("ليس لديك حساب؟ ",
               style: TextStyle(color: Colors.blueGrey)),
           TextButton(
             onPressed: () {
               Navigator.pushReplacementNamed(context, '/SignupPage');
             },
             child: const Text(
-              "Sign Up",
-              style: TextStyle(color: app_colors.green), // Use your orange color
+              "إنشاء حساب",
+              style: TextStyle(color: app_colors.green),
             ),
           ),
         ],

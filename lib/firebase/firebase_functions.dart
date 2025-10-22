@@ -5,6 +5,7 @@ import '../models/Big invoice.dart';
 import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Studentmodel.dart';
+import '../models/absence_model.dart';
 import '../models/payment.dart';
 import '../models/usermodel.dart';
 
@@ -160,11 +161,8 @@ class FirebaseFunctions {
     return newDocRef.id;
   }
 
-  static Future<void> resetAttendanceForAllStudents() async {
-    List<String> grades = [];
-
-    List<String> fetchedGrades = await FirebaseFunctions.getGradesList();
-    grades = fetchedGrades;
+  static Future<void> saveMonthAndStartNew(String monthName) async {
+    List<String> grades = await FirebaseFunctions.getGradesList();
 
     for (var grade in grades) {
       // Get the collection for each grade
@@ -174,18 +172,33 @@ class FirebaseFunctions {
       // Get all students in the grade collection
       QuerySnapshot snapshot = await collection.get();
 
-      // Iterate through each student and update attendance fields
       for (var doc in snapshot.docs) {
-        // Explicitly cast the data to a Studentmodel object
+        // Cast the data to Studentmodel
         Studentmodel student = doc.data() as Studentmodel;
 
-        // Update attendance fields (set to 0)
+        // Create a new AbsenceModel with current attendance counts
+        AbsenceModel newAbsence = AbsenceModel(
+          monthName: monthName,
+          absentDays: student.numberOfAbsentDays ?? 0,
+          attendedDays: student.numberOfAttendantDays ?? 0,
+        );
+
+        // Add the new AbsenceModel to the student's list
+        List<Map<String, dynamic>> updatedAbsences = [];
+        if (student.absencesNumbers != null) {
+          updatedAbsences =
+              student.absencesNumbers!.map((e) => e.toJson()).toList();
+        }
+        updatedAbsences.add(newAbsence.toJson());
+
+        // Update the student document
         await collection.doc(doc.id).update({
-          'numberOfAbsentDays': 0,
+          'absencesNumbers': updatedAbsences,
+          'numberOfAbsentDays': 0, // reset counters for new month
           'numberOfAttendantDays': 0,
         });
 
-        print('Updated attendance for student: ${student.name}');
+        print('Saved month "$monthName" for student: ${student.name}');
       }
     }
   }

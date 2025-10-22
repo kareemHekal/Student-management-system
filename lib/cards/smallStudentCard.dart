@@ -6,10 +6,12 @@ import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
 import '../pages/EditStudent.dart';
 
-class Smallstydentcard extends StatelessWidget {
+class SmallStudentCard extends StatelessWidget {
   final Studentmodel studentModel;
   final String? grade;
-  const Smallstydentcard({required this.studentModel, required this.grade,super.key});
+
+  const SmallStudentCard(
+      {required this.studentModel, required this.grade, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,30 +25,30 @@ class Smallstydentcard extends StatelessWidget {
               return Theme(
                 data: Theme.of(context).copyWith(
                   colorScheme: ColorScheme.fromSwatch().copyWith(
-                    primary: Colors.red, // Primary color for the dialog
+                    primary: Colors.red,
                   ),
                 ),
                 child: AlertDialog(
-                  backgroundColor: Colors.red[100], // Light red background
+                  backgroundColor: Colors.red[100],
                   title: Text(
-                    "Delete Student",
+                    "حذف الطالب",
                     style: TextStyle(
-                      color: Colors.red[900], // Darker red for title
+                      color: Colors.red[900],
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   content: Text(
-                    "Are you sure you want to delete this student?",
+                    "هل أنت متأكد أنك تريد حذف هذا الطالب؟",
                     style: TextStyle(
-                        color:
-                        Colors.red[800]), // Slightly darker red for content
+                      color: Colors.red[800],
+                    ),
                   ),
                   actions: [
                     TextButton(
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.red[900], // Dark red for text
+                        foregroundColor: Colors.red[900],
                       ),
-                      child: Text("Cancel"),
+                      child: Text("إلغاء"),
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
@@ -54,13 +56,12 @@ class Smallstydentcard extends StatelessWidget {
                     TextButton(
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.white,
-                        backgroundColor: Colors.red[
-                        700], // Darker red background for delete button
+                        backgroundColor: Colors.red[700],
                       ),
-                      child: Text("Delete"),
+                      child: Text("حذف"),
                       onPressed: () {
                         FirebaseFunctions.deleteStudentFromHisCollection(
-                            studentModel.grade??"", studentModel.id);
+                            studentModel.grade ?? "", studentModel.id);
                         Navigator.of(context).pop();
                       },
                     ),
@@ -100,7 +101,8 @@ class Smallstydentcard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildInfoRow(context, studentModel.name ?? 'N/A'),
+                        _buildInfoRow(
+                            context, studentModel.name ?? 'غير معروف'),
                       ],
                     ),
                   ],
@@ -113,7 +115,7 @@ class Smallstydentcard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(context,  String value) {
+  Widget _buildInfoRow(context, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -121,8 +123,7 @@ class Smallstydentcard extends StatelessWidget {
           data: Theme.of(context).copyWith(
             textSelectionTheme: TextSelectionThemeData(
               selectionColor: app_colors.darkGrey.withOpacity(0.5),
-              // Highlight (mark) color when selecting text
-              cursorColor: app_colors.darkGrey, // Cursor color
+              cursorColor: app_colors.darkGrey,
             ),
           ),
           child: SelectableText(
@@ -131,6 +132,7 @@ class Smallstydentcard extends StatelessWidget {
               color: app_colors.black,
               fontSize: 25,
             ),
+            textDirection: TextDirection.rtl,
           ),
         ),
       ],

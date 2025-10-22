@@ -5,68 +5,69 @@ import '../models/Magmo3aModel.dart';
 
 class Groupsmallcard extends StatelessWidget {
   final Magmo3amodel? magmo3aModel;
-   Groupsmallcard({super.key,required this.magmo3aModel});
+
+  const Groupsmallcard({super.key, required this.magmo3aModel});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(4),
-      child: Card(
-
-        elevation: 10,
-        shape: RoundedRectangleBorder(
-
-          borderRadius: BorderRadius.circular(30),
-        ),
-        color: app_colors.ligthGreen,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: SizedBox(
-                    width: 150, // Set a fixed width for the card
-                    child: Column(
-                      children: [
-                        _buildDaysList(),
-                        const SizedBox(height: 10),
-                        _buildGradeAndTimeAndType(),
-                      ],
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Card(
+          elevation: 10,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          color: app_colors.ligthGreen,
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: SizedBox(
+                      width: 150,
+                      child: Column(
+                        children: [
+                          _buildDaysList(),
+                          const SizedBox(height: 10),
+                          _buildGradeAndTimeAndType(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-
   Widget _buildDaysList() {
     return SizedBox(
-      height: 60, // increased height
+      height: 60,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
           Padding(
-            padding: const EdgeInsets.all(5.0), // increased padding
+            padding: const EdgeInsets.all(5.0),
             child: Container(
               decoration: BoxDecoration(
                 color: app_colors.darkGrey,
                 border: Border.all(
                   color: app_colors.green,
-                  width: 2, // increased border width
+                  width: 2,
                 ),
-                borderRadius: BorderRadius.circular(15), // increased radius
+                borderRadius: BorderRadius.circular(15),
               ),
-              padding: const EdgeInsets.all(8.0), // added padding
+              padding: const EdgeInsets.all(8.0),
               child: Text(
-                magmo3aModel?.days??"", // Display the full day name
+                magmo3aModel?.days ?? "",
                 style: const TextStyle(
-                  fontSize: 22, // increased font size
+                  fontSize: 22,
                   color: app_colors.green,
                 ),
               ),
@@ -87,10 +88,11 @@ class Groupsmallcard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               RichText(
+                textDirection: TextDirection.rtl,
                 text: TextSpan(
                   children: [
                     const TextSpan(
-                      text: "Grade: ",
+                      text: "الصف: ",
                       style: TextStyle(
                         fontSize: 17,
                         color: app_colors.darkGrey,
@@ -106,14 +108,13 @@ class Groupsmallcard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(
-                width: 10,
-              ),
+              const SizedBox(width: 10),
               RichText(
+                textDirection: TextDirection.rtl,
                 text: TextSpan(
                   children: [
                     const TextSpan(
-                      text: " Time : ",
+                      text: "الوقت: ",
                       style: TextStyle(
                         fontSize: 17,
                         color: app_colors.darkGrey,
@@ -131,9 +132,7 @@ class Groupsmallcard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(
-                width: 10,
-              ),
+              const SizedBox(width: 10),
             ],
           ),
         ],
@@ -145,12 +144,8 @@ class Groupsmallcard extends StatelessWidget {
     final hour = time.hour;
     final minute = time.minute;
     final isPm = hour >= 12;
-
     final formattedHour = hour > 12 ? hour - 12 : hour;
     final formattedMinute = minute.toString().padLeft(2, '0');
-
-    return "$formattedHour:$formattedMinute ${isPm ? 'PM' : 'AM'}";
+    return "$formattedHour:$formattedMinute ${isPm ? 'م' : 'ص'}";
   }
 }
-
-

@@ -14,8 +14,7 @@ import '../models/Studentmodel.dart';
 class StudentInAgroup extends StatefulWidget {
   Magmo3amodel magmo3aModel;
 
-  StudentInAgroup(
-      {required this.magmo3aModel, super.key});
+  StudentInAgroup({required this.magmo3aModel, super.key});
 
   @override
   State<StudentInAgroup> createState() => _StudentInAgroupState();
@@ -29,12 +28,9 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
   @override
   void initState() {
     super.initState();
-
     _searchController.addListener(() {
       setState(() {});
     });
-
-    // ✅ Fetch students once at startup to show the count immediately
     _loadInitialStudents();
   }
 
@@ -118,7 +114,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,
-                                hintText: 'Search',
+                                hintText: 'ابحث',
                                 hintStyle:
                                     const TextStyle(color: app_colors.darkGrey),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -146,7 +142,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                             ),
                           ),
                           Text(
-                            "Number of students in this group is : ${allStudents.length}",
+                            "عدد الطلاب في هذه المجموعة: ${allStudents.length}",
                             style: const TextStyle(
                               color: app_colors.green,
                               fontSize: 16,
@@ -179,10 +175,10 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text("Something went wrong"),
+                                const Text("حدث خطأ ما"),
                                 ElevatedButton(
                                   onPressed: () {},
-                                  child: const Text('Try again'),
+                                  child: const Text('حاول مرة أخرى'),
                                 ),
                               ],
                             ),
@@ -206,7 +202,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                         if (students.isEmpty) {
                           return Center(
                             child: Text(
-                              "No students found",
+                              "لا يوجد طلاب",
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -248,23 +244,20 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
     final pw.Font font = pw.Font.ttf(fontData);
     List<Studentmodel> pdfStudents = allStudents;
 
-    // Format the time
     final String formattedTime = widget.magmo3aModel.time != null
-        ? '${widget.magmo3aModel.time!.hourOfPeriod == 0 ? 12 : widget.magmo3aModel.time!.hourOfPeriod}:${widget.magmo3aModel.time!.minute.toString().padLeft(2, '0')} ${(widget.magmo3aModel.time!.period == DayPeriod.am) ? 'AM' : 'PM'}'
-        : 'Unnamed Group';
+        ? '${widget.magmo3aModel.time!.hourOfPeriod == 0 ? 12 : widget.magmo3aModel.time!.hourOfPeriod}:${widget.magmo3aModel.time!.minute.toString().padLeft(2, '0')} ${(widget.magmo3aModel.time!.period == DayPeriod.am) ? 'صباحًا' : 'مساءً'}'
+        : 'مجموعة بدون اسم';
 
-    // Separate students into boys and girls lists and sort them alphabetically
-    List<Studentmodel> boys = pdfStudents.where((s) => s.gender == 'Male').toList();
-    List<Studentmodel> girls = pdfStudents.where((s) => s.gender == 'Female').toList();
+    List<Studentmodel> boys =
+        pdfStudents.where((s) => s.gender == 'Male').toList();
+    List<Studentmodel> girls =
+        pdfStudents.where((s) => s.gender == 'Female').toList();
 
-    // Sort boys and girls lists alphabetically by student name
     boys.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
     girls.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
 
-    // Set maximum entries per page
     const int maxEntriesPerPage = 40;
 
-    // Helper function to add student pages
     void addStudentPages(String title, List<Studentmodel> students, bool showGroupInfo) {
       for (int page = 0; page * maxEntriesPerPage < students.length; page++) {
         pdf.addPage(
@@ -276,42 +269,41 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   if (page == 0 && showGroupInfo) ...[
-                    pw.Text(
-                      "Group time: $formattedTime",
-                      style: pw.TextStyle(font: font, fontSize: 10, fontWeight: pw.FontWeight.bold),
-                    ),
-                    pw.Text(
-                      "Grade: ${widget.magmo3aModel.grade ?? 'N/A'}",
-                      textDirection: _isArabic(widget.magmo3aModel.grade ?? '')
-                          ? pw.TextDirection.rtl
-                          : pw.TextDirection.ltr,
-                      style: pw.TextStyle(font: font, fontSize: 8),
-                    ),
-                    pw.Text("Day: ${widget.magmo3aModel.days ?? 'N/A'}",
+                    pw.Text("وقت المجموعة: $formattedTime",
+                        style: pw.TextStyle(
+                            font: font,
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold)),
+                    pw.Text("الصف: ${widget.magmo3aModel.grade ?? 'غير محدد'}",
+                        textDirection:
+                            _isArabic(widget.magmo3aModel.grade ?? '')
+                                ? pw.TextDirection.rtl
+                                : pw.TextDirection.ltr,
                         style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("Number of boys: ${boys.length}",
+                    pw.Text("اليوم: ${widget.magmo3aModel.days ?? 'غير محدد'}",
                         style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("Number of girls: ${girls.length}",
+                    pw.Text("عدد الأولاد: ${boys.length}",
                         style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("Total number of students: ${boys.length + girls.length}",
+                    pw.Text("عدد البنات: ${girls.length}",
+                        style: pw.TextStyle(font: font, fontSize: 8)),
+                    pw.Text("إجمالي عدد الطلاب: ${boys.length + girls.length}",
                         style: pw.TextStyle(font: font, fontSize: 8)),
                     pw.SizedBox(height: 10),
-                    pw.Text(
-                      title,
-                      style: pw.TextStyle(font: font, fontSize: 10, fontWeight: pw.FontWeight.bold),
-                    ),
+                    pw.Text(title,
+                        style: pw.TextStyle(
+                            font: font,
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 5),
                   ],
-
-                  // List of student names for the current page
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: students
                         .skip(page * maxEntriesPerPage)
                         .take(maxEntriesPerPage)
                         .map((student) => pw.Text(
-                      student.name ?? 'Unnamed',
-                      textDirection: pw.TextDirection.rtl,
+                              student.name ?? 'بدون اسم',
+                              textDirection: pw.TextDirection.rtl,
                       style: pw.TextStyle(font: font, fontSize: 8),
                     ))
                         .toList(),
@@ -324,11 +316,9 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
       }
     }
 
-    // Add pages for boys and girls, splitting as needed
-    addStudentPages("Boys:", boys, true);
-    addStudentPages("Girls:", girls, true);
+    addStudentPages("الأولاد:", boys, true);
+    addStudentPages("البنات:", girls, true);
 
-    // Print the document
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
     );

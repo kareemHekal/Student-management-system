@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../Alert dialogs/DeleteIncomeBillDialog.dart';
 import '../cards/In come widget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
-import '../models/Invoice.dart';
-import 'package:intl/intl.dart';
+import '../models/Invoiceart';
 
 class AllBillsForStudent extends StatefulWidget {
   final String studentId;
@@ -24,13 +24,13 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
   void initState() {
     super.initState();
     _loadInvoices();
-  }Future<void> _loadInvoices() async {
+  }
+
+  Future<void> _loadInvoices() async {
     try {
       List<Invoice> loadedInvoices =
       await FirebaseFunctions.getInvoicesByStudentNumber(widget.studentId);
-
-      if (!mounted) return; // prevent setState after dispose
-
+      if (!mounted) return;
       setState(() {
         isLoading = false;
         invoices = loadedInvoices;
@@ -38,10 +38,10 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
     } catch (e, stack) {
       if (!mounted) return;
       setState(() {
-        isLoading = false; // stop loading even if error happens
+        isLoading = false;
         invoices = [];
       });
-      debugPrint("❌ Error loading invoices: $e\n$stack");
+      debugPrint("خطأ أثناء تحميل الفواتير: $e\n$stack");
     }
   }
 
@@ -53,7 +53,13 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: Text(invoices.length.toString(),style: TextStyle(color: app_colors.white,fontWeight: FontWeight.w700),),
+            child: Text(
+              invoices.length.toString(),
+              style: const TextStyle(
+                color: app_colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           )
         ],
         leading: IconButton(
@@ -65,15 +71,20 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
         toolbarHeight: 150,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+        child: CircularProgressIndicator(color: app_colors.green),
+      )
           : invoices.isEmpty
           ? const Center(
         child: Text(
-          "No bills for this student",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          "لا توجد فواتير لهذا الطالب",
+          style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: app_colors.darkGrey),
         ),
       )
-          : ListView.builder( // 👈 removed Expanded
+          : ListView.builder(
         itemCount: invoices.length,
         itemBuilder: (context, index) {
           return GestureDetector(
@@ -83,8 +94,9 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
                 builder: (BuildContext context) {
                   return DeleteIncomeBillDialog(
                     onConfirm: () async {
-                      String formattedDate = DateFormat('yyyy-MM-dd')
-                          .format(invoices[index].dateTime);
+                      String formattedDate =
+                      DateFormat('yyyy-MM-dd').format(
+                          invoices[index].dateTime);
 
                       await FirebaseFunctions
                           .deleteInvoiceFromBigInvoices(
@@ -92,11 +104,10 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
                         invoiceId: invoices[index].id,
                       );
 
-                      await _loadInvoices(); // reload after delete
+                      await _loadInvoices();
                     },
-                    title: 'Delete Income Bill',
-                    content:
-                    'Are you sure you want to delete this income bill?',
+                    title: 'حذف فاتورة الدخل',
+                    content: 'هل أنت متأكد من حذف هذه الفاتورة؟',
                   );
                 },
               );
@@ -107,5 +118,4 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
       ),
     );
   }
-
 }

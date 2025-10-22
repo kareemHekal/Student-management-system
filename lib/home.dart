@@ -1,25 +1,13 @@
-import 'package:chips_choice/chips_choice.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'Nav_Bar_Tabs/Add_student_tab.dart';
 import 'Nav_Bar_Tabs/students_tab.dart';
 import 'colors_app.dart';
-import 'pages/drawer.dart';
-import 'firebase/firebase_functions.dart';
-
-class Homescreen extends StatefulWidget {
-  const Homescreen({super.key});
-
-  @override
-  State<Homescreen> createState() => _HomescreenState();
-}
-
-class _HomescreenState extends State<Homescreen> {
+import 'pages/drawertate<Homescreen> {
   int _currant_index = 0;
   final List<Widget> _bodytabs = [
-    const StudentsTab(),
+    const GroupsTab(),
     const AddStudentTab(),
   ];
 

@@ -37,32 +37,28 @@ class StudentWidget extends StatelessWidget {
                     return Theme(
                       data: Theme.of(context).copyWith(
                         colorScheme: ColorScheme.fromSwatch().copyWith(
-                          primary: Colors.red, // Primary color for the dialog
+                          primary: Colors.red,
                         ),
                       ),
                       child: AlertDialog(
-                        backgroundColor:
-                            Colors.red[100], // Light red background
+                        backgroundColor: Colors.red[100],
                         title: Text(
-                          "Delete Student",
+                          "حذف الطالب",
                           style: TextStyle(
-                            color: Colors.red[900], // Darker red for title
+                            color: Colors.red[900],
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         content: Text(
-                          "Are you sure you want to delete this student?",
-                          style: TextStyle(
-                              color: Colors
-                                  .red[800]), // Slightly darker red for content
+                          "هل أنت متأكد أنك تريد حذف هذا الطالب؟",
+                          style: TextStyle(color: Colors.red[800]),
                         ),
                         actions: [
                           TextButton(
                             style: TextButton.styleFrom(
-                              foregroundColor:
-                                  Colors.red[900], // Dark red for text
+                              foregroundColor: Colors.red[900],
                             ),
-                            child: Text("Cancel"),
+                            child: Text("إلغاء"),
                             onPressed: () {
                               Navigator.of(context).pop();
                             },
@@ -70,10 +66,9 @@ class StudentWidget extends StatelessWidget {
                           TextButton(
                             style: TextButton.styleFrom(
                               foregroundColor: Colors.white,
-                              backgroundColor: Colors.red[
-                                  700], // Darker red background for delete button
+                              backgroundColor: Colors.red[700],
                             ),
-                            child: Text("Delete"),
+                            child: Text("حذف"),
                             onPressed: () {
                               FirebaseFunctions.deleteStudentFromHisCollection(
                                   studentModel.grade ?? "", studentModel.id);
@@ -117,14 +112,13 @@ class StudentWidget extends StatelessWidget {
                     Spacer(),
                     _buildIconButton(
                       imagePath: "assets/images/whatsapp.png",
-                      // Path to WhatsApp icon
                       onPressed: () {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
                             backgroundColor: app_colors.ligthGreen,
                             title: const Text(
-                              'Who would you like to send the message to?',
+                              'تحب تبعت الرسالة لمين؟',
                               style: TextStyle(color: app_colors.darkGrey),
                             ),
                             content: SelectRecipientDialogContent(
@@ -138,28 +132,20 @@ class StudentWidget extends StatelessWidget {
                             actions: [
                               Material(
                                 color: Colors.transparent,
-                                // Make the material background transparent
                                 elevation: 10,
-                                // Set elevation for the shadow effect
                                 shadowColor: Colors.black.withOpacity(0.5),
-                                // Set shadow color
                                 borderRadius: BorderRadius.circular(10),
-                                // Optional: Add rounded corners
                                 child: TextButton(
                                   onPressed: () {
                                     Navigator.of(context).pop();
                                   },
                                   style: TextButton.styleFrom(
                                     backgroundColor: app_colors.green,
-                                    // Set background color
                                     foregroundColor: Colors.white,
-                                    // Set text color for contrast
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                        horizontal:
-                                            16), // Optional: Adjust padding
+                                        vertical: 12, horizontal: 16),
                                   ),
-                                  child: const Text('Cancel'),
+                                  child: const Text('إلغاء'),
                                 ),
                               )
                             ],
@@ -167,13 +153,11 @@ class StudentWidget extends StatelessWidget {
                         );
                       },
                     ),
-                    const SizedBox(
-                      width: 20,
-                    ),
+                    const SizedBox(width: 20),
                     ElTooltip(
                       position: ElTooltipPosition.leftCenter,
                       content:
-                          Text("${studentModel.note ?? "there is no note"}"),
+                          Text("${studentModel.note ?? "لا توجد ملاحظات"}"),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(30),
                         child: Image.asset(
@@ -185,24 +169,18 @@ class StudentWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 10),
-
                 _buildInfoRow(
-                    context, false, "Name:", studentModel.name ?? 'N/A'),
-                _buildInfoRow(context, true, "Phone Number:",
+                    context, false, "الاسم:", studentModel.name ?? 'N/A'),
+                _buildInfoRow(context, true, "رقم الطالب:",
                     studentModel.phoneNumber ?? 'N/A'),
-                _buildInfoRow(context, true, "Mother Number:",
+                _buildInfoRow(context, true, "رقم الأم:",
                     studentModel.motherPhone ?? 'N/A'),
-                _buildInfoRow(context, true, "Father Number:",
+                _buildInfoRow(context, true, "رقم الأب:",
                     studentModel.fatherPhone ?? 'N/A'),
-
                 _buildInfoRow(
-                    context, false, "Grade:", studentModel.grade ?? 'N/A'),
+                    context, false, "المرحلة:", studentModel.grade ?? 'N/A'),
                 const SizedBox(height: 10),
-
-                // Display days from Magmo3amodel
-
                 _buildStudentDaysList(),
               ],
             ),
@@ -246,7 +224,6 @@ class StudentWidget extends StatelessWidget {
               ),
               child: GestureDetector(
                 onLongPress: isnumber ? () => _launchPhoneNumber(value) : null,
-                // Check isnumber
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Text(
@@ -268,36 +245,29 @@ class StudentWidget extends StatelessWidget {
   void _sendMessageToParent(String parentRole) {
     String genderSpecificMessage;
 
-    // Determine the parent's role and customize the message
     if (parentRole == 'father') {
       genderSpecificMessage = """
 عزيزي والد ${studentModel.name} 
 
-
-
-أطيب التحيات،
- ${Constants.teacherName}
+أطيب التحيات،  
+${Constants.teacherName}
       """;
     } else if (parentRole == 'mother') {
       genderSpecificMessage = """
 عزيزتي والدة ${studentModel.name}  
 
- 
-
-أطيب التحيات،
- ${Constants.teacherName}
+أطيب التحيات،  
+${Constants.teacherName}
 """;
-    }
-    else {
+    } else {
       genderSpecificMessage = """
 عزيزي ${studentModel.name}،
 
-أطيب التحيات،
+أطيب التحيات،  
 ${Constants.teacherName}
       """;
     }
 
-    // Send the message based on the parent's role
     if (parentRole == 'father') {
       _sendWhatsAppMessage(studentModel.fatherPhone!, genderSpecificMessage);
     } else if (parentRole == 'mother') {
@@ -306,6 +276,7 @@ ${Constants.teacherName}
       _sendWhatsAppMessage(studentModel.phoneNumber!, genderSpecificMessage);
     }
   }
+
   Future<void> _sendWhatsAppMessage(String rawPhone, String message) async {
     final cleanedPhone = rawPhone.replaceAll('+', '').replaceAll(' ', '');
     final String formattedPhone = cleanedPhone.startsWith('0')
@@ -313,12 +284,7 @@ ${Constants.teacherName}
         : cleanedPhone;
     final String encodedMessage = Uri.encodeComponent(message);
 
-    // Build the URL with the message
     final String url = 'https://wa.me/$formattedPhone?text=$encodedMessage';
-
-    print("Sending to: $formattedPhone");
-    print("Message: $encodedMessage");
-    print("URL: $url");
 
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
@@ -326,13 +292,12 @@ ${Constants.teacherName}
       print("WhatsApp is not installed or cannot be opened.");
     }
   }
+
   Widget _buildStudentDaysList() {
-    // Assuming `studentModel.hisGroups` is a list of Magmo3amodel
     List<Map<String, dynamic>> daysWithTimes =
         studentModel.hisGroups?.map((group) {
               return {
-                'day': group
-                    .days, // Group days as a string (e.g., "Monday, Wednesday")
+                'day': group.days,
                 'time': group.time != null
                     ? {'hour': group.time?.hour, 'minute': group.time?.minute}
                     : null,
@@ -340,13 +305,12 @@ ${Constants.teacherName}
             }).toList() ??
             [];
 
-    // Remove entries where day is null
     daysWithTimes.removeWhere((entry) => entry['day'] == null);
 
     return Row(
       children: [
         const Text(
-          "Student Days:",
+          "أيام الطالب:",
           style: TextStyle(
             color: app_colors.darkGrey,
             fontSize: 18,
@@ -365,9 +329,8 @@ ${Constants.teacherName}
                         minute: entry['time']['minute'])
                     : null;
 
-                // Convert TimeOfDay to 12-hour format with AM/PM
                 String timeString =
-                    time != null ? _formatTime12Hour(time) : 'No Time';
+                    time != null ? _formatTime12Hour(time) : 'لا يوجد وقت';
 
                 return Row(
                   children: [
@@ -384,7 +347,7 @@ ${Constants.teacherName}
                             timeString,
                             style: const TextStyle(
                               color: app_colors.green,
-                              fontSize: 12, // Smaller font for time
+                              fontSize: 12,
                             ),
                           ),
                         ],
@@ -392,7 +355,6 @@ ${Constants.teacherName}
                       backgroundColor: app_colors.darkGrey,
                     ),
                     const SizedBox(width: 8),
-                    // Add some space between each day
                   ],
                 );
               }).toList(),
@@ -416,18 +378,15 @@ ${Constants.teacherName}
             width: 30,
             height: 30,
           ),
-        ), // مسافة بين الصورة والنص
+        ),
       ],
     );
   }
-// Helper function to format TimeOfDay to 12-hour format with AM/PM
+
   String _formatTime12Hour(TimeOfDay time) {
-    final int hour = time.hourOfPeriod == 0
-        ? 12
-        : time.hourOfPeriod; // Convert 0 to 12 for midnight/noon
-    final String period = time.period == DayPeriod.am ? 'AM' : 'PM';
-    final String minute =
-        time.minute.toString().padLeft(2, '0'); // Ensure two digits for minutes
+    final int hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final String period = time.period == DayPeriod.am ? 'صباحًا' : 'مساءً';
+    final String minute = time.minute.toString().padLeft(2, '0');
     return '$hour:$minute $period';
   }
 }

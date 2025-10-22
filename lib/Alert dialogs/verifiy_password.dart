@@ -1,5 +1,5 @@
-import 'package:fatma_elorbany/firebase/firebase_functions.dart';
 import 'package:flutter/material.dart';
+import '../firebase/firebase_functions.dart';
 
 Future<void> showVerifyPasswordDialog({
   required BuildContext context,
@@ -14,7 +14,7 @@ Future<void> showVerifyPasswordDialog({
       return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
-          'Enter Password',
+          'أدخل كلمة المرور',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         content: Form(
@@ -23,7 +23,7 @@ Future<void> showVerifyPasswordDialog({
             controller: passwordController,
             obscureText: true,
             decoration: InputDecoration(
-              hintText: 'Password',
+              hintText: 'كلمة المرور',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -31,7 +31,7 @@ Future<void> showVerifyPasswordDialog({
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter password';
+                return 'من فضلك أدخل كلمة المرور';
               }
               return null;
             },
@@ -40,32 +40,33 @@ Future<void> showVerifyPasswordDialog({
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('إلغاء'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () async {
               if (formKey.currentState!.validate()) {
                 final isCorrect =
                 await FirebaseFunctions.verifyPassword(passwordController.text);
                 if (isCorrect) {
-                  Navigator.pop(context); // Close password dialog
-                  onVerified(); // Call your callback
+                  Navigator.pop(context);
+                  onVerified();
                 } else {
-                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Wrong password'),
+                      content: Text('كلمة المرور غير صحيحة'),
                       backgroundColor: Colors.red,
                     ),
                   );
                 }
               }
             },
-            child: const Text('Confirm'),
+            child: const Text('تأكيد'),
           ),
         ],
       );

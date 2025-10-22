@@ -1,7 +1,7 @@
 import 'package:fatma_elorbany/firebase/firebase_functions.dart';
 import 'package:flutter/material.dart';
-import '../add_student_widget.dart';
-import '../colors_app.dart';
+;
+import '../firebase/firebase_functions.dart';
 
 class AddStudentTab extends StatefulWidget {
   const AddStudentTab({super.key});
@@ -60,7 +60,8 @@ class _AddStudentTabState extends State<AddStudentTab> {
                     grade = grades![index];
                   });
                 },
-                isScrollable: false,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 indicatorColor: app_colors.green,
                 labelColor: app_colors.green,
                 unselectedLabelColor: Colors.white,

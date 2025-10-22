@@ -1,7 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
-import '../colors_app.dart'; // Import your app_colors
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -41,19 +41,19 @@ class _SignupPageState extends State<SignupPage> {
                       "assets/images/2....2.png",
                       height: 100,
                       width: 90,
-                    ),const SizedBox(height: 20.0),
+                    ),
+                    const SizedBox(height: 20.0),
                     const Text(
-                      "__ Sign up __",
+                      "__ إنشاء حساب __",
                       style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          color: app_colors
-                              .green // Change to black for better contrast
-                          ),
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: app_colors.green,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      "Create your account",
+                      "أنشئ حسابك الآن",
                       style: TextStyle(fontSize: 15, color: app_colors.darkGrey),
                     )
                   ],
@@ -67,21 +67,19 @@ class _SignupPageState extends State<SignupPage> {
                           TextFormField(
                             controller: _usernameController,
                             decoration: InputDecoration(
-                              hintText: "Username",
+                              hintText: "اسم المستخدم",
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide: BorderSide.none,
                               ),
                               fillColor: app_colors.green.withOpacity(0.1),
-                              // Use your orange color
                               filled: true,
                               prefixIcon: const Icon(Icons.person,
-                                  color: app_colors
-                                      .green), // Use your orange color
+                                  color: app_colors.green),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your username';
+                                return 'من فضلك أدخل اسم المستخدم';
                               }
                               return null;
                             },
@@ -90,24 +88,22 @@ class _SignupPageState extends State<SignupPage> {
                           TextFormField(
                             controller: _emailController,
                             decoration: InputDecoration(
-                              hintText: "Email",
+                              hintText: "البريد الإلكتروني",
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide: BorderSide.none,
                               ),
                               fillColor: app_colors.green.withOpacity(0.1),
-                              // Use your orange color
                               filled: true,
                               prefixIcon: const Icon(Icons.email,
-                                  color: app_colors
-                                      .green), // Use your orange color
+                                  color: app_colors.green),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
+                                return 'من فضلك أدخل البريد الإلكتروني';
                               }
                               if (!value.contains('@')) {
-                                return 'Please enter a valid email';
+                                return 'أدخل بريدًا إلكترونيًا صحيحًا';
                               }
                               return null;
                             },
@@ -116,24 +112,21 @@ class _SignupPageState extends State<SignupPage> {
                           TextFormField(
                             controller: _passwordController,
                             decoration: InputDecoration(
-                              hintText: "Password",
+                              hintText: "كلمة المرور",
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide: BorderSide.none,
                               ),
                               fillColor: app_colors.green.withOpacity(0.1),
-                              // Use your orange color
                               filled: true,
                               prefixIcon: const Icon(Icons.password,
                                   color: app_colors.green),
-                              // Use your orange color
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _isPasswordVisible
                                       ? Icons.visibility
                                       : Icons.visibility_off,
-                                  color: app_colors
-                                      .green, // Use your orange color
+                                  color: app_colors.green,
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -145,10 +138,10 @@ class _SignupPageState extends State<SignupPage> {
                             obscureText: !_isPasswordVisible,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
+                                return 'من فضلك أدخل كلمة المرور';
                               }
                               if (value.length < 8) {
-                                return 'Password must be at least 8 characters';
+                                return 'يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل';
                               }
                               return null;
                             },
@@ -157,24 +150,21 @@ class _SignupPageState extends State<SignupPage> {
                           TextFormField(
                             controller: _confirmPasswordController,
                             decoration: InputDecoration(
-                              hintText: "Confirm Password",
+                              hintText: "تأكيد كلمة المرور",
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(18),
                                 borderSide: BorderSide.none,
                               ),
                               fillColor: app_colors.green.withOpacity(0.1),
-                              // Use your orange color
                               filled: true,
                               prefixIcon: const Icon(Icons.password,
                                   color: app_colors.green),
-                              // Use your orange color
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _isConfirmPasswordVisible
                                       ? Icons.visibility
                                       : Icons.visibility_off,
-                                  color: app_colors
-                                      .green, // Use your orange color
+                                  color: app_colors.green,
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -187,10 +177,10 @@ class _SignupPageState extends State<SignupPage> {
                             obscureText: !_isConfirmPasswordVisible,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your confirm password';
+                                return 'من فضلك أدخل تأكيد كلمة المرور';
                               }
                               if (value != _passwordController.text) {
-                                return 'Passwords do not match';
+                                return 'كلمتا المرور غير متطابقتين';
                               }
                               return null;
                             },
@@ -211,7 +201,7 @@ class _SignupPageState extends State<SignupPage> {
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
-                                title: Text("Error"),
+                                title: Text("خطأ"),
                                 content: Text(
                                   message,
                                   style: TextStyle(color: Colors.black),
@@ -221,78 +211,63 @@ class _SignupPageState extends State<SignupPage> {
                                     onPressed: () {
                                       Navigator.pop(context);
                                     },
-                                    child: Text("OK"),
+                                    child: Text("حسنًا"),
                                   ),
                                 ],
                               ),
                             );
                           },
                           onSucsses: () {
-                            // Show dialog instead of Snackbar
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
-                                title: Text("Check Your Email"),
+                                title: Text("تحقق من بريدك الإلكتروني"),
                                 content: Text(
-                                  'Go check your email and verify your account.',
+                                  'يرجى التحقق من بريدك الإلكتروني وتأكيد حسابك.',
                                   style: TextStyle(color: Colors.black),
                                 ),
                                 actions: [
                                   ElevatedButton(
                                     onPressed: () {
-                                      // Navigate to login page when the button is pressed
                                       Navigator.pushNamedAndRemoveUntil(
                                         context,
                                         '/LoginPage',
                                             (Route<dynamic> route) => false,
                                       );
                                     },
-                                    child: Text("Go to Login Page"),
+                                    child: Text("الذهاب إلى صفحة تسجيل الدخول"),
                                   ),
                                 ],
                               ),
                             );
-
-                            // Call createTestUser if needed
-
-                            // Wait for 1 second before performing any action (if needed)
-                            Future.delayed(Duration(seconds: 1), () {
-                              // You can keep any navigation logic here if needed
-                            });
                           },
                           _emailController.text,
                           _passwordController.text,
                         );
-
-                        // Debug print statements for your form
-                        print('Username: ${_usernameController.text}');
-                        print('Email: ${_emailController.text}');
-                        print('Password: ${_passwordController.text}');
                       }
                     },
                     child: const Text(
-                      "Sign up",
+                      "إنشاء حساب",
                       style: TextStyle(fontSize: 20, color: app_colors.green),
                     ),
                     style: ElevatedButton.styleFrom(
                       shape: const StadiumBorder(),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: app_colors.darkGrey, // Use your green color
+                      backgroundColor: app_colors.darkGrey,
                     ),
                   ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    const Text("Already have an account?"),
+                    const Text("هل لديك حساب بالفعل؟"),
                     TextButton(
                       onPressed: () {
                         Navigator.pushNamed(context, '/LoginPage');
                       },
                       child: const Text(
-                        "Login",
-                        style: TextStyle(
-                            color: app_colors.green), // Use your orange color
+                        "تسجيل الدخول",
+                        style: TextStyle(color: app_colors.green),
                       ),
                     )
                   ],
@@ -304,5 +279,4 @@ class _SignupPageState extends State<SignupPage> {
       ),
     );
   }
-
 }

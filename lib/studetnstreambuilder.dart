@@ -87,12 +87,12 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                                     if (_filteredStudents.isNotEmpty) {
                                       await _generatePdf(_filteredStudents);
                                     } else {
-                                      print("No students to export");
+                                      print("لا يوجد طلاب للطباعة");
                                     }
                                   },
                                 ),
                                 Text(
-                                  "Number of students: $numberofstudents",
+                                  "عدد الطلاب: $numberofstudents",
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
@@ -102,8 +102,8 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                                 LiteRollingSwitch(
                                   width: 110,
                                   value: true,
-                                  textOn: 'Large',
-                                  textOff: 'Small',
+                                  textOn: 'كبير',
+                                  textOff: 'صغير',
                                   colorOn: app_colors.ligthGreen,
                                   colorOff: app_colors.green,
                                   iconOn: Icons.done,
@@ -129,7 +129,7 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,
-                                hintText: 'Search',
+                                hintText: 'ابحث عن الطالب',
                                 hintStyle:
                                     const TextStyle(color: app_colors.darkGrey),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -173,9 +173,8 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                           }
                           if (snapshot.hasError) {
                             return Center(
-                                child: Text('Error: ${snapshot.error}'));
+                                child: Text('حدث خطأ: ${snapshot.error}'));
                           }
-
                           if (!snapshot.hasData || snapshot.data!.isEmpty) {
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (numberofstudents != 0) {
@@ -186,7 +185,7 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                             });
                             return Center(
                                 child: Text(
-                                    'No students found for grade: ${widget.grade}.'));
+                                    'لا يوجد طلاب للمرحلة: ${widget.grade}'));
                           }
 
                           var students = snapshot.data!;
@@ -219,7 +218,7 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                                       grade: widget.grade,
                                       IsComingFromGroup: false,
                                     )
-                                  : Smallstydentcard(
+                                  : SmallStudentCard(
                                       studentModel: student,
                                       grade: widget.grade,
                                     );

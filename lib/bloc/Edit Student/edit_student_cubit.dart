@@ -12,20 +12,17 @@ class StudentEditCubit extends Cubit<StudentEditState> {
 
   StudentEditCubit({required this.student}) : super(StudentEditInitial());
 
-  ///============================================================================================================================\\\
-  ///=============================================================Variables===========================================================\\\
-  ///============================================================================================================================\\\
   final TextEditingController dismissibleAmountController =
       TextEditingController();
   final TextEditingController dismissibleDescController =
       TextEditingController();
 
-  String? dateOfFirstMonthPaid; // Date when the first month was paid
-  String? dateOfSecondMonthPaid; // Date when the second month was paid
-  String? dateOfThirdMonthPaid; // Date when the third month was paid
-  String? dateOfFourthMonthPaid; // Date when the fourth month was paid
-  String? dateOfFifthMonthPaid; // Date when the fifth month was paid
-  String? dateOfExplainingNotePaid; // Date when the explaining note was paid
+  String? dateOfFirstMonthPaid;
+  String? dateOfSecondMonthPaid;
+  String? dateOfThirdMonthPaid;
+  String? dateOfFourthMonthPaid;
+  String? dateOfFifthMonthPaid;
+  String? dateOfExplainingNotePaid;
   String? dateOfReviewingNotePaid;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   TextEditingController totalAmountController = TextEditingController();
@@ -48,9 +45,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
   List<Magmo3amodel>? hisGroups = [];
   List<String>? hisGroupsId = [];
 
-  ///============================================================================================================================\\\
-  ///=============================================================Functions===========================================================\\\
-  ///============================================================================================================================\\\
   static StudentEditCubit get(context) => BlocProvider.of(context);
 
   initTheState() {
@@ -72,7 +66,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
     fatherNumberController.text = student.fatherPhone ?? "";
     motherNumberController.text = student.motherPhone ?? "";
 
-    // Initialize months and notes
     firstMonth = student.firstMonth;
     secondMonth = student.secondMonth;
     thirdMonth = student.thirdMonth;
@@ -81,30 +74,25 @@ class StudentEditCubit extends Cubit<StudentEditState> {
     explainingNote = student.explainingNote;
     reviewNote = student.reviewNote;
 
-    // Initialize gender
     selectedGender = student.gender;
   }
 
   void getCurrentDate() {
     DateTime now = DateTime.now();
-    date = now.toIso8601String().substring(0, 10); // yyyy-mm-dd
-    Day = now.weekday == 1
-        ? 'Monday'
-        : now.weekday == 2
-            ? 'Tuesday'
-            : now.weekday == 3
-                ? 'Wednesday'
-                : now.weekday == 4
-                    ? 'Thursday'
-                    : now.weekday == 5
-                        ? 'Friday'
-                        : now.weekday == 6
-                            ? 'Saturday'
-                            : 'Sunday';
+    const Map<int, String> weekdays = {
+      1: 'Monday',
+      2: 'Tuesday',
+      3: 'Wednesday',
+      4: 'Thursday',
+      5: 'Friday',
+      6: 'Saturday',
+      7: 'Sunday',
+    };
+    date = now.toIso8601String().substring(0, 10);
+    Day = weekdays[now.weekday];
   }
 
   void updatePaymentDates() {
-    // Check if the payment statuses are true, and update the date accordingly.
     dateOfFirstMonthPaid = firstMonth == true ? date : null;
     dateOfSecondMonthPaid = secondMonth == true ? date : null;
     dateOfThirdMonthPaid = thirdMonth == true ? date : null;
@@ -123,9 +111,8 @@ class StudentEditCubit extends Cubit<StudentEditState> {
         hisGroups?.add(result);
         hisGroupsId?.add(result.id);
         emit(StudentUpdatedInEditPage());
-        print('Added Group ID: ${result.id}');
       } else {
-        emit(StudentValidationError("This Group already exists in the list."));
+        emit(StudentValidationError("المجموعة هذه موجودة بالفعل في القائمة."));
       }
     }
   }
@@ -160,7 +147,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
     required String grade,
     required String title,
     required bool dismissible,
-    Studentmodel? studentModel, // optional for update
+    Studentmodel? studentModel,
     required Future<void> Function({
       required double amount,
       required String description,
@@ -174,7 +161,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       context: context,
       builder: (BuildContext context) {
         return PopScope(
-          canPop: dismissible, // prevent back press if not dismissible
+          canPop: dismissible,
           child: AlertDialog(
             title: Text(title),
             content: Form(
@@ -188,12 +175,12 @@ class StudentEditCubit extends Cubit<StudentEditState> {
                           ? dismissibleAmountController
                           : totalAmountController,
                       decoration: const InputDecoration(
-                        labelText: "Total Amount",
+                        labelText: "المبلغ الإجمالي",
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Total Amount cannot be empty';
+                          return 'المبلغ الإجمالي لا يمكن أن يكون فارغًا';
                         }
                         return null;
                       },
@@ -203,7 +190,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
                           ? dismissibleDescController
                           : descriptionController,
                       decoration: const InputDecoration(
-                        labelText: "Description",
+                        labelText: "الوصف",
                       ),
                     ),
                   ],
@@ -214,7 +201,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
               if (dismissible)
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: const Text('إلغاء'),
                 ),
               TextButton(
                 onPressed: () async {
@@ -259,7 +246,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
                     }
                   }
                 },
-                child: const Text('Save'),
+                child: const Text('حفظ'),
               ),
             ],
           ),
@@ -270,52 +257,46 @@ class StudentEditCubit extends Cubit<StudentEditState> {
 
   Future<void> EditStudent(BuildContext context, level) async {
     if (hisGroups == []) {
-      emit(StudentValidationError("Please pick at least one group"));
-      return; // Early return to prevent further actions
+      emit(StudentValidationError("من فضلك اختر مجموعة واحدة على الأقل"));
+      return;
     }
 
     if (name_controller.text.isEmpty) {
-      emit(StudentValidationError("Please enter the student\'s name"));
+      emit(StudentValidationError("من فضلك أدخل اسم الطالب"));
       return;
     }
     if (studentNumberController.text.isEmpty) {
-      emit(StudentValidationError("Please enter the student number"));
+      emit(StudentValidationError("من فضلك أدخل رقم الطالب"));
       return;
     }
 
-    // Validate that student number is exactly 11 digits
     if (!RegExp(r'^\d{11}$').hasMatch(studentNumberController.text)) {
-      emit(StudentValidationError("Student number must be exactly 11 digits"));
+      emit(StudentValidationError("رقم الطالب يجب أن يكون 11 رقمًا بالضبط"));
       return;
     }
 
     if (fatherNumberController.text.isEmpty) {
-      emit(StudentValidationError("Please enter the father\'s number"));
-
+      emit(StudentValidationError("من فضلك أدخل رقم الأب"));
       return;
     }
 
-    // Validate that father's number is exactly 11 digits
     if (!RegExp(r'^\d{11}$').hasMatch(fatherNumberController.text)) {
-      emit(
-          StudentValidationError("Father\'s number must be exactly 11 digits"));
+      emit(StudentValidationError("رقم الأب يجب أن يكون 11 رقمًا بالضبط"));
       return;
     }
 
     if (motherNumberController.text.isEmpty) {
-      emit(StudentValidationError("Please enter the mother\'s number"));
+      emit(StudentValidationError("من فضلك أدخل رقم الأم"));
       return;
     }
 
-    // Validate that mother's number is exactly 11 digits
     if (!RegExp(r'^\d{11}$').hasMatch(motherNumberController.text)) {
-      emit(
-          StudentValidationError("Mother\'s number must be exactly 11 digits"));
+      emit(StudentValidationError("رقم الأم يجب أن يكون 11 رقمًا بالضبط"));
       return;
     }
 
     if (selectedGender == null) {
-      emit(StudentValidationError("Please select a gender"));
+      emit(StudentValidationError("من فضلك اختر النوع"));
       return;
     }
     if (firstMonth == null ||
@@ -323,13 +304,12 @@ class StudentEditCubit extends Cubit<StudentEditState> {
         thirdMonth == null ||
         fifthMonth == null ||
         fourthMonth == null) {
-      emit(StudentValidationError(
-          "Please select payment status for all months"));
+      emit(StudentValidationError("من فضلك اختر حالة الدفع لكل الشهور"));
       return;
     }
     if (explainingNote == null || reviewNote == null) {
       emit(StudentValidationError(
-          "Please select notes for explaining and reviewing"));
+          "من فضلك اختر حالات الملاحظات للشرح والمراجعة"));
       return;
     }
 
@@ -354,7 +334,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
 
     updatePaymentDates();
 
-    // Create the updated Studentmodel
     Studentmodel submodel = Studentmodel(
       id: student.id,
       dateofadd: student.dateofadd,
@@ -383,9 +362,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       dateOfReviewingNotePaid: dateOfReviewingNotePaid,
     );
 
-    // Update the student in Firestore
-
-    // detect payment/note changes
     bool isMonthOrNoteChanged =
         (student.firstMonth == false && firstMonth == true) ||
             (student.secondMonth == false && secondMonth == true) ||
@@ -399,7 +375,7 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       await showPaymentDialog(
         context: context,
         grade: level,
-        title: "Payment Changes Detected",
+        title: "تم الكشف عن تغييرات في الدفع",
         dismissible: false,
         onSave: ({
           required double amount,
@@ -437,12 +413,12 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       } catch (e) {
         emit(StudentEditFailure(errorMessage: e.toString()));
       }
-      Navigator.pop(context); // close edit page
+      Navigator.pop(context);
     }
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         backgroundColor: Colors.green,
-        content: Text('Student Edited successfully!'),
+        content: Text('تم تعديل بيانات الطالب بنجاح!'),
       ),
     );
   }
@@ -451,8 +427,8 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       String? previousDate, String? date) {
     return currentValue != previousValue
         ? currentValue == true
-            ? date // If changed to true, set to current date
-            : null // If changed to false, set to null
+            ? date
+            : null
         : previousDate;
   }
 

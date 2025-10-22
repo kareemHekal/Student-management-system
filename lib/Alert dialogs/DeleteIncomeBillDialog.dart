@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class DeleteIncomeBillDialog extends StatelessWidget {
   final String title;
   final String content;
-  final Future<void> Function() onConfirm; // Use Future for async operations
+  final Future<void> Function() onConfirm;
   final String cancelButtonText;
   final String confirmButtonText;
 
@@ -12,22 +12,21 @@ class DeleteIncomeBillDialog extends StatelessWidget {
     required this.title,
     required this.content,
     required this.onConfirm,
-    this.cancelButtonText = "Cancel",
-    this.confirmButtonText = "Delete",
+    this.cancelButtonText = "إلغاء",
+    this.confirmButtonText = "حذف",
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // Modern rounded corners
+        borderRadius: BorderRadius.circular(16),
       ),
       backgroundColor: Colors.red[50],
-      // Light red background
       title: Text(
         title,
         style: TextStyle(
-          color: Colors.red[900], // Dark red for the title
+          color: Colors.red[900],
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
@@ -39,7 +38,7 @@ class DeleteIncomeBillDialog extends StatelessWidget {
           Text(
             content,
             style: TextStyle(
-              color: Colors.red[700], // Medium red for content text
+              color: Colors.red[700],
               fontSize: 16,
             ),
           ),
@@ -61,12 +60,11 @@ class DeleteIncomeBillDialog extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
             backgroundColor: Colors.red[600],
-            // White text on red button
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            elevation: 5, // Subtle shadow for depth
+            elevation: 5,
           ),
           child: Text(confirmButtonText),
           onPressed: () async {

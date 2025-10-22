@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class RemoveFromGroupsListDialog extends StatelessWidget {
   final String title;
   final String content;
-  final Future<void> Function() onConfirm; // Modify to not require tags
+  final Future<void> Function() onConfirm;
   final String cancelButtonText;
   final String confirmButtonText;
 
@@ -11,21 +11,21 @@ class RemoveFromGroupsListDialog extends StatelessWidget {
     required this.title,
     required this.content,
     required this.onConfirm,
-    this.cancelButtonText = "Cancel",
-    this.confirmButtonText = "Sure!",
+    this.cancelButtonText = "إلغاء",
+    this.confirmButtonText = "تأكيد",
   });
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // Modern rounded corners
+        borderRadius: BorderRadius.circular(16),
       ),
-      backgroundColor: Colors.red[50], // Light red background for contrast
+      backgroundColor: Colors.red[50],
       title: Text(
         title,
         style: TextStyle(
-          color: Colors.red[900], // Darker red for the title for better readability
+          color: Colors.red[900],
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
@@ -37,7 +37,7 @@ class RemoveFromGroupsListDialog extends StatelessWidget {
           Text(
             content,
             style: TextStyle(
-              color: Colors.red[700], // Slightly darker red for content
+              color: Colors.red[700],
               fontSize: 16,
             ),
           ),
@@ -46,7 +46,8 @@ class RemoveFromGroupsListDialog extends StatelessWidget {
       actions: [
         TextButton(
           style: TextButton.styleFrom(
-            foregroundColor: Colors.red[900], padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            foregroundColor: Colors.red[900],
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             textStyle: TextStyle(fontWeight: FontWeight.bold),
           ),
           child: Text(cancelButtonText),
@@ -56,12 +57,13 @@ class RemoveFromGroupsListDialog extends StatelessWidget {
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            foregroundColor: Colors.white, backgroundColor: Colors.red[600], // White text on red button
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.red[600],
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            elevation: 5, // Subtle shadow for depth
+            elevation: 5,
           ),
           child: Text(confirmButtonText),
           onPressed: () async {

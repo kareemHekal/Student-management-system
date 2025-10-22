@@ -13,6 +13,7 @@ import '../cards/groupSmallCard.dart';
 import '../colors_app.dart';
 import '../models/Studentmodel.dart';
 import 'Pick Groups Page.dart';
+import 'all_absent_numbers.dart';
 import 'all_bills_for_student.dart';
 
 class EditStudentScreen extends StatefulWidget {
@@ -49,7 +50,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                       StudentEditCubit.get(context).showPaymentDialog(
                         context: context,
                         grade: widget.grade ?? "",
-                        title: "Add Payment to Student",
+                        title: "إضافة دفعة للطالب",
                         dismissible: true,
                         onSave: ({
                           required amount,
@@ -105,7 +106,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
             body: LoaderOverlay(
               child: BlocConsumer<StudentEditCubit, StudentEditState>(
                 listener: (context, state) {
-                  // Show loader overlay while fetching sources or news
                   if (state is StudentEditLoading) {
                     context.loaderOverlay.show();
                   } else {
@@ -114,7 +114,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                   if (state is StudentEditSuccess) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Student Edited successfully!'),
+                        content: Text('تم تعديل بيانات الطالب بنجاح!'),
                         backgroundColor: Colors.green,
                         duration: Duration(seconds: 2),
                       ),
@@ -146,7 +146,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                   if (state is StudentEditLoading) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  // Check if data is available
                   final cubit = StudentEditCubit.get(context);
 
                   return Stack(
@@ -186,8 +185,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                                   top: 20, left: 0),
                                               child: Text(
                                                 textAlign: TextAlign.start,
-                                                '''  E D I T
-  Y O U R  S T U D E N T S''',
+                                                '''تعديل بيانات الطالب''',
                                                 style: GoogleFonts.oswald(
                                                   fontSize: 30,
                                                   color: app_colors.darkGrey,
@@ -204,14 +202,12 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                         ),
                                         SizedBox(
                                           height: 240,
-                                          // or any other bounded height
                                           child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
                                               const Center(
-                                                  child:
-                                                      Text(" Pick the days ")),
+                                                  child: Text("اختر الأيام")),
                                               Expanded(
                                                 child: PickGroupRow(context),
                                               ),
@@ -237,7 +233,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                         const SizedBox(
                                           height: 15,
                                         ),
-
                                         const SizedBox(
                                           height: 15,
                                         ),
@@ -259,8 +254,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                         const SizedBox(
                                           height: 10,
                                         ),
-
-                                        /// the column of the monthes paid
                                         Column(
                                           children: [
                                             Row(
@@ -268,99 +261,106 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                                   MainAxisAlignment.spaceEvenly,
                                               children: [
                                                 showDateOfPaidMonth(
-                                                    "First month",
+                                                    "الشهر الأول",
                                                     widget.student
                                                         .dateOfFirstMonthPaid),
                                                 showDateOfPaidMonth(
-                                                    "Second month",
+                                                    "الشهر الثاني",
                                                     widget.student
                                                         .dateOfSecondMonthPaid),
                                               ],
                                             ),
-                                            const SizedBox(
-                                              height: 10,
-                                            ),
+                                            const SizedBox(height: 10),
                                             Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.spaceEvenly,
                                               children: [
                                                 showDateOfPaidMonth(
-                                                    "Third month",
+                                                    "الشهر الثالث",
                                                     widget.student
                                                         .dateOfThirdMonthPaid),
                                                 showDateOfPaidMonth(
-                                                    "Fourth month",
+                                                    "الشهر الرابع",
                                                     widget.student
                                                         .dateOfFourthMonthPaid),
                                               ],
                                             ),
-                                            const SizedBox(
-                                              height: 10,
-                                            ),
+                                            const SizedBox(height: 10),
                                             Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.spaceEvenly,
                                               children: [
                                                 showDateOfPaidMonth(
-                                                    "Fifth month",
+                                                    "الشهر الخامس",
                                                     widget.student
                                                         .dateOfFifthMonthPaid),
                                               ],
                                             ),
-                                            const SizedBox(
-                                              height: 10,
-                                            ),
+                                            const SizedBox(height: 10),
                                             Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment.spaceEvenly,
                                               children: [
                                                 showDateOfPaidMonth(
-                                                    "Explaining Note",
+                                                    "شرح الملاحظة",
                                                     widget.student
                                                         .dateOfExplainingNotePaid),
                                                 showDateOfPaidMonth(
-                                                    "Reviewing",
+                                                    "مراجعة الملاحظة",
                                                     widget.student
                                                         .dateOfReviewingNotePaid),
                                               ],
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(
-                                          height: 10,
-                                        ),
+                                        const SizedBox(height: 10),
                                         const Divider(
                                           color: app_colors.green,
                                           thickness: 4,
                                         ),
-                                        const SizedBox(
-                                          height: 20,
-                                        ),
+                                        const SizedBox(height: 20),
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceEvenly,
                                           children: [
                                             showNumberOfAbsenceAndPresence(
-                                                "AttendantDays",
+                                                "أيام الحضور",
                                                 widget.student
                                                     .numberOfAttendantDays),
                                             showNumberOfAbsenceAndPresence(
-                                                "AbsentDays",
-                                                widget
-                                                    .student.numberOfAbsentDays)
+                                                "أيام الغياب",
+                                                widget.student
+                                                    .numberOfAbsentDays),
+                                            IconButton(
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (
+                                                      context,
+                                                    ) =>
+                                                        AbsencesListPage(
+                                                      absences: widget.student
+                                                              .absencesNumbers ??
+                                                          [],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              icon: Icon(
+                                                Icons.calendar_month,
+                                                color: app_colors.green,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                         const Divider(
                                           color: app_colors.green,
                                           thickness: 4,
                                         ),
-                                        const SizedBox(
-                                          height: 20,
-                                        ),
+                                        const SizedBox(height: 20),
                                         NotesPart(context),
-                                        const SizedBox(
-                                          height: 20,
-                                        ),
+                                        const SizedBox(height: 20),
                                         Row(
                                           children: [
                                             Expanded(
@@ -368,21 +368,19 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                                 style: ElevatedButton.styleFrom(
                                                   foregroundColor:
                                                       app_colors.green,
-                                                  backgroundColor: app_colors
-                                                      .darkGrey, // text color
+                                                  backgroundColor:
+                                                      app_colors.darkGrey,
                                                 ),
                                                 onPressed: () async {
                                                   await cubit.EditStudent(
                                                       context, widget.grade);
                                                 },
-                                                child: const Text(" Edit "),
+                                                child: const Text("تعديل"),
                                               ),
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(
-                                          height: 200,
-                                        ),
+                                        const SizedBox(height: 200),
                                       ],
                                     ),
                                   ),
@@ -396,6 +394,236 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               ),
             )),
       ),
+    );
+  }
+  Widget paymentsPart(BuildContext context) {
+    final cubit = StudentEditCubit.get(context);
+    return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Column(
+                    children: [
+                      const Text("الشهر الأول :"),
+                      buildDropdown("الشهر الأول", cubit.firstMonth, (value) {
+                        cubit.changeFirstMonthValue(value);
+                      }),
+                    ],
+                  ),
+                  const SizedBox(width: 16.0),
+                  Column(
+                    children: [
+                      const Text("الشهر الثاني :"),
+                      buildDropdown("الشهر الثاني", cubit.secondMonth, (value) {
+                        cubit.changeSecondMonthValue(value);
+                      }),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+              Row(
+                children: [
+                  Column(
+                    children: [
+                      const Text("الشهر الثالث :"),
+                      buildDropdown("الشهر الثالث", cubit.thirdMonth, (value) {
+                        cubit.changeThirdMonthValue(value);
+                      }),
+                    ],
+                  ),
+                  const SizedBox(width: 16.0),
+                  Column(
+                    children: [
+                      const Text("الشهر الرابع :"),
+                      buildDropdown("الشهر الرابع", cubit.fourthMonth, (value) {
+                        cubit.changeFourthMonthValue(value);
+                      }),
+                    ],
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Column(
+                    children: [
+                      const Text("الشهر الخامس :"),
+                      buildDropdown("الشهر الخامس", cubit.fifthMonth, (value) {
+                        cubit.changeFifthMonthValue(value);
+                      }),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+              Row(
+                children: [
+                  Column(
+                    children: [
+                      const Text("مذكرة الشرح :"),
+                      buildDropdown("مذكرة الشرح", cubit.explainingNote,
+                          (value) {
+                        cubit.changeExplainingNoteValue(value);
+                      }),
+                    ],
+                  ),
+                  const SizedBox(width: 16.0),
+                  Column(
+                    children: [
+                      const Text("مذكرة المراجعة :"),
+                      buildDropdown("مذكرة المراجعة", cubit.reviewNote,
+                          (value) {
+                        cubit.changeReviewNoteValue(value);
+                      }),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ));
+  }
+
+  Widget MaleOrFemalePart(BuildContext context) {
+    final cubit = StudentEditCubit.get(context);
+    return Column(
+      children: [
+        Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: app_colors.darkGrey, width: 1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: DropdownButton<String>(
+              dropdownColor: app_colors.darkGrey,
+              value: cubit.selectedGender ?? "ذكر",
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(
+                  value: "Male",
+                  child: Text("ذكر", style: TextStyle(color: app_colors.green)),
+                ),
+                DropdownMenuItem(
+                  value: "Female",
+                  child:
+                      Text("أنثى", style: TextStyle(color: app_colors.green)),
+                ),
+              ],
+              onChanged: (value) {
+                cubit.changeValueOfGenderDropDown(value);
+              },
+              elevation: 8,
+              style: const TextStyle(color: app_colors.green),
+              icon: const Icon(Icons.arrow_forward_ios_outlined,
+                  color: app_colors.green),
+              iconSize: 24,
+              hint: Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: Text(
+                  cubit.selectedGender ?? "اختر الجنس",
+                  style: const TextStyle(color: app_colors.green),
+                ),
+              ),
+            )),
+        const SizedBox(
+          height: 15,
+        ),
+        cubit.selectedGender != null
+            ? Wrap(
+                direction: Axis.horizontal,
+                spacing: 8,
+                children: [
+                  Chip(
+                    backgroundColor: app_colors.darkGrey,
+                    label: Text(cubit.selectedGender!,
+                        style: const TextStyle(color: app_colors.green)),
+                    deleteIcon: const Icon(Icons.cancel,
+                        size: 20, color: app_colors.green),
+                    shape: const StadiumBorder(
+                        side: BorderSide(color: app_colors.green)),
+                    onDeleted: () {
+                      cubit.setTheSelectedGenderByNull();
+                    },
+                  ),
+                ],
+              )
+            : const Center(
+                child: Text("اختر الجنس",
+                    style: TextStyle(color: app_colors.green)),
+              ),
+      ],
+    );
+  }
+
+  Widget TextFormFields(BuildContext context) {
+    final cubit = StudentEditCubit.get(context);
+
+    InputDecoration getInputDecoration(String label) {
+      return InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+      );
+    }
+
+    Widget buildTextFormField({
+      required TextEditingController controller,
+      required String label,
+      TextInputType? keyboardType,
+    }) {
+      return TextFormField(
+        controller: controller,
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'من فضلك أدخل $label';
+          }
+          return null;
+        },
+        decoration: getInputDecoration(label),
+        keyboardType: keyboardType,
+        inputFormatters: keyboardType == TextInputType.number
+            ? [FilteringTextInputFormatter.digitsOnly]
+            : null,
+      );
+    }
+
+    return Column(
+      children: [
+        buildTextFormField(
+            controller: cubit.name_controller, label: "اسم الطالب"),
+        const SizedBox(height: 15),
+        buildTextFormField(
+          controller: cubit.studentNumberController,
+          label: "رقم الطالب",
+          keyboardType: TextInputType.number,
+        ),
+        const SizedBox(height: 15),
+        buildTextFormField(
+          controller: cubit.fatherNumberController,
+          label: "رقم ولي الأمر",
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 15),
+        buildTextFormField(
+          controller: cubit.motherNumberController,
+          label: "رقم الأم",
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 15),
+      ],
     );
   }
 
@@ -414,7 +642,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              date ?? "he didn't pay for this yet",
+              date ?? "لم يتم الدفع بعد",
               style: const TextStyle(fontSize: 10, color: app_colors.green),
             ),
             const SizedBox(width: 8),
@@ -457,24 +685,22 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
             child: cubit.hisGroups == []
                 ? Center(
                     child: Text(
-                    "You did not choose any group yet",
+                    "لم تقم باختيار أي مجموعة بعد",
                     style: TextStyle(color: app_colors.green),
                   ))
                 : ListView.builder(
                     itemCount: cubit.hisGroups?.length,
                     itemBuilder: (context, index) {
-                      // Get the current Magmo3amodel
                       final magmo3aModel = cubit.hisGroups?[index];
-                      // Return the Groupsmallcard widget for each Magmo3aModel
                       return GestureDetector(
                           onLongPress: () {
                             showDialog(
                               context: context,
                               builder: (BuildContext context) {
                                 return RemoveFromGroupsListDialog(
-                                  title: "Remove Group",
+                                  title: "حذف المجموعة",
                                   content:
-                                      "Are you sure you want to remove this group ?",
+                                      "هل أنت متأكد أنك تريد إزالة هذه المجموعة؟",
                                   onConfirm: () async {
                                     await Future.delayed(
                                         Duration(milliseconds: 1));
@@ -489,13 +715,12 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                           child: Groupsmallcard(magmo3aModel: magmo3aModel));
                     },
                   )),
-        const SizedBox(height: 10), // Space between the list and the button
-        // First Day Button
+        const SizedBox(height: 10),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             side: const BorderSide(color: app_colors.green, width: 1),
             foregroundColor: app_colors.green,
-            backgroundColor: app_colors.darkGrey, // text color
+            backgroundColor: app_colors.darkGrey,
           ),
           onPressed: () {
             Navigator.push(
@@ -509,7 +734,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               }
             });
           },
-          child: const Text("Add Group"),
+          child: const Text("إضافة مجموعة"),
         ),
       ],
     );
@@ -521,7 +746,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     ValueChanged<bool?> onChanged,
   ) {
     return SizedBox(
-      width: 200, // specify a width
+      width: 200,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -536,11 +761,11 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           items: const [
             DropdownMenuItem(
               value: true,
-              child: Text("Paid", style: TextStyle(color: Colors.orange)),
+              child: Text("مدفوع", style: TextStyle(color: Colors.orange)),
             ),
             DropdownMenuItem(
               value: false,
-              child: Text("Not Paid", style: TextStyle(color: Colors.orange)),
+              child: Text("غير مدفوع", style: TextStyle(color: Colors.orange)),
             ),
           ],
           onChanged: onChanged,
@@ -552,7 +777,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           hint: Text(
             selectedValue == null
                 ? hint
-                : (selectedValue ? "Paid" : "Not Paid"),
+                : (selectedValue ? "مدفوع" : "غير مدفوع"),
             style: const TextStyle(color: Colors.orange),
           ),
         ),
@@ -565,15 +790,15 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
 
     return TextFormField(
       controller: cubit.noteController,
-      maxLines: 3, // Allows for multi-line input
+      maxLines: 3,
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter a note';
+          return 'من فضلك أدخل ملاحظة';
         }
         return null;
       },
       decoration: InputDecoration(
-        labelText: "Add Note",
+        labelText: "إضافة ملاحظة",
         labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.0),
@@ -586,240 +811,9 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
-        hintText: 'Type your note here...',
+        hintText: 'اكتب ملاحظتك هنا...',
         hintStyle: const TextStyle(color: Colors.grey),
       ),
-    );
-  }
-
-  Widget paymentsPart(BuildContext context) {
-    final cubit = StudentEditCubit.get(context);
-    return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("First Month :"),
-                      buildDropdown("First Month", cubit.firstMonth, (value) {
-                        cubit.changeFirstMonthValue(value);
-                      }),
-                    ],
-                  ),
-                  const SizedBox(width: 16.0),
-                  Column(
-                    children: [
-                      const Text("Second Month :"),
-                      buildDropdown("Second Month", cubit.secondMonth, (value) {
-                        cubit.changeSecondMonthValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("Third Month :"),
-                      buildDropdown("Third Month", cubit.thirdMonth, (value) {
-                        cubit.changeThirdMonthValue(value);
-                      }),
-                    ],
-                  ),
-                  const SizedBox(width: 16.0),
-                  Column(
-                    children: [
-                      const Text("Fourth Month :"),
-                      buildDropdown("Fourth Month", cubit.fourthMonth, (value) {
-                        cubit.changeFourthMonthValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("Fifth Month :"),
-                      buildDropdown("Fifth Month", cubit.fifthMonth, (value) {
-                        cubit.changeFifthMonthValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("Explaining Note :"),
-                      buildDropdown("Explaining Note", cubit.explainingNote,
-                          (value) {
-                        cubit.changeExplainingNoteValue(value);
-                      }),
-                    ],
-                  ),
-                  const SizedBox(width: 16.0),
-                  Column(
-                    children: [
-                      const Text("Reviewing Note :"),
-                      buildDropdown("Review Note", cubit.reviewNote, (value) {
-                        cubit.changeReviewNoteValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ));
-  }
-
-  Widget MaleOrFemalePart(BuildContext context) {
-    final cubit = StudentEditCubit.get(context);
-    return Column(
-      children: [
-        Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: app_colors.darkGrey, width: 1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: DropdownButton<String>(
-              dropdownColor: app_colors.darkGrey,
-              value: cubit.selectedGender ?? "Male",
-              isExpanded: true,
-              items: const [
-                DropdownMenuItem(
-                  value: "Male",
-                  child:
-                      Text("Male", style: TextStyle(color: app_colors.green)),
-                ),
-                DropdownMenuItem(
-                  value: "Female",
-                  child:
-                      Text("Female", style: TextStyle(color: app_colors.green)),
-                ),
-              ],
-              onChanged: (value) {
-                cubit.changeValueOfGenderDropDown(value);
-              },
-              elevation: 8,
-              style: const TextStyle(color: app_colors.green),
-              icon: const Icon(Icons.arrow_forward_ios_outlined,
-                  color: app_colors.green),
-              iconSize: 24,
-              hint: Padding(
-                padding: const EdgeInsets.only(left: 10),
-                child: Text(
-                  cubit.selectedGender ?? "Select a gender",
-                  style: const TextStyle(color: app_colors.green),
-                ),
-              ),
-            )),
-        const SizedBox(
-          height: 15,
-        ),
-        cubit.selectedGender != null
-            ? Wrap(
-                direction: Axis.horizontal,
-                spacing: 8,
-                children: [
-                  Chip(
-                    backgroundColor: app_colors.darkGrey,
-                    label: Text(cubit.selectedGender!,
-                        style: const TextStyle(color: app_colors.green)),
-                    deleteIcon: const Icon(Icons.cancel,
-                        size: 20, color: app_colors.green),
-                    shape: const StadiumBorder(
-                        side: BorderSide(color: app_colors.green)),
-                    onDeleted: () {
-                      cubit.setTheSelectedGenderByNull();
-                    },
-                  ),
-                ],
-              )
-            : const Center(
-                child: Text("Select a gender",
-                    style: TextStyle(color: app_colors.green)),
-              ),
-      ],
-    );
-  }
-
-  Widget TextFormFields(BuildContext context) {
-    final cubit = StudentEditCubit.get(context);
-
-    InputDecoration getInputDecoration(String label) {
-      return InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-      );
-    }
-
-    Widget buildTextFormField({
-      required TextEditingController controller,
-      required String label,
-      TextInputType? keyboardType,
-    }) {
-      return TextFormField(
-        controller: controller,
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter your $label';
-          }
-          return null;
-        },
-        decoration: getInputDecoration(label),
-        keyboardType: keyboardType,
-        inputFormatters: keyboardType == TextInputType.number
-            ? [FilteringTextInputFormatter.digitsOnly]
-            : null,
-      );
-    }
-
-    return Column(
-      children: [
-        buildTextFormField(
-            controller: cubit.name_controller, label: "Student Name"),
-        const SizedBox(height: 15),
-        buildTextFormField(
-          controller: cubit.studentNumberController,
-          label: "Student Number",
-          keyboardType: TextInputType.number,
-        ),
-        const SizedBox(height: 15),
-        buildTextFormField(
-          controller: cubit.fatherNumberController,
-          label: "Father's Number",
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 15),
-        buildTextFormField(
-          controller: cubit.motherNumberController,
-          label: "Mother's Number",
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 15),
-      ],
     );
   }
 }

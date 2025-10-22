@@ -20,21 +20,17 @@ class _InvoicespageState extends State<Invoicespage> {
   @override
   void initState() {
     super.initState();
-    // Fetch invoices from Firestore and filter them initially
     _fetchInvoices();
   }
 
-  // Fetch invoices from Firestore and filter based on the initial search term
   Future<void> _fetchInvoices() async {
     final snapshot = await FirebaseFirestore.instance.collection('big_invoices').get();
     if (snapshot.docs.isNotEmpty) {
       setState(() {
-        // Convert documents to BigInvoice model
         allInvoices = snapshot.docs.map((doc) {
-          return BigInvoice.fromJson(doc.data() );
+          return BigInvoice.fromJson(doc.data());
         }).toList();
 
-        // Initially, we set filteredInvoices to allInvoices (no filtering)
         filteredInvoices = allInvoices;
       });
     }
@@ -58,7 +54,7 @@ class _InvoicespageState extends State<Invoicespage> {
               MaterialPageRoute(
                 builder: (context) => const Homescreen(),
               ),
-                  (route) => false, // This ensures all previous routes are removed.
+              (route) => false,
             );
           },
           icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
@@ -84,19 +80,18 @@ class _InvoicespageState extends State<Invoicespage> {
                 child: TextField(
                   controller: _searchController,
                   decoration: const InputDecoration(
-                    labelText: 'Search by Date (yyyy_mm_dd)',
+                    labelText: 'ابحث حسب التاريخ (yyyy_mm_dd)',
                     border: OutlineInputBorder(),
                     suffixIcon: Icon(Icons.search),
                   ),
                   onChanged: (value) {
                     setState(() {
                       if (value.isNotEmpty) {
-                        // Filter invoices based on whether the date contains the search term
                         filteredInvoices = allInvoices.where((invoice) {
-                          return invoice.date.contains(value); // Check if the date contains the search term
+                          return invoice.date.contains(value);
                         }).toList();
                       } else {
-                        filteredInvoices = allInvoices; // Show all invoices if the search is empty
+                        filteredInvoices = allInvoices;
                       }
                     });
                   },
@@ -104,14 +99,15 @@ class _InvoicespageState extends State<Invoicespage> {
               ),
               Expanded(
                 child: ListView.builder(
-                  itemCount: filteredInvoices.isNotEmpty
-                      ? filteredInvoices.length
-                      : 1,
+                  itemCount:
+                      filteredInvoices.isNotEmpty ? filteredInvoices.length : 1,
                   itemBuilder: (context, index) {
                     if (filteredInvoices.isNotEmpty) {
                       return BigInvoiceCard(invoice: filteredInvoices[index]);
                     } else {
-                      return const Center(child: Text('No invoices found for the given date'));
+                      return const Center(
+                        child: Text('لا توجد فواتير لهذا التاريخ'),
+                      );
                     }
                   },
                 ),
@@ -123,4 +119,3 @@ class _InvoicespageState extends State<Invoicespage> {
     );
   }
 }
-

@@ -1,12 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../Appbar_TAbs/All 1 S.dart';
-import '../Appbar_TAbs/All 2 S.dart';
-import '../Appbar_TAbs/All 3 S.dart';
-import '../colors_app.dart';
-import '../firebase/firebase_functions.dart';
-import '../studetnstreambuilder.dart';
-
 class AllStudentsTab extends StatefulWidget {
   const AllStudentsTab({super.key});
 
@@ -20,12 +13,13 @@ List<String>? grades;
 late bool thereIsGrades;
 
 class _AllStudentsTabState extends State<AllStudentsTab> {
+  @override
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () async {
       await fetchGrades();
       setState(() {
-        isLoading = false; // Stop loading after fetching
+        isLoading = false;
       });
     });
   }
@@ -38,7 +32,7 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
         thereIsGrades = false;
       } else {
         thereIsGrades = true;
-        grade = grades![0]; // Default to the first grade
+        grade = grades![0];
       }
     });
   }
@@ -75,39 +69,40 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
             body: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : Center(
-                    child: thereIsGrades
-                        ? Column(
-                            children: [
-                              Container(
-                                color: app_colors.darkGrey,
-                                child: TabBar(
-                                  labelPadding: const EdgeInsets.symmetric(
-                                      horizontal: 10),
-                                  dividerColor: Colors.transparent,
-                                  onTap: (index) {
-                                    setState(() {
-                                      grade = grades![index];
-                                    });
-                                  },
-                                  isScrollable: false,
-                                  indicatorColor: app_colors.green,
-                                  labelColor: app_colors.green,
-                                  unselectedLabelColor: Colors.white,
-                                  tabs:
-                                      grades!.map((g) => Tab(text: g)).toList(),
-                                ),
-                              ),
-                              Expanded(
-                                child: StudentStreamBuilder(grade: grade ?? ""),
-                              ),
-                            ],
-                          )
-                        : const Text(
-                            "There are no grades, you must add one first.",
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
+              child: thereIsGrades
+                  ? Column(
+                children: [
+                  Container(
+                    color: app_colors.darkGrey,
+                    child: TabBar(
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                      dividerColor: Colors.transparent,
+                      onTap: (index) {
+                        setState(() {
+                          grade = grades![index];
+                        });
+                      },
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      indicatorColor: app_colors.green,
+                      labelColor: app_colors.green,
+                      unselectedLabelColor: Colors.white,
+                      tabs: grades!.map((g) => Tab(text: g)).toList(),
+                    ),
                   ),
+                  Expanded(
+                    child: StudentStreamBuilder(grade: grade ?? ""),
+                  ),
+                ],
+              )
+                  : const Text(
+                "لا توجد مراحل دراسية، يجب إضافة مرحلة أولاً.",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ),
         ),
       ],

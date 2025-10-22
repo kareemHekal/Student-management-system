@@ -1,7 +1,7 @@
-import 'package:fatma_elorbany/Alert%20dialogs/verifiy_password.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/payment.dart';
@@ -35,18 +35,17 @@ class _PaymentWidgetState extends State<PaymentWidget> {
               _buildHeader(context),
               const Divider(color: app_colors.darkGrey, thickness: 1),
               const SizedBox(height: 8),
-              _buildInfoRow(context, "Amount:",
+              _buildInfoRow(context, "المبلغ:",
                   "\$${widget.payment.amount.toStringAsFixed(2)}"),
-              _buildInfoRow(
-                  context, "Description:", widget.payment.description),
+              _buildInfoRow(context, "الوصف:", widget.payment.description),
               _buildInfoRow(
                 context,
-                "Date:",
+                "التاريخ:",
                 DateFormat('yyyy-MM-dd').format(widget.payment.dateTime),
               ),
               _buildInfoRow(
                 context,
-                "Time:",
+                "الوقت:",
                 DateFormat('hh:mm a').format(widget.payment.dateTime),
               ),
             ],
@@ -61,7 +60,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Text(
-          "OutCome Details",
+          "تفاصيل المصروف",
           style: TextStyle(
             color: app_colors.darkGrey,
             fontSize: 20,
@@ -128,27 +127,27 @@ class _PaymentWidgetState extends State<PaymentWidget> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Edit Outcome Bill"),
+          title: const Text("تعديل الفاتورة"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Amount"),
+                decoration: const InputDecoration(labelText: "المبلغ"),
               ),
               TextFormField(
                 controller: descriptionController,
-                decoration: const InputDecoration(labelText: "Description"),
+                decoration: const InputDecoration(labelText: "الوصف"),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog without changes
+                Navigator.of(context).pop();
               },
-              child: const Text("Cancel"),
+              child: const Text("إلغاء"),
             ),
             TextButton(
               onPressed: () async {
@@ -157,14 +156,12 @@ class _PaymentWidgetState extends State<PaymentWidget> {
                 double parsedAmount = double.tryParse(amountController.text) ??
                     widget.payment.amount;
 
-                // Create the updated payment object
                 Payment updatedPayment = Payment(
                   amount: parsedAmount,
                   description: descriptionController.text,
                   dateTime: widget.payment.dateTime,
                 );
 
-                // Update in Firebase
                 await FirebaseFunctions.updatePaymentInBigInvoice(
                   date: formattedDate,
                   updatedPayment: updatedPayment,
@@ -173,18 +170,16 @@ class _PaymentWidgetState extends State<PaymentWidget> {
 
                 Navigator.pushNamedAndRemoveUntil(
                     context, "/HomeScreen", (route) => false);
-                // Update the local widget state
+
                 setState(() {
                   widget.payment.amount = updatedPayment.amount;
                   widget.payment.description = updatedPayment.description;
                 });
-
-                // Close the dialog
               },
-              child: const Text("OK"),
+              child: const Text("تأكيد"),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
-                backgroundColor: Colors.blue, // Text color
+                backgroundColor: Colors.blue,
               ),
             ),
           ],

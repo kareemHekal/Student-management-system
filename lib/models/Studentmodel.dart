@@ -1,47 +1,48 @@
 import 'Magmo3aModel.dart';
+import 'absence_model.dart';
 
 /// A model representing a student and their associated data.
 class Studentmodel {
   // Basic student details
-  String id; // Unique identifier for the student
-  String? name; // Name of the student
-  String? grade; // Grade/level of the student
-  String? gender; // Gender of the student (e.g., male, female)
-  String? phoneNumber; // Student's phone number
-  String? motherPhone; // Mother's phone number
-  String? fatherPhone; // Father's phone number
+  String id;
+  String? name;
+  String? grade;
+  String? gender;
+  String? phoneNumber;
+  String? motherPhone;
+  String? fatherPhone;
 
-  // List of groups the student belongs to
+  // List of groups and absences
   List<Magmo3amodel>? hisGroups;
-  List<String>? hisGroupsId; // List of group IDs (Strings)
+  List<String>? hisGroupsId;
+  List<AbsenceModel>? absencesNumbers;
 
-  /// Flags for tracking payments for monthly fees and notes
-  bool? firstMonth; // Payment status for the first month
-  bool? secondMonth; // Payment status for the second month
-  bool? thirdMonth; // Payment status for the third month
-  bool? fourthMonth; // Payment status for the fourth month
-  bool? fifthMonth; // Payment status for the fifth month
-  bool? explainingNote; // Payment status for explaining notes
-  bool? reviewNote; // Payment status for reviewing notes
+  // Flags for tracking payments and notes
+  bool? firstMonth;
+  bool? secondMonth;
+  bool? thirdMonth;
+  bool? fourthMonth;
+  bool? fifthMonth;
+  bool? explainingNote;
+  bool? reviewNote;
 
   // Additional student information
-  String? note; // Notes or remarks about the student
-  String? dateofadd; // Date the student was added
-  int? numberOfAbsentDays; // Total number of days the student was absent
-  int? numberOfAttendantDays; // Total number of days the student was present
-  String? lastDayStudentCame; // The last day the student attended class
-  String? lastDateStudentCame; // The last date the student attended class
+  String? note;
+  String? dateofadd;
+  int? numberOfAbsentDays;
+  int? numberOfAttendantDays;
+  String? lastDayStudentCame;
+  String? lastDateStudentCame;
 
-  // Dates for when payments were made
-  String? dateOfFirstMonthPaid; // Date when the first month's fee was paid
-  String? dateOfSecondMonthPaid; // Date when the second month's fee was paid
-  String? dateOfThirdMonthPaid; // Date when the third month's fee was paid
-  String? dateOfFourthMonthPaid; // Date when the fourth month's fee was paid
-  String? dateOfFifthMonthPaid; // Date when the fifth month's fee was paid
-  String? dateOfExplainingNotePaid; // Date when the explaining note fee was paid
-  String? dateOfReviewingNotePaid; // Date when the reviewing note fee was paid
+  // Dates for payments
+  String? dateOfFirstMonthPaid;
+  String? dateOfSecondMonthPaid;
+  String? dateOfThirdMonthPaid;
+  String? dateOfFourthMonthPaid;
+  String? dateOfFifthMonthPaid;
+  String? dateOfExplainingNotePaid;
+  String? dateOfReviewingNotePaid;
 
-  /// Constructor to initialize the student model.
   Studentmodel({
     this.id = "",
     this.hisGroups,
@@ -52,6 +53,7 @@ class Studentmodel {
     this.explainingNote,
     this.reviewNote,
     this.phoneNumber,
+    this.absencesNumbers,
     this.motherPhone,
     this.fatherPhone,
     this.firstMonth,
@@ -108,9 +110,12 @@ class Studentmodel {
       hisGroups: (json['hisGroups'] as List<dynamic>?)
           ?.map((group) => Magmo3amodel.fromJson(group))
           .toList(),
-      // Convert `hisGroupsId` if available in the JSON
       hisGroupsId: (json['hisGroupsId'] as List<dynamic>?)
           ?.map((id) => id.toString())
+          .toList(),
+      // Convert JSON list to `absencesNumbers`
+      absencesNumbers: (json['absencesNumbers'] as List<dynamic>?)
+          ?.map((item) => AbsenceModel.fromJson(item))
           .toList(),
     );
   }
@@ -145,10 +150,9 @@ class Studentmodel {
       'dateOfFifthMonthPaid': dateOfFifthMonthPaid,
       'dateOfExplainingNotePaid': dateOfExplainingNotePaid,
       'dateOfReviewingNotePaid': dateOfReviewingNotePaid,
-      // Convert `hisGroups` to JSON
       'hisGroups': hisGroups?.map((group) => group.toJson()).toList(),
-      // Convert `hisGroupsId` to JSON
       'hisGroupsId': hisGroupsId,
+      'absencesNumbers': absencesNumbers?.map((abs) => abs.toJson()).toList(),
     };
   }
 }

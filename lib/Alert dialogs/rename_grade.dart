@@ -1,5 +1,6 @@
-import 'package:fatma_elorbany/firebase/firebase_functions.dart';
 import 'package:flutter/material.dart';
+
+import '../firebase/firebase_functions.dart';
 
 Future<void> renameGrade({
   required BuildContext context,
@@ -15,7 +16,7 @@ Future<void> renameGrade({
       return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
-          ' new grade name',
+          'اسم المرحلة الجديد',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         content: Form(
@@ -23,14 +24,14 @@ Future<void> renameGrade({
           child: TextFormField(
             controller: gradeController,
             decoration: InputDecoration(
-              hintText: 'new grade name',
+              hintText: 'اسم المرحلة الجديد',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return ' enter new grade name';
+                return 'من فضلك أدخل اسم المرحلة الجديد';
               }
               return null;
             },
@@ -39,7 +40,7 @@ Future<void> renameGrade({
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('إلغاء'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -50,7 +51,7 @@ Future<void> renameGrade({
               FirebaseFunctions.renameGrade(oldGrade, gradeController.text);
               Navigator.pop(context);
             },
-            child: const Text('Confirm'),
+            child: const Text('تأكيد'),
           ),
         ],
       );

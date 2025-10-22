@@ -30,7 +30,6 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         create: (context) => StudentCubit()..initTheState(),
         child: BlocConsumer<StudentCubit, StudentState>(
           listener: (context, state) {
-            // Show loader overlay while fetching sources or news
             if (state is StudentLoading) {
               context.loaderOverlay.show();
             } else {
@@ -39,7 +38,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
             if (state is StudentAddedSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Student added successfully!'),
+                  content: Text('تم إضافة الطالب بنجاح!'),
                   backgroundColor: Colors.green,
                   duration: Duration(seconds: 2),
                 ),
@@ -71,120 +70,120 @@ class _AddStudentTabState extends State<AddStudentScreen> {
             if (state is StudentLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-            // Check if data is available
+
             final cubit = StudentCubit.get(context);
 
             return Padding(
-                padding: const EdgeInsets.only(left: 10, right: 10, top: 17),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: app_colors.white.withOpacity(0.3),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(25),
-                      topRight: Radius.circular(25),
-                    ),
+              padding: const EdgeInsets.only(left: 10, right: 10, top: 17),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: app_colors.white.withOpacity(0.3),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(25),
+                    topRight: Radius.circular(25),
                   ),
-                  width: double.infinity,
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(2.0),
-                      child: Container(
-                        color: Colors.transparent,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.only(top: 20, left: 0),
-                                  child: Text(
-                                    textAlign: TextAlign.start,
-                                    '''  A D D 
-  Y O U R  S T U D E N T S''',
-                                    style: GoogleFonts.oswald(
-                                      fontSize: 30,
-                                      color: app_colors.darkGrey,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                ),
+                width: double.infinity,
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(2.0),
+                    child: Container(
+                      color: Colors.transparent,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 20, left: 0),
+                                child: Text(
+                                  textAlign: TextAlign.start,
+                                  ''' أضف 
+طلابك ''',
+                                  style: GoogleFonts.oswald(
+                                    fontSize: 30,
+                                    color: app_colors.darkGrey,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                const Spacer(),
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
+                          const Divider(
+                            color: app_colors.green,
+                            thickness: 4,
+                          ),
+                          SizedBox(
+                            height: 240,
+                            child: Column(
+                              spacing: 15,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Center(child: Text("اختر الأيام")),
+                                Expanded(
+                                  child: PickGroupRow(context),
+                                ),
                               ],
                             ),
-                            const Divider(
-                              color: app_colors.green,
-                              thickness: 4,
-                            ),
-                            SizedBox(
-                              height: 240, // or any other bounded height
-                              child: Column(
-                                spacing: 15,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Center(child: Text(" Pick the days ")),
-                                  Expanded(
-                                    child: PickGroupRow(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Divider(
-                              color: app_colors.green,
-                              thickness: 4,
-                            ),
-                            TextFormFields(context),
-                            const Divider(
-                              color: app_colors.green,
-                              thickness: 4,
-                            ),
-                            MaleOrFemalePart(context),
-                            const Divider(
-                              color: app_colors.green,
-                              thickness: 4,
-                            ),
-                            paymentsPart(context),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            const Divider(
-                              color: app_colors.green,
-                              thickness: 4,
-                            ),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            // note part
-                            NotesPart(context),
-                            const SizedBox(
-                              height: 20,
-                            ),
-                            Row(
-                              children: [
-                                Expanded(
-                                    child: ElevatedButton(
+                          ),
+                          const Divider(
+                            color: app_colors.green,
+                            thickness: 4,
+                          ),
+                          TextFormFields(context),
+                          const Divider(
+                            color: app_colors.green,
+                            thickness: 4,
+                          ),
+                          MaleOrFemalePart(context),
+                          const Divider(
+                            color: app_colors.green,
+                            thickness: 4,
+                          ),
+                          paymentsPart(context),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          const Divider(
+                            color: app_colors.green,
+                            thickness: 4,
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          NotesPart(context),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: app_colors.green,
-                                    backgroundColor:
-                                        app_colors.darkGrey, // text color
+                                    backgroundColor: app_colors.darkGrey,
                                   ),
                                   onPressed: () async {
                                     await cubit.addStudent(
                                         context, widget.level);
                                   },
-                                  child: const Text(" Add "),
-                                )),
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 200,
-                            ),
-                          ],
-                        ),
+                                  child: const Text(" أضف "),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 200,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ));
+                ),
+              ),
+            );
           },
         ),
       ),
@@ -196,48 +195,47 @@ class _AddStudentTabState extends State<AddStudentScreen> {
     return Column(
       children: [
         Expanded(
-            child: cubit.hisGroups.isEmpty
-                ? const Center(
-                    child: Text(
-                    "You did not choose any group yet",
+          child: cubit.hisGroups.isEmpty
+              ? const Center(
+                  child: Text(
+                    "لم تختَر أي مجموعة بعد",
                     style: TextStyle(color: app_colors.green),
-                  ))
-                : ListView.builder(
-                    itemCount: cubit.hisGroups.length,
-                    itemBuilder: (context, index) {
-                      // Get the current Magmo3amodel
-                      final magmo3aModel = cubit.hisGroups[index];
-                      // Return the Groupsmallcard widget for each Magmo3aModel
-                      return GestureDetector(
-                          onLongPress: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return RemoveFromGroupsListDialog(
-                                  title: "Remove Group",
-                                  content:
-                                      "Are you sure you want to remove this group ?",
-                                  onConfirm: () async {
-                                    await Future.delayed(
-                                        Duration(milliseconds: 1));
-                                    cubit.hisGroups.removeAt(index);
-                                    cubit.hisGroupsId.removeAt(index);
-                                    setState(() {});
-                                  },
-                                );
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: cubit.hisGroups.length,
+                  itemBuilder: (context, index) {
+                    final magmo3aModel = cubit.hisGroups[index];
+                    return GestureDetector(
+                      onLongPress: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return RemoveFromGroupsListDialog(
+                              title: "حذف المجموعة",
+                              content:
+                                  "هل أنت متأكد أنك تريد حذف هذه المجموعة؟",
+                              onConfirm: () async {
+                                await Future.delayed(Duration(milliseconds: 1));
+                                cubit.hisGroups.removeAt(index);
+                                cubit.hisGroupsId.removeAt(index);
+                                setState(() {});
                               },
                             );
                           },
-                          child: Groupsmallcard(magmo3aModel: magmo3aModel));
-                    },
-                  )),
-        const SizedBox(height: 10), // Space between the list and the button
-        // First Day Button
+                        );
+                      },
+                      child: Groupsmallcard(magmo3aModel: magmo3aModel),
+                    );
+                  },
+                ),
+        ),
+        const SizedBox(height: 10),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             side: const BorderSide(color: app_colors.green, width: 1),
             foregroundColor: app_colors.green,
-            backgroundColor: app_colors.darkGrey, // text color
+            backgroundColor: app_colors.darkGrey,
           ),
           onPressed: () {
             Navigator.push(
@@ -251,19 +249,17 @@ class _AddStudentTabState extends State<AddStudentScreen> {
               }
             });
           },
-          child: const Text("Add Group"),
+          child: const Text("إضافة مجموعة"),
         ),
       ],
     );
   }
 
-  Widget buildDropdown(
-    String hint,
-    bool? selectedValue,
-    ValueChanged<bool?> onChanged,
-  ) {
+  Widget buildDropdown(String hint,
+      bool? selectedValue,
+      ValueChanged<bool?> onChanged,) {
     return SizedBox(
-      width: 200, // specify a width
+      width: 200,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -278,11 +274,12 @@ class _AddStudentTabState extends State<AddStudentScreen> {
           items: const [
             DropdownMenuItem(
               value: true,
-              child: Text("Paid", style: TextStyle(color: Colors.orange)),
+              child: Text("تم الدفع", style: TextStyle(color: Colors.orange)),
             ),
             DropdownMenuItem(
               value: false,
-              child: Text("Not Paid", style: TextStyle(color: Colors.orange)),
+              child:
+                  Text("لم يتم الدفع", style: TextStyle(color: Colors.orange)),
             ),
           ],
           onChanged: onChanged,
@@ -294,7 +291,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
           hint: Text(
             selectedValue == null
                 ? hint
-                : (selectedValue ? "Paid" : "Not Paid"),
+                : (selectedValue ? "تم الدفع" : "لم يتم الدفع"),
             style: const TextStyle(color: Colors.orange),
           ),
         ),
@@ -346,7 +343,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         controller: controller,
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Please enter your $label';
+            return 'الرجاء إدخال $label';
           }
           return null;
         },
@@ -361,23 +358,23 @@ class _AddStudentTabState extends State<AddStudentScreen> {
     return Column(
       children: [
         buildTextFormField(
-            controller: cubit.name_controller, label: "Student Name"),
+            controller: cubit.name_controller, label: "اسم الطالب"),
         const SizedBox(height: 15),
         buildTextFormField(
           controller: cubit.studentNumberController,
-          label: "Student Number",
+          label: "رقم الطالب",
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 15),
         buildTextFormField(
           controller: cubit.fatherNumberController,
-          label: "Father's Number",
+          label: "رقم ولي الأمر (الأب)",
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 15),
         buildTextFormField(
           controller: cubit.motherNumberController,
-          label: "Mother's Number",
+          label: "رقم ولي الأمر (الأم)",
           keyboardType: TextInputType.phone,
         ),
         const SizedBox(height: 15),
@@ -390,45 +387,42 @@ class _AddStudentTabState extends State<AddStudentScreen> {
     return Column(
       children: [
         Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: app_colors.darkGrey, width: 1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: DropdownButton<String>(
-              dropdownColor: app_colors.darkGrey,
-              value: cubit.selectedGender ?? "Male",
-              isExpanded: true,
-              items: const [
-                DropdownMenuItem(
-                  value: "Male",
-                  child:
-                      Text("Male", style: TextStyle(color: app_colors.green)),
-                ),
-                DropdownMenuItem(
-                  value: "Female",
-                  child:
-                      Text("Female", style: TextStyle(color: app_colors.green)),
-                ),
-              ],
-              onChanged: (value) {
-                cubit.changeValueOfGenderDropDown(value);
-              },
-              elevation: 8,
-              style: const TextStyle(color: app_colors.green),
-              icon: const Icon(Icons.arrow_forward_ios_outlined,
-                  color: app_colors.green),
-              iconSize: 24,
-              hint: Padding(
-                padding: const EdgeInsets.only(left: 10),
-                child: Text(
-                  cubit.selectedGender ?? "Select a gender",
-                  style: const TextStyle(color: app_colors.green),
-                ),
+          decoration: BoxDecoration(
+            border: Border.all(color: app_colors.darkGrey, width: 1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: DropdownButton<String>(
+            dropdownColor: app_colors.darkGrey,
+            value: cubit.selectedGender ?? "ذكر",
+            isExpanded: true,
+            items: const [
+              DropdownMenuItem(
+                value: "ذكر",
+                child: Text("ذكر", style: TextStyle(color: app_colors.green)),
               ),
-            )),
-        const SizedBox(
-          height: 15,
+              DropdownMenuItem(
+                value: "أنثى",
+                child: Text("أنثى", style: TextStyle(color: app_colors.green)),
+              ),
+            ],
+            onChanged: (value) {
+              cubit.changeValueOfGenderDropDown(value);
+            },
+            elevation: 8,
+            style: const TextStyle(color: app_colors.green),
+            icon: const Icon(Icons.arrow_forward_ios_outlined,
+                color: app_colors.green),
+            iconSize: 24,
+            hint: Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: Text(
+                cubit.selectedGender ?? "اختر الجنس",
+                style: const TextStyle(color: app_colors.green),
+              ),
+            ),
+          ),
         ),
+        const SizedBox(height: 15),
         cubit.selectedGender != null
             ? Wrap(
                 direction: Axis.horizontal,
@@ -449,7 +443,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                 ],
               )
             : const Center(
-                child: Text("Select a gender",
+                child: Text("اختر الجنس",
                     style: TextStyle(color: app_colors.green)),
               ),
       ],
@@ -459,92 +453,92 @@ class _AddStudentTabState extends State<AddStudentScreen> {
   Widget paymentsPart(BuildContext context) {
     final cubit = StudentCubit.get(context);
     return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("First Month :"),
-                      buildDropdown("First Month", cubit.firstMonth, (value) {
-                        cubit.changeFirstMonthValue(value);
-                      }),
-                    ],
-                  ),
-                  const SizedBox(width: 16.0),
-                  Column(
-                    children: [
-                      const Text("Second Month :"),
-                      buildDropdown("Second Month", cubit.secondMonth, (value) {
-                        cubit.changeSecondMonthValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("Third Month :"),
-                      buildDropdown("Third Month", cubit.thirdMonth, (value) {
-                        cubit.changeThirdMonthValue(value);
-                      }),
-                    ],
-                  ),
-                  const SizedBox(width: 16.0),
-                  Column(
-                    children: [
-                      const Text("Fourth Month :"),
-                      buildDropdown("Fourth Month", cubit.fourthMonth, (value) {
-                        cubit.changeFourthMonthValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("Fifth Month :"),
-                      buildDropdown("Fifth Month", cubit.fifthMonth, (value) {
-                        cubit.changeFifthMonthValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("Explaining Note :"),
-                      buildDropdown("Explaining Note", cubit.explainingNote,
-                          (value) {
-                        cubit.changeExplainingNoteValue(value);
-                      }),
-                    ],
-                  ),
-                  const SizedBox(width: 16.0),
-                  Column(
-                    children: [
-                      const Text("Reviewing Note :"),
-                      buildDropdown("Review Note", cubit.reviewNote, (value) {
-                        cubit.changeReviewNoteValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ));
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Column(
+                  children: [
+                    const Text("الشهر الأول :"),
+                    buildDropdown("الشهر الأول", cubit.firstMonth, (value) {
+                      cubit.changeFirstMonthValue(value);
+                    }),
+                  ],
+                ),
+                const SizedBox(width: 16.0),
+                Column(
+                  children: [
+                    const Text("الشهر الثاني :"),
+                    buildDropdown("الشهر الثاني", cubit.secondMonth, (value) {
+                      cubit.changeSecondMonthValue(value);
+                    }),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16.0),
+            Row(
+              children: [
+                Column(
+                  children: [
+                    const Text("الشهر الثالث :"),
+                    buildDropdown("الشهر الثالث", cubit.thirdMonth, (value) {
+                      cubit.changeThirdMonthValue(value);
+                    }),
+                  ],
+                ),
+                const SizedBox(width: 16.0),
+                Column(
+                  children: [
+                    const Text("الشهر الرابع :"),
+                    buildDropdown("الشهر الرابع", cubit.fourthMonth, (value) {
+                      cubit.changeFourthMonthValue(value);
+                    }),
+                  ],
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Column(
+                  children: [
+                    const Text("الشهر الخامس :"),
+                    buildDropdown("الشهر الخامس", cubit.fifthMonth, (value) {
+                      cubit.changeFifthMonthValue(value);
+                    }),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16.0),
+            Row(
+              children: [
+                Column(
+                  children: [
+                    const Text("مذكرة الشرح :"),
+                    buildDropdown("مذكرة الشرح", cubit.explainingNote, (value) {
+                      cubit.changeExplainingNoteValue(value);
+                    }),
+                  ],
+                ),
+                const SizedBox(width: 16.0),
+                Column(
+                  children: [
+                    const Text("مذكرة المراجعة :"),
+                    buildDropdown("مذكرة المراجعة", cubit.reviewNote, (value) {
+                      cubit.changeReviewNoteValue(value);
+                    }),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget NotesPart(BuildContext context) {
@@ -552,15 +546,15 @@ class _AddStudentTabState extends State<AddStudentScreen> {
 
     return TextFormField(
       controller: cubit.noteController,
-      maxLines: 3, // Allows for multi-line input
+      maxLines: 3,
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Please enter a note';
+          return 'الرجاء إدخال ملاحظة';
         }
         return null;
       },
       decoration: InputDecoration(
-        labelText: "Add Note",
+        labelText: "أضف ملاحظة",
         labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.0),
@@ -573,7 +567,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
           borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
-        hintText: 'Type your note here...',
+        hintText: 'اكتب ملاحظتك هنا...',
         hintStyle: const TextStyle(color: Colors.grey),
       ),
     );

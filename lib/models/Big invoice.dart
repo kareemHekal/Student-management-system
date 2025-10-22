@@ -1,7 +1,5 @@
-import 'package:fatma_elorbany/models/payment.dart';
-
 import 'Invoice.dart';
-
+import 'payment.dart';
 
 class BigInvoice {
   final String date; // Change from DateTime to String

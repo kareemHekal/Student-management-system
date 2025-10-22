@@ -10,7 +10,7 @@ import '../models/Invoice.dart';
 class InvoiceWidget extends StatefulWidget {
   final Invoice invoice;
 
-  InvoiceWidget({required this.invoice, super.key});
+  const InvoiceWidget({required this.invoice, super.key});
 
   @override
   State<InvoiceWidget> createState() => _InvoiceWidgetState();
@@ -36,21 +36,21 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
               const Divider(color: app_colors.darkGrey, thickness: 1),
               const SizedBox(height: 8),
               _buildInfoRow(
-                  context, false, "Student Name:", widget.invoice.studentName),
-              _buildInfoRow(context, true, "Student Phone:",
+                  context, false, "اسم الطالب:", widget.invoice.studentName),
+              _buildInfoRow(context, true, "رقم الطالب:",
                   widget.invoice.studentPhoneNumber),
               _buildInfoRow(
-                  context, true, "Mom's Phone:", widget.invoice.momPhoneNumber),
+                  context, true, "رقم الأم:", widget.invoice.momPhoneNumber),
               _buildInfoRow(
-                  context, true, "Dad's Phone:", widget.invoice.dadPhoneNumber),
-              _buildInfoRow(context, false, "Grade:", widget.invoice.grade),
-              _buildInfoRow(context, false, "Amount:",
-                  "\$${widget.invoice.amount.toStringAsFixed(2)}"),
+                  context, true, "رقم الأب:", widget.invoice.dadPhoneNumber),
+              _buildInfoRow(context, false, "الصف:", widget.invoice.grade),
+              _buildInfoRow(context, false, "المبلغ:",
+                  "${widget.invoice.amount.toStringAsFixed(2)} جنيه"),
               _buildInfoRow(
-                  context, false, "Description:", widget.invoice.description),
-              _buildInfoRow(context, false, "Date:",
+                  context, false, "الوصف:", widget.invoice.description),
+              _buildInfoRow(context, false, "التاريخ:",
                   DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime)),
-              _buildInfoRow(context, false, "Time:",
+              _buildInfoRow(context, false, "الوقت:",
                   DateFormat('hh:mm a').format(widget.invoice.dateTime)),
             ],
           ),
@@ -64,7 +64,7 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Text(
-          "InCome Details",
+          "تفاصيل الإيراد",
           style: TextStyle(
             color: app_colors.darkGrey,
             fontSize: 20,
@@ -80,11 +80,11 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
               ),
               onPressed: () {
                 showVerifyPasswordDialog(
-                    context: context,
-                    onVerified: () {
-                      _showEditDialog(context);
-                    });
-                // Show the edit dialog
+                  context: context,
+                  onVerified: () {
+                    _showEditDialog(context);
+                  },
+                );
               },
             ),
           ],
@@ -99,8 +99,6 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
       final String phoneUrl = 'tel:$phoneNumber';
       if (await canLaunchUrlString(phoneUrl)) {
         await launchUrlString(phoneUrl);
-      } else {
-        print('Could not launch $phoneNumber');
       }
     }
 
@@ -153,44 +151,42 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("Edit Income Bill"),
+          title: const Text("تعديل فاتورة الإيراد"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Amount"),
+                decoration: const InputDecoration(labelText: "المبلغ"),
               ),
               TextFormField(
                 controller: descriptionController,
-                decoration: const InputDecoration(labelText: "Description"),
+                decoration: const InputDecoration(labelText: "الوصف"),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog without changes
+                Navigator.of(context).pop();
               },
-              child: const Text("Cancel"),
+              child: const Text("إلغاء"),
             ),
             TextButton(
               onPressed: () {
                 String formattedDate =
                     DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime);
-                // Parse the new amount
+
                 double parsedAmount = double.tryParse(amountController.text) ??
                     widget.invoice.amount;
 
-                // Create an updated Invoice object
                 Invoice updatedInvoice = Invoice(
                   studentId: widget.invoice.studentId,
                   id: widget.invoice.id,
                   amount: parsedAmount,
                   description: descriptionController.text,
                   dateTime: widget.invoice.dateTime,
-                  // Keep the same date and time
                   studentName: widget.invoice.studentName,
                   studentPhoneNumber: widget.invoice.studentPhoneNumber,
                   momPhoneNumber: widget.invoice.momPhoneNumber,
@@ -206,13 +202,12 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                 Navigator.pushNamedAndRemoveUntil(
                     context, "/HomeScreen", (route) => false);
                 setState(() {});
-                // Close the dialog after updating
               },
-              child: const Text("OK"),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
-                backgroundColor: Colors.blue, // Text color
+                backgroundColor: Colors.blue,
               ),
+              child: const Text("تأكيد"),
             ),
           ],
         );

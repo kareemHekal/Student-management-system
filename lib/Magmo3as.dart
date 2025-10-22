@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'BottomSheets/add_magmo3a.dart';
-import 'models/Magmo3aModel.dart';
 import 'cards/Magmo3aWidget.dart';
 import 'colors_app.dart';
 import 'firebase/firebase_functions.dart';
 import 'loadingFile/loadingWidget.dart';
+import 'models/Magmo3aModel.dart';
 
 class Magmo3as extends StatelessWidget {
   String day;
@@ -47,7 +47,7 @@ class Magmo3as extends StatelessWidget {
           ],
         ),
         StreamBuilder<List<Magmo3amodel>>(
-          stream: FirebaseFunctions.getAllDocsFromDay(day), // Ensure this returns Stream<List<Magmo3amodel>>
+          stream: FirebaseFunctions.getAllDocsFromDay(day),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
@@ -59,30 +59,37 @@ class Magmo3as extends StatelessWidget {
                 ),
               );
             }
+
             if (snapshot.hasError) {
               return Center(
                 child: Column(
                   children: [
-                    const Text("Something went wrong"),
+                    const Text("حدث شئ خطأ"),
                     ElevatedButton(
-                      onPressed: () {
-                        // You can implement retry logic here if needed
-                      },
-                      child: const Text('Try again'),
+                      onPressed: () {},
+                      child: const Text('حاول مره اخري'),
                     ),
                   ],
                 ),
               );
             }
 
-            // Directly get the list of Magmo3amodel
-            var magmo3as = snapshot.data ?? []; // This is already a list of Magmo3amodel
+            var magmo3as = snapshot.data ?? [];
 
+            // ✅ Sort by time (earlier first)
+            magmo3as.sort((a, b) {
+              if (a.time == null && b.time == null) return 0;
+              if (a.time == null) return 1; // put nulls at the end
+              if (b.time == null) return -1;
+              final aMinutes = a.time!.hour * 60 + a.time!.minute;
+              final bMinutes = b.time!.hour * 60 + b.time!.minute;
+              return aMinutes.compareTo(bMinutes);
+            });
 
             if (magmo3as.isEmpty) {
               return Center(
                 child: Text(
-                  "No groups",
+                  "لا توجد مجموعات",
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: 25,
                     color: app_colors.black,
@@ -96,7 +103,7 @@ class Magmo3as extends StatelessWidget {
                 separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   return Magmo3aWidget(
-                    magmo3aModel: magmo3as[index], // Use the Magmo3amodel directly
+                    magmo3aModel: magmo3as[index],
                   );
                 },
                 itemCount: magmo3as.length,
@@ -104,6 +111,7 @@ class Magmo3as extends StatelessWidget {
             );
           },
         )
+
       ],
     );
   }

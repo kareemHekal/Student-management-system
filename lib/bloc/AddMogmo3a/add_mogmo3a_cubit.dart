@@ -1,7 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
 import 'add_mogmo3a_state.dart';
@@ -26,8 +25,8 @@ class Magmo3aCubit extends Cubit<Magmo3aState> {
     secondaries = fetchedGrades;
     emit(SecondaryFetched());
     print(secondaries);
-    if (secondaries.isEmpty){
-      emit(Magmo3aError("there is no grades so you can't put groups"));
+    if (secondaries.isEmpty) {
+      emit(Magmo3aError("لا توجد مراحل دراسية، لذلك لا يمكنك إضافة مجموعات."));
     }
   }
 
@@ -39,8 +38,7 @@ class Magmo3aCubit extends Cubit<Magmo3aState> {
     chosenDay = existingMagmo3a.days;
     selectedSecondary = existingMagmo3a.grade;
     timeOfDay = existingMagmo3a.time ?? TimeOfDay.now();
-
-    emit(Magmo3aInitial()); // or a custom state like Magmo3aPreFilled()
+    emit(Magmo3aInitial());
   }
 
   void selectDay(String day) {
@@ -60,7 +58,7 @@ class Magmo3aCubit extends Cubit<Magmo3aState> {
 
   Future<void> addMagmo3a() async {
     if (chosenDay == null || selectedSecondary == null) {
-      emit(Magmo3aError("Please fill all fields"));
+      emit(Magmo3aError("من فضلك أكمل جميع الحقول."));
       return;
     }
 
@@ -77,7 +75,7 @@ class Magmo3aCubit extends Cubit<Magmo3aState> {
       await FirebaseFunctions.addMagmo3aToDay(chosenDay!, magmo3amodel);
       emit(Magmo3aSuccess());
     } catch (e) {
-      emit(Magmo3aError("Failed to add group"));
+      emit(Magmo3aError("فشل في إضافة المجموعة."));
     }
   }
 }

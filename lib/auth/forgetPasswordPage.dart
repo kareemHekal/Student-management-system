@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../colors_app.dart'; // Import your app_colors
+
+import '../colors_app.dart';
 
 class ForgetPasswordPage extends StatefulWidget {
   ForgetPasswordPage({super.key});
@@ -15,7 +16,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
 
   @override
   void dispose() {
-    _emailController.dispose(); // Release the controller
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -25,9 +26,9 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text("Successfully"),
+          title: Text("تم بنجاح"),
           content: Text(
-            "Reset password link sent successfully! Check your email.",
+            "تم إرسال رابط إعادة تعيين كلمة المرور بنجاح! تحقق من بريدك الإلكتروني.",
             style: TextStyle(color: Colors.black),
           ),
           actions: [
@@ -35,19 +36,19 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text("OK"),
+              child: Text("حسناً"),
             ),
           ],
         ),
       );
       setState(() {
-        _passwordResetSent = true; // Set the flag to true
+        _passwordResetSent = true;
       });
     } on FirebaseAuthException catch (e) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text("Error"),
+          title: Text("خطأ"),
           content: Text(
             e.message.toString(),
             style: TextStyle(color: Colors.black),
@@ -57,7 +58,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text("OK"),
+              child: Text("حسناً"),
             ),
           ],
         ),
@@ -71,7 +72,7 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: app_colors.green), // Use your orange color
+          icon: Icon(Icons.arrow_back, color: app_colors.green),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -97,31 +98,32 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
               ),
               Text(
                 textAlign: TextAlign.center,
-                "Just enter your email and we will send you a reset password link.",
-                style: TextStyle(color: app_colors.darkGrey), // Use your blue color
+                "فقط أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور.",
+                style: TextStyle(color: app_colors.darkGrey),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 25),
                 child: TextFormField(
-                  obscureText: _passwordResetSent, // Show the password field if the reset link has been sent
-                  cursorColor: app_colors.green, // Use your blue color
+                  obscureText: _passwordResetSent,
+                  cursorColor: app_colors.green,
                   style: TextStyle(color: Colors.black, fontSize: 20),
                   controller: _emailController,
                   decoration: InputDecoration(
-                    hintText: "Email",
+                    hintText: "البريد الإلكتروني",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(18),
                       borderSide: BorderSide.none,
                     ),
-                    fillColor: app_colors.green.withOpacity(0.1), // Use your orange color
+                    fillColor: app_colors.green.withOpacity(0.1),
                     filled: true,
-                    prefixIcon: const Icon(Icons.email, color: app_colors.green), // Use your orange color
+                    prefixIcon:
+                        const Icon(Icons.email, color: app_colors.green),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your Email';
+                      return 'من فضلك أدخل البريد الإلكتروني';
                     } else if (!value.contains('@') || !value.contains('.')) {
-                      return 'Invalid email address';
+                      return 'عنوان البريد الإلكتروني غير صالح';
                     }
                     return null;
                   },
@@ -138,12 +140,13 @@ class _ForgetPasswordPageState extends State<ForgetPasswordPage> {
                 style: ElevatedButton.styleFrom(
                   shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  backgroundColor: app_colors.darkGrey, // Use your green color
+                  backgroundColor: app_colors.darkGrey,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5,horizontal: 30),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 5, horizontal: 30),
                   child: const Text(
-                    "Send",
+                    "إرسال",
                     style: TextStyle(fontSize: 18, color: app_colors.green),
                   ),
                 ),

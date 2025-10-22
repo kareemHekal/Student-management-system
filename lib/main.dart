@@ -1,19 +1,19 @@
 
 import 'package:bloc/bloc.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fatma_elorbany/pages/AllStudentPage.dart';
 import 'package:fatma_elorbany/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'auth/forgetPasswordPage.dart';
 import 'auth/login.dart';
 import 'auth/noInternetConnection.dart';
 import 'auth/sign up page.dart';
 import 'bloc/observer.dart';
-import 'colors_app.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'firebase/firebase_options.dart';
-import 'home.dart'; // Import connectivity_plus
+import 'colors_apprt 'home.dart';
+import 'pages/AllStudentPage.dart'; // Import connectivity_plus
 
 void main() async {
   Bloc.observer = MyBlocObserver();

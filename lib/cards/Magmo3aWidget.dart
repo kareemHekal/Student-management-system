@@ -41,24 +41,20 @@ class Magmo3aWidget extends StatelessWidget {
                     builder: (context) {
                       return AlertDialog(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              16), // Modern rounded corners
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         backgroundColor: Colors.red[50],
-                        // Light red background for contrast
                         title: Text(
-                          'Delete the group',
+                          'حذف المجموعة',
                           style: TextStyle(
                             color: Colors.red[900],
-                            // Darker red for the title for better readability
                             fontSize: 20,
                           ),
                         ),
                         content: Text(
-                          'Are you sure you want to delete the group?',
+                          'هل أنت متأكد أنك تريد حذف هذه المجموعة؟',
                           style: TextStyle(
                             color: Colors.red[700],
-                            // Slightly darker red for content
                             fontSize: 16,
                           ),
                         ),
@@ -66,54 +62,47 @@ class Magmo3aWidget extends StatelessWidget {
                           TextButton(
                             style: TextButton.styleFrom(
                               foregroundColor: Colors.red[900],
-                              // Darker red text for cancel
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 10),
                               textStyle:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             child: Text(
-                              'Cancel',
+                              'إلغاء',
                               style: TextStyle(
                                   color: Colors.red[900], fontSize: 16),
                             ),
                             onPressed: () {
-                              Navigator.pop(context); // Close the dialog
+                              Navigator.pop(context);
                             },
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               foregroundColor: Colors.white,
-                              // White text on the red button
                               backgroundColor: Colors.red[600],
-                              // Dark red button color
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    8), // Rounded corners for the button
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              elevation: 5, // Subtle shadow for depth
+                              elevation: 5,
                             ),
                             child: const Text(
-                              'Confirm',
+                              'تأكيد الحذف',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 16),
                             ),
                             onPressed: () async {
                               try {
-                                // Delete the Magmo3a from the day
                                 await FirebaseFunctions.deleteMagmo3aFromDay(
                                     magmo3aModel.days ?? "", magmo3aModel.id);
                                 Navigator.pop(context);
 
-                                // Fetch students by group ID
                                 Stream<QuerySnapshot<Studentmodel>>
                                     studentsStream =
                                     FirebaseFunctions.getStudentsByGroupId(
                                         magmo3aModel.grade ?? "",
                                         magmo3aModel.id);
-                                print(studentsStream);
                                 studentsStream.listen((snapshot) async {
                                   for (var doc in snapshot.docs) {
                                     var student = doc.data();
@@ -122,7 +111,6 @@ class Magmo3aWidget extends StatelessWidget {
                                     student.hisGroupsId
                                         ?.remove(magmo3aModel.id);
 
-                                    // Update the student in the collection
                                     await FirebaseFunctions
                                         .updateStudentInCollection(
                                       student.grade ?? "",
@@ -131,8 +119,6 @@ class Magmo3aWidget extends StatelessWidget {
                                     );
                                   }
                                 });
-
-                                print('Delete button pressed');
                               } catch (e) {
                                 print("Error deleting group: $e");
                               }
@@ -143,10 +129,10 @@ class Magmo3aWidget extends StatelessWidget {
                     },
                   );
                 },
-                backgroundColor: Color(0xFFFE4A49),
+                backgroundColor: const Color(0xFFFE4A49),
                 foregroundColor: Colors.white,
                 icon: Icons.delete,
-                label: 'Delete',
+                label: 'حذف',
               ),
             ],
           ),
@@ -201,26 +187,26 @@ class Magmo3aWidget extends StatelessWidget {
 
   Widget _buildDaysList() {
     return SizedBox(
-      height: 70, // increased height
+      height: 70,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
           Padding(
-            padding: const EdgeInsets.all(5.0), // increased padding
+            padding: const EdgeInsets.all(5.0),
             child: Container(
               decoration: BoxDecoration(
                 color: app_colors.darkGrey,
                 border: Border.all(
                   color: app_colors.green,
-                  width: 2, // increased border width
+                  width: 2,
                 ),
-                borderRadius: BorderRadius.circular(15), // increased radius
+                borderRadius: BorderRadius.circular(15),
               ),
-              padding: const EdgeInsets.all(8.0), // added padding
+              padding: const EdgeInsets.all(8.0),
               child: Text(
-                magmo3aModel.days ?? "", // Display the full day name
-                style: TextStyle(
-                  fontSize: 30, // increased font size
+                magmo3aModel.days ?? "",
+                style: const TextStyle(
+                  fontSize: 30,
                   color: app_colors.green,
                 ),
               ),
@@ -243,16 +229,16 @@ class Magmo3aWidget extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   children: [
-                    TextSpan(
-                      text: "Grade: ",
+                    const TextSpan(
+                      text: "الصف: ",
                       style: TextStyle(
                         fontSize: 17,
                         color: app_colors.darkGrey,
                       ),
                     ),
                     TextSpan(
-                      text: "${magmo3aModel.grade ?? ''}",
-                      style: TextStyle(
+                      text: magmo3aModel.grade ?? '',
+                      style: const TextStyle(
                         fontSize: 20,
                         color: app_colors.green,
                       ),
@@ -260,14 +246,12 @@ class Magmo3aWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(
-                width: 10,
-              ),
+              const SizedBox(width: 10),
               RichText(
                 text: TextSpan(
                   children: [
-                    TextSpan(
-                      text: " Time : ",
+                    const TextSpan(
+                      text: "الوقت: ",
                       style: TextStyle(
                         fontSize: 17,
                         color: app_colors.darkGrey,
@@ -275,9 +259,9 @@ class Magmo3aWidget extends StatelessWidget {
                     ),
                     TextSpan(
                       text: magmo3aModel.time != null
-                          ? "${_formatTime(magmo3aModel.time!)}"
+                          ? _formatTime(magmo3aModel.time!)
                           : '',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         color: app_colors.green,
                       ),
@@ -285,9 +269,7 @@ class Magmo3aWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(
-                width: 10,
-              ),
+              const SizedBox(width: 10),
             ],
           ),
         ],
@@ -299,11 +281,9 @@ class Magmo3aWidget extends StatelessWidget {
     final hour = time.hour;
     final minute = time.minute;
     final isPm = hour >= 12;
-
     final formattedHour = hour > 12 ? hour - 12 : hour;
     final formattedMinute = minute.toString().padLeft(2, '0');
-
-    return "$formattedHour:$formattedMinute ${isPm ? 'PM' : 'AM'}";
+    return "$formattedHour:$formattedMinute ${isPm ? 'م' : 'ص'}";
   }
 
   Widget _buildDetailsButton(context) {
@@ -331,7 +311,7 @@ class Magmo3aWidget extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.arrow_forward_ios,
               color: app_colors.green,
             ),

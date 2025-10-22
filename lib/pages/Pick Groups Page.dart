@@ -1,10 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../cards/magmo3afor display widget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loadingWidget.dart';
-import '../cards/magmo3afor display widget.dart';
 import '../models/Magmo3aModel.dart';
 
 class ChoosedaysToAttend extends StatefulWidget {
@@ -101,7 +100,7 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
               children: [
                 const SizedBox(height: 20),
                 Text(
-                  " Just Pick the Group ",
+                  "اختر المجموعة فقط",
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: app_colors.darkGrey, fontSize: 30),
                 ),
@@ -123,26 +122,28 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
                       return Center(
                         child: Column(
                           children: [
-                            const Text("Something went wrong"),
+                            const Text("حدث خطأ ما"),
                             ElevatedButton(
                               onPressed: () {
-                                // Optionally implement retry logic here
+                                // يمكنك تنفيذ منطق إعادة المحاولة هنا
                               },
-                              child: const Text('Try Again'),
+                              child: const Text('أعد المحاولة'),
                             ),
                           ],
                         ),
                       );
                     }
 
-                    // Directly use snapshot.data as a List<Magmo3amodel>
                     var Magmo3as = snapshot.data ?? [];
 
                     if (Magmo3as.isEmpty) {
                       return Center(
                         child: Text(
-                          "No groups",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 25, color: app_colors.black),
+                          "لا توجد مجموعات",
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(fontSize: 25, color: app_colors.black),
                         ),
                       );
                     }
@@ -167,7 +168,6 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
                     );
                   },
                 )
-
               ],
             ),
           ),

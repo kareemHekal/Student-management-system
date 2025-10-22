@@ -1,9 +1,9 @@
-import 'package:fatma_elorbany/models/Studentmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:rafat_elzahaby_main/models/Studentmodel.dart';
 
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
@@ -165,10 +165,10 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDropdown("G R A D E", "Select a grade", secondaries,
+            _buildDropdown("المرحلة", "اختر المرحلة", secondaries,
                 selectedSecondary, (value) => selectSecondary(value)),
             const SizedBox(height: 15),
-            _buildDropdown("Select Month", "Select the month", categories,
+            _buildDropdown("اختر الشهر", "اختر الشهر", categories,
                 selectedCategory, (value) => selectCategory(value)),
             const SizedBox(height: 20),
             Center(
@@ -182,7 +182,7 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
                   padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
                 ),
                 child: const Text(
-                  "Search",
+                  "بحث",
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -196,15 +196,23 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         ElevatedButton.icon(
-                          onPressed: () => generatePdf(paidStudents, "Paid Students"),
+                          onPressed: () =>
+                              generatePdf(paidStudents, "طلاب مدفوعين"),
                           icon: const Icon(Icons.picture_as_pdf),
-                          label: const Text("PDF Paid",style: TextStyle(color: Colors.white),),
+                          label: const Text(
+                            "PDF للمدفوعين",
+                            style: TextStyle(color: Colors.white),
+                          ),
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                         ),
                         ElevatedButton.icon(
-                          onPressed: () => generatePdf(unpaidStudents, "Unpaid Students"),
+                          onPressed: () =>
+                              generatePdf(unpaidStudents, "طلاب غير مدفوعين"),
                           icon: const Icon(Icons.picture_as_pdf),
-                          label: const Text("PDF Unpaid",style: TextStyle(color: Colors.white),),
+                          label: const Text(
+                            "PDF لغير المدفوعين",
+                            style: TextStyle(color: Colors.white),
+                          ),
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                         ),
                       ],
@@ -213,9 +221,11 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
                     Expanded(
                       child: ListView(
                         children: [
-                          _buildStudentList("Paid Students", paidStudents, Colors.green),
+                          _buildStudentList(
+                              "الطلاب المدفوعين", paidStudents, Colors.green),
                           const SizedBox(height: 20),
-                          _buildStudentList("Unpaid Students", unpaidStudents, Colors.red),
+                          _buildStudentList("الطلاب غير المدفوعين",
+                              unpaidStudents, Colors.red),
                         ],
                       ),
                     ),
@@ -225,12 +235,11 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
             else if (startSearch)
               const Padding(
                 padding: EdgeInsets.only(top: 30),
-                child: Center(child: Text("You don't have students in this grade")),
+                child: Center(child: Text("لا يوجد طلاب في هذه المرحلة")),
               ),
           ],
         ),
       ),
-
     );
   }
 

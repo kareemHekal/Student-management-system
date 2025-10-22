@@ -16,13 +16,13 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // Rounded corners
+        borderRadius: BorderRadius.circular(16),
       ),
-      backgroundColor: Colors.red[50], // Light red background for contrast
+      backgroundColor: Colors.red[50],
       title: Text(
         title,
         style: TextStyle(
-          color: Colors.red[900], // Darker red for the title
+          color: Colors.red[900],
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
@@ -34,7 +34,7 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
           Text(
             content,
             style: TextStyle(
-              color: Colors.red[700], // Slightly darker red for content
+              color: Colors.red[700],
               fontSize: 16,
             ),
           ),
@@ -47,7 +47,7 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             textStyle: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          child: const Text("Cancel"),
+          child: const Text("إلغاء"),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -55,17 +55,16 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
-            backgroundColor: Colors.red[600], // White text on red button
+            backgroundColor: Colors.red[600],
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            elevation: 5, // Subtle shadow for depth
+            elevation: 5,
           ),
-          child: const Text("Sure!"),
+          child: const Text("تأكيد"),
           onPressed: () async {
             await onConfirm();
-
             Navigator.pushNamedAndRemoveUntil(
                 context, "/HomeScreen", (route) => false);
           },

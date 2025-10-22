@@ -1,10 +1,10 @@
-import 'package:fatma_elorbany/firebase/firebase_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/AddMogmo3a/add_mogmo3a_cubit.dart';
 import '../bloc/AddMogmo3a/add_mogmo3a_state.dart';
 import '../colors_app.dart';
+import '../firebase/firebase_functions.dart';
 import '../models/Magmo3aModel.dart';
 
 class AddMagmo3a extends StatelessWidget {
@@ -30,8 +30,8 @@ class AddMagmo3a extends StatelessWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(existingMagmo3a == null
-                    ? 'Added successfully'
-                    : 'Edited successfully'),
+                    ? 'تمت الإضافة بنجاح'
+                    : 'تم التعديل بنجاح'),
                 backgroundColor: Colors.green,
               ),
             );
@@ -39,12 +39,12 @@ class AddMagmo3a extends StatelessWidget {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                title: const Text("Error"),
+                title: const Text("خطأ"),
                 content: Text(state.message),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text("OK"),
+                    child: const Text("حسنًا"),
                   ),
                 ],
               ),
@@ -66,8 +66,8 @@ class AddMagmo3a extends StatelessWidget {
               child: Column(
                 children: [
                   _buildDropdown(
-                    "D A Y S",
-                    "Select a day",
+                    "اليوم",
+                    "اختر اليوم",
                     cubit.days,
                     cubit.chosenDay,
                     (value) => cubit.selectDay(value),
@@ -76,8 +76,8 @@ class AddMagmo3a extends StatelessWidget {
                   _buildTimePicker(context, cubit),
                   const Divider(color: app_colors.darkGrey, thickness: 3),
                   _buildDropdown(
-                    "G R A D E",
-                    "Select a secondary",
+                    "المرحلة الدراسية",
+                    "اختر المرحلة الدراسية",
                     cubit.secondaries,
                     cubit.selectedSecondary,
                     (value) => cubit.selectSecondary(value),
@@ -103,24 +103,22 @@ class AddMagmo3a extends StatelessWidget {
                               );
 
                               await FirebaseFunctions.editMagmo3aInDay(
-                                oldDay ?? existingMagmo3a!.days!,
-                                existingMagmo3a!.grade!,
-                                updatedMagmo3a,
-                              );
+                          oldDay ?? existingMagmo3a!.days!,
+                          existingMagmo3a!.grade!,
+                          updatedMagmo3a,
+                        );
 
-                              // ignore: use_build_context_synchronously
                               Navigator.pop(context);
-                              // ignore: use_build_context_synchronously
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Edited successfully'),
+                                  content: Text('تم التعديل بنجاح'),
                                   backgroundColor: Colors.green,
                                 ),
                               );
                             }
                           },
-                          child: Text(
-                              existingMagmo3a == null ? "A D D" : "E D I T"),
+                          child:
+                              Text(existingMagmo3a == null ? "إضافة" : "تعديل"),
                         ),
                 ],
               ),
@@ -163,7 +161,7 @@ class AddMagmo3a extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("T I M E", style: TextStyle(fontSize: 16)),
+        const Text("الوقت", style: TextStyle(fontSize: 16)),
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -183,11 +181,11 @@ class AddMagmo3a extends StatelessWidget {
                   border: Border.all(color: app_colors.darkGrey, width: 1.5),
                 ),
                 padding: const EdgeInsets.all(8.0),
-                child: const Text("Pick Time"),
+                child: const Text("اختر الوقت"),
               ),
             ),
             Text(
-              "${cubit.timeOfDay.hourOfPeriod}:${cubit.timeOfDay.minute.toString().padLeft(2, '0')} ${cubit.timeOfDay.period == DayPeriod.am ? 'AM' : 'PM'}",
+              "${cubit.timeOfDay.hourOfPeriod}:${cubit.timeOfDay.minute.toString().padLeft(2, '0')} ${cubit.timeOfDay.period == DayPeriod.am ? 'ص' : 'م'}",
               style: const TextStyle(fontSize: 30),
             ),
           ],

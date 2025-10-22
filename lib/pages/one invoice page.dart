@@ -1,9 +1,10 @@
-import 'package:fatma_elorbany/Alert%20dialogs/verifiy_password.dart';
 import 'package:flutter/material.dart';
+
 import '../Alert dialogs/DeleteIncomeBillDialog.dart';
 import '../Alert dialogs/DeleteOutcomeBillDialog.dart';
-import '../cards/outcome widget.dart';
+import '../Alert dialogs/verifiy_password.dart';
 import '../cards/In come widget.dart';
+import '../cards/outcome widget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Big invoice.dart';
@@ -26,14 +27,13 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize filtered lists
     filteredIncomeInvoices = widget.invoice.invoices;
   }
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2, // Number of tabs
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
@@ -88,8 +88,8 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                 const TabBar(
                   dividerHeight: 0,
                   tabs: [
-                    Tab(text: "Income"),
-                    Tab(text: "Outcomes"),
+                    Tab(text: "الإيرادات"),
+                    Tab(text: "المصروفات"),
                   ],
                   indicatorColor: Colors.white,
                   labelColor: Colors.white,
@@ -109,13 +109,12 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                   child: TextField(
                     controller: _incomeSearchController,
                     decoration: const InputDecoration(
-                      labelText: 'Search by Student Name',
+                      labelText: 'ابحث باسم الطالب',
                       border: OutlineInputBorder(),
                       suffixIcon: Icon(Icons.search),
                     ),
                     onChanged: (value) {
                       setState(() {
-                        // Filter income invoices based on student name
                         filteredIncomeInvoices = widget.invoice.invoices
                             .where((invoice) => invoice.studentName
                                 .toLowerCase()
@@ -145,11 +144,11 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                                               invoiceId: widget.invoice
                                                   .invoices[filteredIndex].id);
                                       setState(() {});
-                                      print("Income bill deleted");
+                                      print("تم حذف الفاتورة");
                                     },
-                                    title: 'Delete Income Bill',
+                                    title: 'حذف فاتورة الإيراد',
                                     content:
-                                        'Are you sure you want to delete this income bill?',
+                                        'هل أنت متأكد أنك تريد حذف هذه الفاتورة؟',
                                   );
                                 },
                               );
@@ -157,20 +156,17 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                           );
                         },
                         child: InvoiceWidget(
-                          invoice: filteredIncomeInvoices[
-                              filteredIndex], // Pass the filtered invoice
+                          invoice: filteredIncomeInvoices[filteredIndex],
                         ),
                       );
                     },
                   ),
                 ),
-
-                // Display list length
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    '${filteredIncomeInvoices.length} Income Bill(s)',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    '${filteredIncomeInvoices.length} فاتورة إيراد',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
               ],
@@ -192,9 +188,9 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                                   context: context,
                                   builder: (BuildContext context) {
                                     return DeleteOutcomeBillDialog(
-                                      title: 'Delete Outcome Bill',
+                                      title: 'حذف فاتورة المصروفات',
                                       content:
-                                          'Are you sure you want to delete this outcome bill?',
+                                          'هل أنت متأكد أنك تريد حذف هذه الفاتورة؟',
                                       onConfirm: () async {
                                         widget.invoice.payments.remove(
                                             widget.invoice.payments[index]);
@@ -203,7 +199,7 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                                                 widget.invoice.date,
                                                 widget.invoice);
                                         setState(() {});
-                                        print("Outcome bill deleted");
+                                        print("تم حذف الفاتورة");
                                       },
                                     );
                                   },
@@ -218,12 +214,11 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                     },
                   ),
                 ),
-                // Display list length
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    '${widget.invoice.payments.length} Outcome Bill(s)',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    '${widget.invoice.payments.length} فاتورة مصروفات',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ),
               ],

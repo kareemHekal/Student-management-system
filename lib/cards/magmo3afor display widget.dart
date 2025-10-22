@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 
 import '../colors_app.dart';
@@ -8,8 +6,7 @@ import '../models/Magmo3aModel.dart';
 class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
   final Magmo3amodel? magmo3aModel;
 
-  Magmo3aWidgetWithoutSlidable(
-      {  required this.magmo3aModel, super.key});
+  Magmo3aWidgetWithoutSlidable({required this.magmo3aModel, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -60,26 +57,26 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
 
   Widget _buildDaysList() {
     return SizedBox(
-      height: 70, // increased height
+      height: 70,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
           Padding(
-            padding: const EdgeInsets.all(5.0), // increased padding
+            padding: const EdgeInsets.all(5.0),
             child: Container(
               decoration: BoxDecoration(
                 color: app_colors.darkGrey,
                 border: Border.all(
                   color: app_colors.green,
-                  width: 2, // increased border width
+                  width: 2,
                 ),
-                borderRadius: BorderRadius.circular(15), // increased radius
+                borderRadius: BorderRadius.circular(15),
               ),
-              padding: const EdgeInsets.all(8.0), // added padding
+              padding: const EdgeInsets.all(8.0),
               child: Text(
-                magmo3aModel?.days??"", // Display the full day name
+                magmo3aModel?.days ?? "",
                 style: const TextStyle(
-                  fontSize: 30, // increased font size
+                  fontSize: 30,
                   color: app_colors.green,
                 ),
               ),
@@ -103,7 +100,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
                 text: TextSpan(
                   children: [
                     const TextSpan(
-                      text: "Grade: ",
+                      text: "الصف: ",
                       style: TextStyle(
                         fontSize: 17,
                         color: app_colors.darkGrey,
@@ -119,14 +116,12 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(
-                width: 10,
-              ),
+              const SizedBox(width: 10),
               RichText(
                 text: TextSpan(
                   children: [
                     const TextSpan(
-                      text: " Time : ",
+                      text: "الوقت: ",
                       style: TextStyle(
                         fontSize: 17,
                         color: app_colors.darkGrey,
@@ -144,9 +139,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(
-                width: 10,
-              ),
+              const SizedBox(width: 10),
             ],
           ),
         ],
@@ -162,6 +155,6 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
     final formattedHour = hour > 12 ? hour - 12 : hour;
     final formattedMinute = minute.toString().padLeft(2, '0');
 
-    return "$formattedHour:$formattedMinute ${isPm ? 'PM' : 'AM'}";
+    return "$formattedHour:$formattedMinute ${isPm ? 'م' : 'ص'}";
   }
 }
