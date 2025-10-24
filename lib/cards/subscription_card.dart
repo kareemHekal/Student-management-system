@@ -20,7 +20,7 @@ class SubscriptionCard extends StatelessWidget {
           context: context,
           builder: (_) => DeleteSubscriptionDialog(
             gradeName: gradeName,
-            subscriptionName: subscriptionFee.subscriptionName,
+            id: subscriptionFee.id,
           ),
         );
       },

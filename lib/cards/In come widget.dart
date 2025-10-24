@@ -1,6 +1,8 @@
+import 'package:fatma_elorbany/models/subscription_fee.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+
 import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
@@ -16,6 +18,28 @@ class InvoiceWidget extends StatefulWidget {
 }
 
 class _InvoiceWidgetState extends State<InvoiceWidget> {
+  SubscriptionFee? subscriptionFee;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _loadSubscription();
+  }
+
+  Future<void> _loadSubscription() async {
+    final sub = await FirebaseFunctions.getSubscriptionById(
+      widget.invoice.grade,
+      widget.invoice.subscriptionFeeID,
+    );
+
+    if (mounted) {
+      setState(() {
+        subscriptionFee = sub;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -45,6 +69,8 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
               _buildInfoRow(context, false, "الصف:", widget.invoice.grade),
               _buildInfoRow(context, false, "المبلغ:",
                   "${widget.invoice.amount.toStringAsFixed(2)} جنيه"),
+              _buildInfoRow(context, false, "اسم الأشتراك:",
+                  subscriptionFee?.subscriptionName ?? ""),
               _buildInfoRow(
                   context, false, "الوصف:", widget.invoice.description),
               _buildInfoRow(context, false, "التاريخ:",
@@ -189,6 +215,7 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                   studentName: widget.invoice.studentName,
                   studentPhoneNumber: widget.invoice.studentPhoneNumber,
                   momPhoneNumber: widget.invoice.momPhoneNumber,
+                  subscriptionFeeID: widget.invoice.subscriptionFeeID,
                   dadPhoneNumber: widget.invoice.dadPhoneNumber,
                   grade: widget.invoice.grade,
                 );

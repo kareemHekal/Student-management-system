@@ -1,6 +1,8 @@
+import 'package:fatma_elorbany/models/student_paid_subscription.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../Alert dialogs/show_add_student_payment_dialog.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../home.dart';
 import '../../models/Magmo3aModel.dart';
@@ -9,29 +11,10 @@ import 'add_student_state.dart';
 
 class StudentCubit extends Cubit<StudentState> {
   StudentCubit() : super(StudentInitial());
-
-  late double totalAmount;
-  late String description;
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  TextEditingController totalAmountController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
+  List<StudentPaidSubscriptions>? studentPaidSubscriptions = [];
   late String? date;
   late String? day;
-  String? dateOfFirstMonthPaid;
-  String? dateOfSecondMonthPaid;
-  String? dateOfThirdMonthPaid;
-  String? dateOfFourthMonthPaid;
-  String? dateOfFifthMonthPaid;
-  String? dateOfExplainingNotePaid;
-  String? dateOfReviewingNotePaid;
   String? selectedGender;
-  bool? secondMonth;
-  bool? firstMonth;
-  bool? thirdMonth;
-  bool? fourthMonth;
-  bool? fifthMonth;
-  bool? explainingNote;
-  bool? reviewNote;
   TextEditingController name_controller = TextEditingController();
   TextEditingController studentNumberController = TextEditingController();
   TextEditingController fatherNumberController = TextEditingController();
@@ -57,6 +40,7 @@ class StudentCubit extends Cubit<StudentState> {
       emit(StudentValidationError("من فضلك أدخل اسم الطالب"));
       return;
     }
+
     if (studentNumberController.text.trim().isEmpty) {
       studentNumberController.text = '00000000000';
     } else if (!RegExp(r'^\d{11}$').hasMatch(studentNumberController.text)) {
@@ -83,170 +67,54 @@ class StudentCubit extends Cubit<StudentState> {
       return;
     }
 
-    if (firstMonth == null ||
-        secondMonth == null ||
-        thirdMonth == null ||
-        fourthMonth == null ||
-        fifthMonth == null) {
-      emit(StudentValidationError("من فضلك اختر حالة الدفع لكل الشهور"));
-      return;
-    }
-
-    if (explainingNote == null || reviewNote == null) {
-      emit(StudentValidationError(
-          "من فضلك اختر حالات الملاحظات للشرح والمراجعة"));
-      return;
-    }
-
-    updatePaymentDates();
-
     Studentmodel submodel = Studentmodel(
       hisGroupsId: hisGroupsId,
+      studentPaidSubscriptions: studentPaidSubscriptions,
       hisGroups: hisGroups,
       note: noteController.text.isEmpty ? "بدون ملاحظة" : noteController.text,
-      dateofadd: date!,
+      dateofadd: date ?? "",
       name: name_controller.text,
       gender: selectedGender,
       grade: level,
-      firstMonth: firstMonth,
-      secondMonth: secondMonth,
-      thirdMonth: thirdMonth,
-      fourthMonth: fourthMonth,
-      fifthMonth: fifthMonth,
-      explainingNote: explainingNote,
-      reviewNote: reviewNote,
       phoneNumber: studentNumberController.text,
       motherPhone: motherNumberController.text,
       fatherPhone: fatherNumberController.text,
-      dateOfFirstMonthPaid: dateOfFirstMonthPaid,
-      dateOfSecondMonthPaid: dateOfSecondMonthPaid,
-      dateOfThirdMonthPaid: dateOfThirdMonthPaid,
-      dateOfFourthMonthPaid: dateOfFourthMonthPaid,
-      dateOfFifthMonthPaid: dateOfFifthMonthPaid,
-      dateOfExplainingNotePaid: dateOfExplainingNotePaid,
-      dateOfReviewingNotePaid: dateOfReviewingNotePaid,
     );
 
-    bool hasPayment = reviewNote == true ||
-        explainingNote == true ||
-        firstMonth == true ||
-        secondMonth == true ||
-        thirdMonth == true ||
-        fourthMonth == true ||
-        fifthMonth == true;
+    try {
+      emit(StudentLoading());
+      String studentId = await FirebaseFunctions.addStudentToCollection(
+        level ?? "",
+        submodel,
+      );
 
-    if (hasPayment) {
-      await showPaymentChangeDialog(context, level, submodel);
-    } else {
-      try {
-        emit(StudentLoading());
-        await FirebaseFunctions.addStudentToCollection(level ?? "", submodel);
-        emit(StudentAddedSuccess());
-        clearControllers();
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => Homescreen()),
-              (route) => false,
+      emit(StudentAddedSuccess());
+
+      for (final paidSub in studentPaidSubscriptions ?? []) {
+        await FirebaseFunctions.addInvoiceToBigInvoices(
+          subscriptionFeeID: paidSub.subscriptionId ?? "",
+          date: date ?? "",
+          day: day ?? "",
+          amount: paidSub.paidAmount ?? 0,
+          description: paidSub.description ?? "",
+          grade: level ?? "",
+          phoneNumber: studentNumberController.text,
+          motherPhone: motherNumberController.text,
+          fatherPhone: fatherNumberController.text,
+          studentId: studentId,
+          studentName: name_controller.text,
         );
-      } catch (e) {
-        emit(StudentAddedFailure(e.toString()));
       }
+
+      clearControllers();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => Homescreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      emit(StudentAddedFailure(e.toString()));
     }
-  }
-
-  void updatePaymentDates() {
-    dateOfFirstMonthPaid = firstMonth == true ? date : null;
-    dateOfSecondMonthPaid = secondMonth == true ? date : null;
-    dateOfThirdMonthPaid = thirdMonth == true ? date : null;
-    dateOfFourthMonthPaid = fourthMonth == true ? date : null;
-    dateOfFifthMonthPaid = fifthMonth == true ? date : null;
-    dateOfExplainingNotePaid = explainingNote == true ? date : null;
-    dateOfReviewingNotePaid = reviewNote == true ? date : null;
-  }
-
-  Future<void> showPaymentChangeDialog(BuildContext context,
-      level,
-      Studentmodel submodel,) async {
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return PopScope(
-          canPop: false,
-          child: AlertDialog(
-            title: const Text("تم الكشف عن تغييرات في الدفع"),
-            content: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: totalAmountController,
-                    decoration: const InputDecoration(
-                      labelText: "المبلغ الإجمالي",
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'المبلغ الإجمالي لا يمكن أن يكون فارغًا';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextField(
-                    controller: descriptionController,
-                    decoration: const InputDecoration(labelText: "الوصف"),
-                  ),
-                ],
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () async {
-                  if (_formKey.currentState?.validate() ?? false) {
-                    totalAmount =
-                        double.tryParse(totalAmountController.text) ?? 0.0;
-                    description = descriptionController.text;
-
-                    try {
-                      emit(StudentLoading());
-                      String studentId =
-                      await FirebaseFunctions.addStudentToCollection(
-                        level ?? "",
-                        submodel,
-                      );
-                      emit(StudentAddedSuccess());
-
-                      FirebaseFunctions.addInvoiceToBigInvoices(
-                        date: date ?? "",
-                        day: day ?? "",
-                        amount: totalAmount,
-                        description: description,
-                        grade: level,
-                        fatherPhone: fatherNumberController.text,
-                        motherPhone: motherNumberController.text,
-                        phoneNumber: studentNumberController.text,
-                        studentId: studentId,
-                        studentName: name_controller.text,
-                      );
-                      clearControllers();
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/HomeScreen',
-                            (route) => false,
-                      );
-                    } catch (e) {
-                      emit(StudentAddedFailure(e.toString()));
-                    }
-                  }
-                },
-                child: const Text('حفظ'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   void updateGroup(BuildContext context, Magmo3amodel? result) {
@@ -297,61 +165,49 @@ class StudentCubit extends Cubit<StudentState> {
     print(selectedGender);
   }
 
-  void changeFirstMonthValue(value) {
-    firstMonth = value;
-    emit(StudentUpdated());
-    print(firstMonth);
-  }
-
-  void changeSecondMonthValue(value) {
-    secondMonth = value;
-    emit(StudentUpdated());
-    print(secondMonth);
-  }
-
-  void changeThirdMonthValue(value) {
-    thirdMonth = value;
-    emit(StudentUpdated());
-    print(thirdMonth);
-  }
-
-  void changeFourthMonthValue(value) {
-    fourthMonth = value;
-    emit(StudentUpdated());
-    print(fourthMonth);
-  }
-
-  void changeFifthMonthValue(value) {
-    fifthMonth = value;
-    emit(StudentUpdated());
-    print(fifthMonth);
-  }
-
-  void changeExplainingNoteValue(value) {
-    explainingNote = value;
-    emit(StudentUpdated());
-    print(explainingNote);
-  }
-
-  void changeReviewNoteValue(value) {
-    reviewNote = value;
-    emit(StudentUpdated());
-    print(reviewNote);
-  }
-
   void clearControllers() {
     name_controller.clear();
     studentNumberController.clear();
     fatherNumberController.clear();
     motherNumberController.clear();
     noteController.clear();
-    totalAmountController.clear();
-    descriptionController.clear();
     selectedGender = null;
-    firstMonth = secondMonth = thirdMonth = fourthMonth = fifthMonth = null;
-    explainingNote = reviewNote = null;
     hisGroups.clear();
     hisGroupsId.clear();
     emit(StudentInitial());
+  }
+
+  void changePayment(StudentPaidSubscriptions studentPaidSubscription,
+      double fullPrice, BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => PaidDialog(
+        paidAmount: studentPaidSubscription.paidAmount,
+        fullPrice: fullPrice,
+        onSave: (editedAmount, comingDescription) {
+          // Check if this subscriptionId already exists
+          int index = studentPaidSubscriptions?.indexWhere((sub) =>
+                  sub.subscriptionId ==
+                  studentPaidSubscription.subscriptionId) ??
+              -1;
+
+          if (index != -1) {
+            // Overwrite the existing entry
+            studentPaidSubscriptions?[index] = StudentPaidSubscriptions(
+                description: comingDescription,
+                paidAmount: editedAmount,
+                subscriptionId: studentPaidSubscription.subscriptionId);
+          } else {
+            // Add new entry
+            studentPaidSubscriptions?.add(StudentPaidSubscriptions(
+                paidAmount: editedAmount,
+                description: comingDescription,
+                subscriptionId: studentPaidSubscription.subscriptionId));
+          }
+
+          emit(StudentUpdated());
+        },
+      ),
+    );
   }
 }

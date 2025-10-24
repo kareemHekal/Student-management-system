@@ -10,8 +10,12 @@ import '../Alert dialogs/RemoveFromGroupsListDialog.dart';
 import '../bloc/Edit Student/edit_student_cubit.dart';
 import '../bloc/Edit Student/edit_student_state.dart';
 import '../cards/groupSmallCard.dart';
+import '../cards/student_subscriptions_card.dart';
 import '../colors_app.dart';
+import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
+import '../models/grade_subscriptions_model.dart';
+import '../models/student_paid_subscription.dart';
 import 'Pick Groups Page.dart';
 import 'all_absent_numbers.dart';
 import 'all_bills_for_student.dart';
@@ -45,35 +49,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               ),
               centerTitle: true,
               actions: [
-                IconButton(
-                    onPressed: () {
-                      StudentEditCubit.get(context).showPaymentDialog(
-                        context: context,
-                        grade: widget.grade ?? "",
-                        title: "إضافة دفعة للطالب",
-                        dismissible: true,
-                        onSave: ({
-                          required amount,
-                          required description,
-                          required date,
-                          required day,
-                        }) async {
-                          await StudentEditCubit.get(context)
-                              .addInvoiceToBigInvoices(
-                            date: date,
-                            day: day,
-                            grade: widget.grade ?? "",
-                            amount: amount,
-                            description: description,
-                          );
-                        },
-                      );
-                    },
-                    icon: Icon(
-                      Icons.add_box,
-                      size: 30,
-                      color: app_colors.green,
-                    )),
                 IconButton(
                     onPressed: () {
                       Navigator.push(
@@ -254,66 +229,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                         const SizedBox(
                                           height: 10,
                                         ),
-                                        Column(
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: [
-                                                showDateOfPaidMonth(
-                                                    "الشهر الأول",
-                                                    widget.student
-                                                        .dateOfFirstMonthPaid),
-                                                showDateOfPaidMonth(
-                                                    "الشهر الثاني",
-                                                    widget.student
-                                                        .dateOfSecondMonthPaid),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 10),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: [
-                                                showDateOfPaidMonth(
-                                                    "الشهر الثالث",
-                                                    widget.student
-                                                        .dateOfThirdMonthPaid),
-                                                showDateOfPaidMonth(
-                                                    "الشهر الرابع",
-                                                    widget.student
-                                                        .dateOfFourthMonthPaid),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 10),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: [
-                                                showDateOfPaidMonth(
-                                                    "الشهر الخامس",
-                                                    widget.student
-                                                        .dateOfFifthMonthPaid),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 10),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceEvenly,
-                                              children: [
-                                                showDateOfPaidMonth(
-                                                    "شرح الملاحظة",
-                                                    widget.student
-                                                        .dateOfExplainingNotePaid),
-                                                showDateOfPaidMonth(
-                                                    "مراجعة الملاحظة",
-                                                    widget.student
-                                                        .dateOfReviewingNotePaid),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 10),
                                         const Divider(
                                           color: app_colors.green,
                                           thickness: 4,
@@ -396,97 +311,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       ),
     );
   }
-  Widget paymentsPart(BuildContext context) {
-    final cubit = StudentEditCubit.get(context);
-    return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("الشهر الأول :"),
-                      buildDropdown("الشهر الأول", cubit.firstMonth, (value) {
-                        cubit.changeFirstMonthValue(value);
-                      }),
-                    ],
-                  ),
-                  const SizedBox(width: 16.0),
-                  Column(
-                    children: [
-                      const Text("الشهر الثاني :"),
-                      buildDropdown("الشهر الثاني", cubit.secondMonth, (value) {
-                        cubit.changeSecondMonthValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("الشهر الثالث :"),
-                      buildDropdown("الشهر الثالث", cubit.thirdMonth, (value) {
-                        cubit.changeThirdMonthValue(value);
-                      }),
-                    ],
-                  ),
-                  const SizedBox(width: 16.0),
-                  Column(
-                    children: [
-                      const Text("الشهر الرابع :"),
-                      buildDropdown("الشهر الرابع", cubit.fourthMonth, (value) {
-                        cubit.changeFourthMonthValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("الشهر الخامس :"),
-                      buildDropdown("الشهر الخامس", cubit.fifthMonth, (value) {
-                        cubit.changeFifthMonthValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("مذكرة الشرح :"),
-                      buildDropdown("مذكرة الشرح", cubit.explainingNote,
-                          (value) {
-                        cubit.changeExplainingNoteValue(value);
-                      }),
-                    ],
-                  ),
-                  const SizedBox(width: 16.0),
-                  Column(
-                    children: [
-                      const Text("مذكرة المراجعة :"),
-                      buildDropdown("مذكرة المراجعة", cubit.reviewNote,
-                          (value) {
-                        cubit.changeReviewNoteValue(value);
-                      }),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ));
-  }
 
   Widget MaleOrFemalePart(BuildContext context) {
     final cubit = StudentEditCubit.get(context);
@@ -503,11 +327,11 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               isExpanded: true,
               items: const [
                 DropdownMenuItem(
-                  value: "Male",
+                  value: "ذكر",
                   child: Text("ذكر", style: TextStyle(color: app_colors.green)),
                 ),
                 DropdownMenuItem(
-                  value: "Female",
+                  value: "أنثى",
                   child:
                       Text("أنثى", style: TextStyle(color: app_colors.green)),
                 ),
@@ -627,30 +451,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     );
   }
 
-  Widget showDateOfPaidMonth(
-    String label,
-    String? date,
-  ) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              date ?? "لم يتم الدفع بعد",
-              style: const TextStyle(fontSize: 10, color: app_colors.green),
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
-      ],
-    );
-  }
 
   Widget showNumberOfAbsenceAndPresence(
     String label,
@@ -740,50 +540,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     );
   }
 
-  Widget buildDropdown(
-    String hint,
-    bool? selectedValue,
-    ValueChanged<bool?> onChanged,
-  ) {
-    return SizedBox(
-      width: 200,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        decoration: BoxDecoration(
-          border: Border.all(color: app_colors.darkGrey, width: 1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: DropdownButton<bool>(
-          dropdownColor: app_colors.darkGrey,
-          value: selectedValue,
-          isExpanded: true,
-          items: const [
-            DropdownMenuItem(
-              value: true,
-              child: Text("مدفوع", style: TextStyle(color: Colors.orange)),
-            ),
-            DropdownMenuItem(
-              value: false,
-              child: Text("غير مدفوع", style: TextStyle(color: Colors.orange)),
-            ),
-          ],
-          onChanged: onChanged,
-          elevation: 8,
-          style: const TextStyle(color: Colors.orange),
-          icon: const Icon(Icons.arrow_forward_ios_outlined,
-              color: Colors.orange),
-          iconSize: 24,
-          hint: Text(
-            selectedValue == null
-                ? hint
-                : (selectedValue ? "مدفوع" : "غير مدفوع"),
-            style: const TextStyle(color: Colors.orange),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget NotesPart(BuildContext context) {
     final cubit = StudentEditCubit.get(context);
@@ -814,6 +570,81 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
         hintText: 'اكتب ملاحظتك هنا...',
         hintStyle: const TextStyle(color: Colors.grey),
       ),
+    );
+  }
+
+  Widget paymentsPart(BuildContext context) {
+    final cubit = StudentEditCubit.get(context);
+
+    return StreamBuilder<GradeSubscriptionsModel?>(
+      stream: FirebaseFunctions.getGradeSubscriptionsStream(widget.grade ?? ""),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const Center(
+            child: Text(
+              'لا توجد اشتراكات لهذا الصف حالياً',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          );
+        }
+
+        final gradeSubs = snapshot.data!;
+        final subscriptions = gradeSubs.subscriptions;
+        final studentPaidSubscriptions = cubit.studentPaidSubscriptions;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'الاشتراكات (${subscriptions.length})',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: app_colors.green,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Show cards horizontally
+              SizedBox(
+                height: 180,
+                child: ListView.builder(
+                  scrollDirection: Axis.vertical,
+                  itemCount: subscriptions.length,
+                  itemBuilder: (context, index) {
+                    final sub = subscriptions[index];
+                    // Try to find matching student payment
+                    final paidSub = studentPaidSubscriptions?.firstWhere(
+                      (s) => s.subscriptionId == sub.id,
+                      orElse: () => StudentPaidSubscriptions(
+                        description: "",
+                        subscriptionId: sub.id,
+                        paidAmount: 0,
+                      ),
+                    );
+
+                    return GestureDetector(
+                      onTap: () {
+                        cubit.changePayment(
+                            paidSub!, sub.subscriptionAmount, context);
+                      },
+                      child: StudentSubscriptionsCard(
+                        studentPaidSubscription: paidSub,
+                        subscriptionFee: sub,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

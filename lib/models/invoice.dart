@@ -1,3 +1,5 @@
+
+
 class Invoice {
   final String studentName;
   final String id;
@@ -5,19 +7,21 @@ class Invoice {
   final String studentPhoneNumber;
   final String momPhoneNumber;
   final String dadPhoneNumber;
-  final String grade;
   final double amount;
   final String description;
+  final String grade;
+  final String subscriptionFeeID;
   final DateTime dateTime;
 
   Invoice({
+    required this.grade,
+    required this.subscriptionFeeID,
     required this.studentId,
     required this.id,
     required this.studentName,
     required this.studentPhoneNumber,
     required this.momPhoneNumber,
     required this.dadPhoneNumber,
-    required this.grade,
     required this.amount,
     required this.description,
     required this.dateTime,
@@ -26,15 +30,15 @@ class Invoice {
   // From JSON
   factory Invoice.fromJson(Map<String, dynamic> json) {
     return Invoice(
+      grade: json['grade'] ?? "",
       id: json['id'] ?? "",
       // safe default
       studentId: json['studentId'] ?? "",
-      // safe default
+      subscriptionFeeID: json['subscriptionFeeID'] ?? "",
       studentName: json['studentName'] ?? "",
       studentPhoneNumber: json['studentPhoneNumber'] ?? "",
       momPhoneNumber: json['momPhoneNumber'] ?? "",
       dadPhoneNumber: json['dadPhoneNumber'] ?? "",
-      grade: json['grade'] ?? "",
       amount: (json['amount'] ?? 0).toDouble(),
       // handles int or null
       description: json['description'] ?? "",
@@ -49,11 +53,12 @@ class Invoice {
     return {
       'id': id,
       'studentName': studentName,
+      'subscriptionFeeID': subscriptionFeeID,
       'studentId': studentId,
+      'grade': grade,
       'studentPhoneNumber': studentPhoneNumber,
       'momPhoneNumber': momPhoneNumber,
       'dadPhoneNumber': dadPhoneNumber,
-      'grade': grade,
       'amount': amount,
       'description': description,
       'dateTime': dateTime.toIso8601String(),

@@ -3,10 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../home.dart';
 import '../models/Studentmodel.dart';
+import '../models/student_paid_subscription.dart';
+import '../models/subscription_fee.dart';
 
 class PaymentCheckPage extends StatefulWidget {
   const PaymentCheckPage({super.key});
@@ -16,116 +19,149 @@ class PaymentCheckPage extends StatefulWidget {
 }
 
 class _PaymentCheckPageState extends State<PaymentCheckPage> {
-  late List<String> secondaries = [];
-  List<String> categories = [
-    "First Month",
-    "Second Month",
-    "Third Month",
-    "Fourth Month",
-    "Fifth Month",
-    "Explaining Note",
-    "Review Note"
-  ];
+  List<String> grades = [];
+  String? selectedGrade;
+  SubscriptionFee? selectedSubscription;
+  List<SubscriptionFee> gradeSubscriptions = [];
 
-  String? selectedSecondary;
-  String? selectedCategory;
   List<Studentmodel> paidStudents = [];
   List<Studentmodel> unpaidStudents = [];
-  bool startSearch=false;
+  bool startSearch = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchGrades();
+  }
 
   Future<void> fetchGrades() async {
     List<String> fetchedGrades = await FirebaseFunctions.getGradesList();
     setState(() {
-      secondaries = fetchedGrades;
+      grades = fetchedGrades;
+    });
+  }
+
+  Future<void> fetchSubscriptionsForGrade(String grade) async {
+    final gradeSubsStream =
+        await FirebaseFunctions.getGradeSubscriptionsStream(grade);
+    final gradeSubs = await gradeSubsStream.firstWhere((data) => data != null);
+    setState(() {
+      gradeSubscriptions = gradeSubs?.subscriptions ?? [];
+      selectedSubscription = null; // reset when grade changes
     });
   }
 
   Future<void> checkPayments() async {
-    if (selectedSecondary == null || selectedCategory == null) {
+    if (selectedGrade == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select both grade and category.")),
+        const SnackBar(content: Text("الرجاء اختيار المرحلة.")),
       );
       return;
     }
-    print(selectedSecondary);
-    print(selectedCategory);
-    List<Studentmodel> students =
-    await FirebaseFunctions.getAllStudentsByGrade_future(selectedSecondary!);
+    if (selectedSubscription == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("الرجاء اختيار الاشتراك.")),
+      );
+      return;
+    }
+
+    // Get all students in the selected grade
+    final students =
+        await FirebaseFunctions.getAllStudentsByGrade_future(selectedGrade!);
 
     List<Studentmodel> paid = [];
     List<Studentmodel> unpaid = [];
-    if (selectedCategory=="First Month"){
-      for (var student in students) {
-        if (student.firstMonth == true) {
-          paid.add(student);
-        } else {
-          unpaid.add(student);
-        }
-      }
-    }else if (selectedCategory=="Second Month"){
-      for (var student in students) {
-        if (student.secondMonth == true) {
-          paid.add(student);
-        } else {
-          unpaid.add(student);
-        }
-      }
-    }else if (selectedCategory=="Third Month"){
-      for (var student in students) {
-        if (student.thirdMonth == true) {
-          paid.add(student);
-        } else {
-          unpaid.add(student);
-        }
-      }
-    } else if (selectedCategory=="Fourth Month"){
-      for (var student in students) {
-        if (student.fourthMonth == true) {
-          paid.add(student);
-        } else {
-          unpaid.add(student);
-        }
-      }
-    }else if (selectedCategory=="Fifth Month"){
-      for (var student in students) {
-        if (student.fifthMonth == true) {
-          paid.add(student);
-        } else {
-          unpaid.add(student);
-        }
-      }
-    } else if (selectedCategory=="Explaining Note"){
-      for (var student in students) {
-        if (student.explainingNote == true) {
-          paid.add(student);
-        } else {
-          unpaid.add(student);
-        }
-      }
-    } else if (selectedCategory=="Review Note"){
-      for (var student in students) {
-        if (student.reviewNote == true) {
-          paid.add(student);
-        } else {
-          unpaid.add(student);
-        }
+
+    for (var student in students) {
+      final paidSub = student.studentPaidSubscriptions?.firstWhere(
+        (s) => s.subscriptionId == selectedSubscription!.id,
+        orElse: () => StudentPaidSubscriptions(
+            subscriptionId: '', description: '', paidAmount: 0),
+      );
+
+      final paidAmount = paidSub?.paidAmount ?? 0;
+      final totalDue = selectedSubscription!.subscriptionAmount;
+
+      if (paidAmount >= totalDue) {
+        paid.add(student);
+      } else {
+        unpaid.add(student);
       }
     }
 
     setState(() {
       paidStudents = paid;
       unpaidStudents = unpaid;
-      startSearch=true;
+      startSearch = true;
     });
-    print('Paid Students: ${paidStudents.length}');
-    print('Unpaid Students: ${unpaidStudents.length}');
-
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fetchGrades();
+  Future<void> generatePdf(List<Studentmodel> students, String title) async {
+    final pdf = pw.Document();
+    final arabicFont =
+        pw.Font.ttf(await rootBundle.load('fonts/NotoKufiArabic-Regular.ttf'));
+
+    pdf.addPage(
+      pw.MultiPage(
+        textDirection: pw.TextDirection.rtl,
+        build: (context) => [
+          pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontSize: 22,
+              fontWeight: pw.FontWeight.bold,
+              font: arabicFont,
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          pw.Text("المرحلة: ${selectedGrade ?? 'غير محدد'}",
+              style: pw.TextStyle(font: arabicFont)),
+          pw.Text(
+              "الاشتراك: ${selectedSubscription?.subscriptionName ?? 'غير محدد'}",
+              style: pw.TextStyle(font: arabicFont)),
+          pw.SizedBox(height: 15),
+          pw.TableHelper.fromTextArray(
+            headers: [
+              'المبلغ المتبقي',
+              'المبلغ المطلوب',
+              'المبلغ المدفوع',
+              'رقم الطالب',
+              'اسم الطالب'
+            ],
+            data: students.map((student) {
+              final paidSub = student.studentPaidSubscriptions?.firstWhere(
+                (s) => s.subscriptionId == selectedSubscription!.id,
+                orElse: () => StudentPaidSubscriptions(
+                    description: '',
+                    subscriptionId: selectedSubscription!.id,
+                    paidAmount: 0),
+              );
+
+              final paidAmount = paidSub?.paidAmount ?? 0;
+              final totalDue = selectedSubscription!.subscriptionAmount;
+              final remaining = totalDue - paidAmount;
+
+              return [
+                remaining.toStringAsFixed(2),
+                totalDue.toStringAsFixed(2),
+                paidAmount.toStringAsFixed(2),
+                student.phoneNumber ?? '---',
+                student.name ?? '---',
+              ];
+            }).toList(),
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              font: arabicFont,
+            ),
+            cellStyle: pw.TextStyle(font: arabicFont, fontSize: 12),
+            cellAlignment: pw.Alignment.centerRight,
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+          )
+        ],
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
   }
 
   @override
@@ -143,10 +179,8 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(
-                builder: (context) => const Homescreen(),
-              ),
-                  (route) => false,
+              MaterialPageRoute(builder: (context) => const Homescreen()),
+              (route) => false,
             );
           },
           icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
@@ -164,11 +198,32 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDropdown("المرحلة", "اختر المرحلة", secondaries,
-                selectedSecondary, (value) => selectSecondary(value)),
-            const SizedBox(height: 15),
-            _buildDropdown("اختر الشهر", "اختر الشهر", categories,
-                selectedCategory, (value) => selectCategory(value)),
+            _buildDropdown(
+              "المرحلة",
+              "اختر المرحلة",
+              grades,
+              selectedGrade,
+              (value) {
+                fetchSubscriptionsForGrade(value);
+                setState(() {
+                  selectedGrade = value;
+                });
+              },
+            ),
+            const SizedBox(height: 20),
+            if (gradeSubscriptions.isNotEmpty)
+              _buildDropdown(
+                "الاشتراك",
+                "اختر الاشتراك",
+                gradeSubscriptions.map((s) => s.subscriptionName).toList(),
+                selectedSubscription?.subscriptionName,
+                (value) {
+                  setState(() {
+                    selectedSubscription = gradeSubscriptions
+                        .firstWhere((s) => s.subscriptionName == value);
+                  });
+                },
+              ),
             const SizedBox(height: 20),
             Center(
               child: ElevatedButton(
@@ -178,11 +233,16 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
                 ),
                 child: const Text(
                   "بحث",
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -195,35 +255,32 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         ElevatedButton.icon(
-                          onPressed: () =>
-                              generatePdf(paidStudents, "طلاب مدفوعين"),
+                          onPressed: () => generatePdf(
+                              paidStudents, "الطلاب اللي خلّصوا الدفع"),
                           icon: const Icon(Icons.picture_as_pdf),
-                          label: const Text(
-                            "PDF للمدفوعين",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                          label: const Text("PDF للمدفوعين",
+                              style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green),
                         ),
                         ElevatedButton.icon(
-                          onPressed: () =>
-                              generatePdf(unpaidStudents, "طلاب غير مدفوعين"),
+                          onPressed: () => generatePdf(
+                              unpaidStudents, "الطلاب اللي لسه مكمّلوش الدفع"),
                           icon: const Icon(Icons.picture_as_pdf),
-                          label: const Text(
-                            "PDF لغير المدفوعين",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                          label: const Text("PDF لغير المدفوعين",
+                              style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red),
                         ),
                       ],
                     ),
-
                     Expanded(
                       child: ListView(
                         children: [
-                          _buildStudentList(
-                              "الطلاب المدفوعين", paidStudents, Colors.green),
+                          _buildStudentList("الطلاب اللي خلّصوا الدفع",
+                              paidStudents, Colors.green),
                           const SizedBox(height: 20),
-                          _buildStudentList("الطلاب غير المدفوعين",
+                          _buildStudentList("الطلاب اللي لسه مكمّلوش الدفع",
                               unpaidStudents, Colors.red),
                         ],
                       ),
@@ -242,97 +299,13 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
     );
   }
 
-  Widget _buildStudentList(String title, List<Studentmodel> students, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-        const SizedBox(height: 10),
-        ...students.map((student) => Card(
-          child: ListTile(
-            title: Text(student.name ?? "Unknown"),
-            subtitle: Text(student.phoneNumber ?? "No Phone"),
-          ),
-        )),
-      ],
-    );
-  }
-
-  void selectSecondary(String secondary) {
-    setState(() {
-      selectedSecondary = secondary;
-    });
-  }
-
-  void selectCategory(String category) {
-    setState(() {
-      selectedCategory = category;
-    });
-  }
-
-  Future<void> generatePdf(List<Studentmodel> students, String title) async {
-    final pdf = pw.Document();
-    final arabicFont = pw.Font.ttf(
-      await rootBundle.load('fonts/NotoKufiArabic-Regular.ttf'),
-    );
-
-    pdf.addPage(
-      pw.MultiPage(
-        textDirection: pw.TextDirection.rtl, // <<< دا مهم جداً
-        build: (context) => [
-          pw.Text(
-            title,
-            style: pw.TextStyle(
-              fontSize: 24,
-              fontWeight: pw.FontWeight.bold,
-              font: arabicFont,
-            ),
-          ),
-          pw.SizedBox(height: 10),
-          pw.Text(
-            "المرحلة: ${selectedSecondary ?? 'غير محدد'}",
-            style: pw.TextStyle(fontSize: 14, font: arabicFont),
-          ),
-          pw.Text(
-            "الشهر: ${selectedCategory ?? 'غير محدد'}",
-            style: pw.TextStyle(fontSize: 14, font: arabicFont),
-          ),
-          pw.Text(
-            "عدد الطلاب: ${students.length}",
-            style: pw.TextStyle(fontSize: 14, font: arabicFont),
-          ),
-          pw.SizedBox(height: 20),
-          pw.Table.fromTextArray(
-            headers: ['رقم الهاتف', 'الاسم'],
-            // عكس الترتيب
-            data: students.map((student) => [
-                      student.phoneNumber ?? 'لا يوجد',
-                      student.name ?? 'غير معروف',
-                    ])
-                .toList(),
-            headerStyle: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              font: arabicFont,
-            ),
-            cellStyle: pw.TextStyle(font: arabicFont),
-            cellAlignment: pw.Alignment.centerRight,
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
-          ),
-        ],
-      ),
-    );
-
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  }
-
   Widget _buildDropdown(String label, String hint, List<String> items,
       String? selectedValue, Function(String) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(label,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
@@ -349,14 +322,36 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
               hint: Text(hint, style: TextStyle(color: Colors.grey[700])),
               items: items.map((item) {
                 return DropdownMenuItem(
-                    value: item,
-                    child: Text(item, style: const TextStyle(color: app_colors.darkGrey)));
+                  value: item,
+                  child: Text(item,
+                      style: const TextStyle(color: app_colors.darkGrey)),
+                );
               }).toList(),
               onChanged: (value) => onChanged(value!),
-              icon: const Icon(Icons.arrow_drop_down, color: app_colors.darkGrey),
+              icon:
+                  const Icon(Icons.arrow_drop_down, color: app_colors.darkGrey),
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildStudentList(
+      String title, List<Studentmodel> students, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: TextStyle(
+                fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+        const SizedBox(height: 10),
+        ...students.map((student) => Card(
+              child: ListTile(
+                title: Text(student.name ?? "غير معروف"),
+                subtitle: Text(student.phoneNumber ?? "لا يوجد رقم"),
+              ),
+            )),
       ],
     );
   }

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../Alert dialogs/Delete diaolog.dart';
 import '../Alert dialogs/ResetAbscenceMonthDialog.dart';
+import '../Alert dialogs/Reset_Grade_student_subscriptions.dart';
 import '../Alert dialogs/change_password.dart';
 import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
@@ -82,7 +83,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   Image.asset(
                     "assets/images/1......1.png",
                     height: 120,
@@ -118,24 +119,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => StartNewMonthDialog(),
-                      );
-                    },
-                    child: ListTile(
-                      leading:
-                          Image.asset("assets/images/restart.png", width: 40),
-                      title: const Text(
-                        "إعادة ضبط الغياب",
-                        style: TextStyle(color: app_colors.green, fontSize: 18),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   GestureDetector(
                     onTap: () {
                       Navigator.pushAndRemoveUntil(
@@ -154,7 +138,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   GestureDetector(
                     onTap: () {
                       showDialog(
@@ -270,7 +254,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   GestureDetector(
                     onTap: () {
                       Navigator.pushAndRemoveUntil(
@@ -305,6 +289,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
                   GestureDetector(
                     onTap: () {
                       showVerifyPasswordDialog(
@@ -323,6 +308,45 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => StartNewMonthDialog(),
+                      );
+                    },
+                    child: ListTile(
+                      leading:
+                          Image.asset("assets/images/restart.png", width: 40),
+                      title: const Text(
+                        "تصفير الغياب",
+                        style: TextStyle(color: app_colors.green, fontSize: 18),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) =>
+                            ResetGradeAndStudentSubscriptionsDialog(),
+                      );
+                    },
+                    child: ListTile(
+                      leading: Image.asset(
+                        "assets/images/restart.png",
+                        width: 40,
+                        color: app_colors.green,
+                      ),
+                      title: const Text(
+                        "بدأ ترم جديد ",
+                        style: TextStyle(color: app_colors.green, fontSize: 18),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                 ],
               ),
             ),

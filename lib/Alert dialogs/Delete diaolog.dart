@@ -46,7 +46,7 @@ class CustomConfirmDialog extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             "لقد اخترت: ${tags?.isEmpty ?? true ? "لا شيء" : tags!.join(', ')}",
-            style: TextStyle(color: Colors.orange[800]),
+            style: TextStyle(color: Colors.orange[900]),
           ),
         ],
       ),

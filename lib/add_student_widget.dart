@@ -8,7 +8,11 @@ import 'Alert dialogs/RemoveFromGroupsListDialog.dart';
 import 'bloc/AddStudent/add_student_cubit.dart';
 import 'bloc/AddStudent/add_student_state.dart';
 import 'cards/groupSmallCard.dart';
+import 'cards/student_subscriptions_card.dart';
 import 'colors_app.dart';
+import 'firebase/firebase_functions.dart';
+import 'models/grade_subscriptions_model.dart';
+import 'models/student_paid_subscription.dart';
 import 'pages/Pick Groups Page.dart';
 
 class AddStudentScreen extends StatefulWidget {
@@ -99,8 +103,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                                     const EdgeInsets.only(top: 20, left: 0),
                                 child: Text(
                                   textAlign: TextAlign.start,
-                                  ''' أضف 
-طلابك ''',
+                                  "أضف طلابك",
                                   style: GoogleFonts.oswald(
                                     fontSize: 30,
                                     color: app_colors.darkGrey,
@@ -454,92 +457,77 @@ class _AddStudentTabState extends State<AddStudentScreen> {
 
   Widget paymentsPart(BuildContext context) {
     final cubit = StudentCubit.get(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Column(
-                  children: [
-                    const Text("الشهر الأول :"),
-                    buildDropdown("الشهر الأول", cubit.firstMonth, (value) {
-                      cubit.changeFirstMonthValue(value);
-                    }),
-                  ],
-                ),
-                const SizedBox(width: 16.0),
-                Column(
-                  children: [
-                    const Text("الشهر الثاني :"),
-                    buildDropdown("الشهر الثاني", cubit.secondMonth, (value) {
-                      cubit.changeSecondMonthValue(value);
-                    }),
-                  ],
-                ),
-              ],
+
+    return StreamBuilder<GradeSubscriptionsModel?>(
+      stream: FirebaseFunctions.getGradeSubscriptionsStream(widget.level ?? ""),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const Center(
+            child: Text(
+              'لا توجد اشتراكات لهذا الصف حالياً',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Column(
-                  children: [
-                    const Text("الشهر الثالث :"),
-                    buildDropdown("الشهر الثالث", cubit.thirdMonth, (value) {
-                      cubit.changeThirdMonthValue(value);
-                    }),
-                  ],
+          );
+        }
+
+        final gradeSubs = snapshot.data!;
+        final subscriptions = gradeSubs.subscriptions;
+        final studentPaidSubscriptions = cubit.studentPaidSubscriptions;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'الاشتراكات (${subscriptions.length})',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: app_colors.green,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(width: 16.0),
-                Column(
-                  children: [
-                    const Text("الشهر الرابع :"),
-                    buildDropdown("الشهر الرابع", cubit.fourthMonth, (value) {
-                      cubit.changeFourthMonthValue(value);
-                    }),
-                  ],
+              ),
+              const SizedBox(height: 16),
+              // Show cards horizontally
+              SizedBox(
+                height: 180,
+                child: ListView.builder(
+                  scrollDirection: Axis.vertical,
+                  itemCount: subscriptions.length,
+                  itemBuilder: (context, index) {
+                    final sub = subscriptions[index];
+                    // Try to find matching student payment
+                    final paidSub = studentPaidSubscriptions?.firstWhere(
+                      (s) => s.subscriptionId == sub.id,
+                      orElse: () => StudentPaidSubscriptions(
+                        description: "",
+                        subscriptionId: sub.id,
+                        paidAmount: 0,
+                      ),
+                    );
+
+                    return GestureDetector(
+                      onTap: () {
+                        cubit.changePayment(
+                            paidSub!, sub.subscriptionAmount, context);
+                      },
+                      child: StudentSubscriptionsCard(
+                        studentPaidSubscription: paidSub,
+                        subscriptionFee: sub,
+                      ),
+                    );
+                  },
                 ),
-              ],
-            ),
-            Row(
-              children: [
-                Column(
-                  children: [
-                    const Text("الشهر الخامس :"),
-                    buildDropdown("الشهر الخامس", cubit.fifthMonth, (value) {
-                      cubit.changeFifthMonthValue(value);
-                    }),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Column(
-                  children: [
-                    const Text("مذكرة الشرح :"),
-                    buildDropdown("مذكرة الشرح", cubit.explainingNote, (value) {
-                      cubit.changeExplainingNoteValue(value);
-                    }),
-                  ],
-                ),
-                const SizedBox(width: 16.0),
-                Column(
-                  children: [
-                    const Text("مذكرة المراجعة :"),
-                    buildDropdown("مذكرة المراجعة", cubit.reviewNote, (value) {
-                      cubit.changeReviewNoteValue(value);
-                    }),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -205,6 +205,40 @@ class FirebaseFunctions {
     }
   }
 
+  static Future<void> resetGradeAndStudentSubscriptions(
+      String gradeName) async {
+    final firestore = FirebaseFirestore.instance;
+
+    final docRef = firestore
+        .collection('constants')
+        .doc('grades_subscriptions')
+        .collection('grades')
+        .doc(gradeName);
+
+    final doc = await docRef.get();
+
+    if (!doc.exists) {
+      print("⚠️ Grade $gradeName does not exist.");
+      return;
+    }
+
+    // 🔹 1. Clear all grade-level subscriptions
+    await docRef.update({'subscriptions': []});
+
+    print("✅ Grade-level subscriptions for '$gradeName' cleared.");
+
+    // 🔹 2. Get all students for that grade
+    final allStudents = await getAllStudentsByGrade_future(gradeName);
+
+    // 🔹 3. Clear their individual subscription data
+    for (final student in allStudents) {
+      final studentRef = getSecondaryCollection(gradeName).doc(student.id);
+      await studentRef.update({'studentPaidSubscriptions': []});
+    }
+
+    print("✅ All students in '$gradeName' had their subscriptions reset.");
+  }
+
   /// Deletes a `StudentModel` from a specific grade's collection
   static Future<void> deleteStudentFromHisCollection(
       String grade, String documentId) async {
@@ -392,7 +426,7 @@ class FirebaseFunctions {
       }
       print('✅ Students moved and old collection deleted.');
 
-      // 4️⃣ Go through all day collections and update magmo3a documents that have this grade
+      // 4️⃣ Update magmo3a documents in all day collections
       final allDays = [
         "Saturday",
         "Sunday",
@@ -414,8 +448,41 @@ class FirebaseFunctions {
           }
         }
       }
-
       print('✅ All magmo3a groups updated to new grade.');
+
+      // 5️⃣ Rename the grade subscription document and update gradeName inside
+      final oldSubDocRef = firestore
+          .collection('constants')
+          .doc('grades_subscriptions')
+          .collection('grades')
+          .doc(oldGrade);
+
+      final oldSubDocSnapshot = await oldSubDocRef.get();
+
+      if (oldSubDocSnapshot.exists) {
+        // Deserialize
+        final oldModel =
+            GradeSubscriptionsModel.fromJson(oldSubDocSnapshot.data()!);
+
+        // Update the grade name in the model
+        oldModel.gradeName = newGrade;
+
+        // Save it as new document
+        final newSubDocRef = firestore
+            .collection('constants')
+            .doc('grades_subscriptions')
+            .collection('grades')
+            .doc(newGrade);
+
+        await newSubDocRef.set(oldModel.toJson());
+
+        // Delete the old document
+        await oldSubDocRef.delete();
+
+        print('✅ Grade subscription renamed successfully.');
+      } else {
+        print('⚠️ No subscription document found for $oldGrade.');
+      }
 
       print('🎉 Grade renamed successfully from "$oldGrade" to "$newGrade".');
     } catch (e) {
@@ -632,6 +699,7 @@ class FirebaseFunctions {
     required String day,
     required String grade,
     required double amount,
+    required String subscriptionFeeID,
     required String description,
     required String studentId,
     required String studentName,
@@ -649,6 +717,7 @@ class FirebaseFunctions {
       id: invoiceId.toString(),
       studentId: studentId,
       studentName: studentName,
+      subscriptionFeeID: subscriptionFeeID,
       studentPhoneNumber: phoneNumber,
       momPhoneNumber: motherPhone,
       dadPhoneNumber: fatherPhone,
@@ -793,9 +862,11 @@ class FirebaseFunctions {
         .set(model.toJson());
   }
 
-  static Future<void> addSubscriptionToGrade(
-      String gradeName, SubscriptionFee newSubscription) async {
-    final docRef = FirebaseFirestore.instance
+  static Future<void> addSubscriptionToGrade(String gradeName,
+      String subscriptionName, double subscriptionAmount) async {
+    final firestore = FirebaseFirestore.instance;
+
+    final docRef = firestore
         .collection('constants')
         .doc('grades_subscriptions')
         .collection('grades')
@@ -803,8 +874,17 @@ class FirebaseFunctions {
 
     final doc = await docRef.get();
 
+    // 🔹 Create a temporary document reference just to generate an ID
+    final tempId = firestore.collection('temp_ids').doc().id;
+
+    final newSubscription = SubscriptionFee(
+      id: tempId,
+      subscriptionName: subscriptionName.trim(),
+      subscriptionAmount: subscriptionAmount,
+    );
+
     if (!doc.exists) {
-      // 🔹 Create the doc first if it doesn't exist
+      // 🔹 Create the document if it doesn't exist
       final newGrade = GradeSubscriptionsModel(
         gradeName: gradeName,
         subscriptions: [newSubscription],
@@ -814,7 +894,7 @@ class FirebaseFunctions {
       return;
     }
 
-    // 🔹 If it already exists, just add the new subscription
+    // 🔹 If it exists, append the new subscription
     final grade = GradeSubscriptionsModel.fromJson(doc.data()!);
     grade.subscriptions.add(newSubscription);
 
@@ -823,11 +903,8 @@ class FirebaseFunctions {
     });
   }
 
-  static Future<void> updateSubscriptionInGrade(
-    String gradeName,
-    String oldSubscriptionName,
-    SubscriptionFee updatedSubscription,
-  ) async {
+  static Future<void> updateSubscriptionInGrade(String gradeName,
+      SubscriptionFee updatedSubscription,) async {
     final docRef = FirebaseFirestore.instance
         .collection('constants')
         .doc('grades_subscriptions')
@@ -839,15 +916,16 @@ class FirebaseFunctions {
 
     final grade = GradeSubscriptionsModel.fromJson(doc.data()!);
 
-    // 👇 Find by the old name instead of the new one
-    final index = grade.subscriptions
-        .indexWhere((s) => s.subscriptionName == oldSubscriptionName);
+    // 👇 Find by ID instead of name
+    final index =
+        grade.subscriptions.indexWhere((s) => s.id == updatedSubscription.id);
 
     if (index == -1) {
-      throw Exception("Subscription '$oldSubscriptionName' not found.");
+      throw Exception(
+          "Subscription with ID '${updatedSubscription.id}' not found.");
     }
 
-    // 👇 Replace it with the updated one
+    // 👇 Replace with updated one
     grade.subscriptions[index] = updatedSubscription;
 
     await docRef.update({
@@ -855,8 +933,8 @@ class FirebaseFunctions {
     });
   }
 
-  static Future<void> deleteSubscriptionFromGrade(
-      String gradeName, String subscriptionName) async {
+  static Future<void> deleteSubscriptionFromGrade(String gradeName,
+      String subscriptionId) async {
     final docRef = FirebaseFirestore.instance
         .collection('constants')
         .doc('grades_subscriptions')
@@ -867,12 +945,41 @@ class FirebaseFunctions {
     if (!doc.exists) throw Exception("Grade '$gradeName' does not exist.");
 
     final grade = GradeSubscriptionsModel.fromJson(doc.data()!);
-    grade.subscriptions
-        .removeWhere((s) => s.subscriptionName == subscriptionName);
+    grade.subscriptions.removeWhere((s) => s.id == subscriptionId);
 
     await docRef.update({
       'subscriptions': grade.subscriptions.map((e) => e.toJson()).toList(),
     });
+  }
+
+  static Future<SubscriptionFee?> getSubscriptionById(
+      String gradeName, String subscriptionId) async {
+    final firestore = FirebaseFirestore.instance;
+
+    final docRef = firestore
+        .collection('constants')
+        .doc('grades_subscriptions')
+        .collection('grades')
+        .doc(gradeName);
+
+    final doc = await docRef.get();
+
+    if (!doc.exists) return null;
+
+    final data = doc.data();
+    if (data == null || data['subscriptions'] == null) return null;
+
+    final subscriptions = (data['subscriptions'] as List)
+        .map((e) => SubscriptionFee.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    try {
+      // 🔍 Find the subscription by ID
+      return subscriptions.firstWhere((sub) => sub.id == subscriptionId);
+    } catch (e) {
+      // Not found
+      return null;
+    }
   }
 
   static Stream<GradeSubscriptionsModel?> getGradeSubscriptionsStream(

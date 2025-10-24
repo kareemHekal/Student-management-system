@@ -4,12 +4,12 @@ import '../firebase/firebase_functions.dart';
 
 class DeleteSubscriptionDialog extends StatelessWidget {
   final String gradeName;
-  final String subscriptionName;
+  final String id;
 
   const DeleteSubscriptionDialog({
     Key? key,
     required this.gradeName,
-    required this.subscriptionName,
+    required this.id,
   }) : super(key: key);
 
   @override
@@ -56,8 +56,7 @@ class DeleteSubscriptionDialog extends StatelessWidget {
           ),
           child: const Text("حذف"),
           onPressed: () async {
-            await FirebaseFunctions.deleteSubscriptionFromGrade(
-                gradeName, subscriptionName);
+            await FirebaseFunctions.deleteSubscriptionFromGrade(gradeName, id);
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(

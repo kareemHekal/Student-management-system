@@ -15,7 +15,7 @@ Future<void> showAddOrEditSubscriptionDialog(
   final TextEditingController nameController =
       TextEditingController(text: subscriptionFee?.subscriptionName ?? '');
   final TextEditingController amountController = TextEditingController(
-      text: subscriptionFee?.subscriptionAmount?.toString() ?? '');
+      text: subscriptionFee?.subscriptionAmount.toString() ?? '');
   final formKey = GlobalKey<FormState>();
 
   // 🎨 Define color scheme
@@ -120,22 +120,21 @@ Future<void> showAddOrEditSubscriptionDialog(
             child: Text(isEdit ? 'تعديل' : 'حفظ'),
             onPressed: () async {
               if (formKey.currentState!.validate()) {
-                final newSubscription = SubscriptionFee(
-                  subscriptionName: nameController.text.trim(),
-                  subscriptionAmount:
-                      double.tryParse(amountController.text.trim()) ?? 0.0,
-                );
-
                 if (isEdit) {
                   await FirebaseFunctions.updateSubscriptionInGrade(
                     gradeName,
-                    subscriptionFee.subscriptionName,
-                    newSubscription,
+                    SubscriptionFee(
+                      id: subscriptionFee.id,
+                      subscriptionName: nameController.text.trim(),
+                      subscriptionAmount:
+                          double.tryParse(amountController.text.trim()) ?? 0.0,
+                    ),
                   );
                 } else {
                   await FirebaseFunctions.addSubscriptionToGrade(
                     gradeName,
-                    newSubscription,
+                    nameController.text.trim(),
+                    double.tryParse(amountController.text.trim()) ?? 0.0,
                   );
                 }
 
