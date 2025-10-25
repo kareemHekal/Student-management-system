@@ -54,13 +54,17 @@ class PdfGenerator {
                 pw.Text(
                   "Big Invoice Summary",
                   style: pw.TextStyle(
-                      font: ttf, fontSize: 24, fontWeight: pw.FontWeight.bold),
+                    font: ttf,
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
                 pw.Divider(),
                 pw.Text("Date: ${bigInvoice.date}", style: textStyle),
                 pw.Text(
-                    "Day: ${getDayName(DateTime.parse(bigInvoice.date).weekday)}",
-                    style: textStyle),
+                  "Day: ${getDayName(DateTime.parse(bigInvoice.date).weekday)}",
+                  style: textStyle,
+                ),
                 pw.SizedBox(height: 16),
                 pw.Divider(),
               ],
@@ -80,11 +84,14 @@ class PdfGenerator {
               return pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text("Income",
-                      style: pw.TextStyle(
-                          font: ttf,
-                          fontSize: 24,
-                          fontWeight: pw.FontWeight.bold)),
+                  pw.Text(
+                    "Income",
+                    style: pw.TextStyle(
+                      font: ttf,
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
                   pw.Divider(),
                   ...chunk.map((invoice) {
                     return pw.Column(
@@ -101,10 +108,14 @@ class PdfGenerator {
                           "Student Phone: ${invoice.studentPhoneNumber}",
                           style: textStyle,
                         ),
-                        pw.Text("Mom's Phone: ${invoice.momPhoneNumber}",
-                            style: textStyle),
-                        pw.Text("Dad's Phone: ${invoice.dadPhoneNumber}",
-                            style: textStyle),
+                        pw.Text(
+                          "Mom's Phone: ${invoice.momPhoneNumber}",
+                          style: textStyle,
+                        ),
+                        pw.Text(
+                          "Dad's Phone: ${invoice.dadPhoneNumber}",
+                          style: textStyle,
+                        ),
                         pw.Text(
                           "Grade: ${invoice.grade}",
                           textDirection: _isArabic(invoice.grade ?? "")
@@ -113,17 +124,31 @@ class PdfGenerator {
                           style: textStyle,
                         ),
                         pw.Text(
-                            "Amount: \$${invoice.amount.toStringAsFixed(2)}",
-                            style: textStyle),
-                        pw.Text("Description: ${invoice.description}",
-                            style: textStyle),
+                          "Amount: \$${invoice.amount.toStringAsFixed(2)}",
+                          style: textStyle,
+                        ),
+
+                        // ✅ Description now auto-switches between RTL/LTR
                         pw.Text(
-                            "Date: ${invoice.dateTime.toString().split(' ')[0]}",
-                            style: textStyle),
-                        pw.Text("Day: ${invoice.dateTime.weekday}",
-                            style: textStyle),
-                        pw.Text("Time: ${_formatTime(invoice.dateTime)}",
-                            style: textStyle),
+                          "Description: ${invoice.description}",
+                          textDirection: _isArabic(invoice.description ?? "")
+                              ? pw.TextDirection.rtl
+                              : pw.TextDirection.ltr,
+                          style: textStyle,
+                        ),
+
+                        pw.Text(
+                          "Date: ${invoice.dateTime.toString().split(' ')[0]}",
+                          style: textStyle,
+                        ),
+                        pw.Text(
+                          "Day: ${invoice.dateTime.weekday}",
+                          style: textStyle,
+                        ),
+                        pw.Text(
+                          "Time: ${_formatTime(invoice.dateTime)}",
+                          style: textStyle,
+                        ),
                         pw.Divider(),
                       ],
                     );
@@ -139,9 +164,14 @@ class PdfGenerator {
         pw.Page(
           build: (context) {
             return pw.Center(
-              child: pw.Text("Income List is Empty",
-                  style: pw.TextStyle(
-                      font: ttf, fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              child: pw.Text(
+                "Income List is Empty",
+                style: pw.TextStyle(
+                  font: ttf,
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
             );
           },
         ),
@@ -158,28 +188,45 @@ class PdfGenerator {
               return pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text("Outcome",
-                      style: pw.TextStyle(
-                          font: ttf,
-                          fontSize: 24,
-                          fontWeight: pw.FontWeight.bold)),
+                  pw.Text(
+                    "Outcome",
+                    style: pw.TextStyle(
+                      font: ttf,
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
                   pw.Divider(),
                   ...chunk.map((payment) {
                     return pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                            "Amount: \$${payment.amount.toStringAsFixed(2)}",
-                            style: textStyle),
-                        pw.Text("Description: ${payment.description}",
-                            style: textStyle),
+                          "Amount: \$${payment.amount.toStringAsFixed(2)}",
+                          style: textStyle,
+                        ),
+
+                        // ✅ Arabic description detection for payments too
                         pw.Text(
-                            "Date: ${payment.dateTime.toString().split(' ')[0]}",
-                            style: textStyle),
-                        pw.Text("Day: ${payment.dateTime.weekday}",
-                            style: textStyle),
-                        pw.Text("Time: ${_formatTime(payment.dateTime)}",
-                            style: textStyle),
+                          "Description: ${payment.description}",
+                          textDirection: _isArabic(payment.description ?? "")
+                              ? pw.TextDirection.rtl
+                              : pw.TextDirection.ltr,
+                          style: textStyle,
+                        ),
+
+                        pw.Text(
+                          "Date: ${payment.dateTime.toString().split(' ')[0]}",
+                          style: textStyle,
+                        ),
+                        pw.Text(
+                          "Day: ${payment.dateTime.weekday}",
+                          style: textStyle,
+                        ),
+                        pw.Text(
+                          "Time: ${_formatTime(payment.dateTime)}",
+                          style: textStyle,
+                        ),
                         pw.Divider(),
                       ],
                     );
@@ -195,9 +242,14 @@ class PdfGenerator {
         pw.Page(
           build: (context) {
             return pw.Center(
-              child: pw.Text("Outcome List is Empty",
-                  style: pw.TextStyle(
-                      font: ttf, fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              child: pw.Text(
+                "Outcome List is Empty",
+                style: pw.TextStyle(
+                  font: ttf,
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
             );
           },
         ),
@@ -210,7 +262,7 @@ class PdfGenerator {
     );
   }
 
-  // Static function to format time to 12-hour system with AM/PM
+  // ✅ Static function to format time to 12-hour system with AM/PM
   static String _formatTime(DateTime dateTime) {
     final hour = dateTime.hour;
     final minute = dateTime.minute;

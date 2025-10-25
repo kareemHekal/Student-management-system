@@ -101,6 +101,20 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
     final arabicFont =
         pw.Font.ttf(await rootBundle.load('fonts/NotoKufiArabic-Regular.ttf'));
 
+    // ✅ Calculate total income
+    double totalIncome = 0;
+    for (final student in students) {
+      final paidSub = student.studentPaidSubscriptions?.firstWhere(
+        (s) => s.subscriptionId == selectedSubscription!.id,
+        orElse: () => StudentPaidSubscriptions(
+          description: '',
+          subscriptionId: selectedSubscription!.id,
+          paidAmount: 0,
+        ),
+      );
+      totalIncome += paidSub?.paidAmount ?? 0;
+    }
+
     pdf.addPage(
       pw.MultiPage(
         textDirection: pw.TextDirection.rtl,
@@ -119,7 +133,21 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
           pw.Text(
               "الاشتراك: ${selectedSubscription?.subscriptionName ?? 'غير محدد'}",
               style: pw.TextStyle(font: arabicFont)),
+          pw.SizedBox(height: 10),
+
+          // ✅ Show total income at the top
+          pw.Text(
+            "إجمالي المبالغ المدفوعة: ${totalIncome.toStringAsFixed(2)} جنيه",
+            style: pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.green800,
+              font: arabicFont,
+            ),
+          ),
+
           pw.SizedBox(height: 15),
+
           pw.TableHelper.fromTextArray(
             headers: [
               'المبلغ المتبقي',
@@ -132,9 +160,10 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
               final paidSub = student.studentPaidSubscriptions?.firstWhere(
                 (s) => s.subscriptionId == selectedSubscription!.id,
                 orElse: () => StudentPaidSubscriptions(
-                    description: '',
-                    subscriptionId: selectedSubscription!.id,
-                    paidAmount: 0),
+                  description: '',
+                  subscriptionId: selectedSubscription!.id,
+                  paidAmount: 0,
+                ),
               );
 
               final paidAmount = paidSub?.paidAmount ?? 0;
@@ -156,7 +185,7 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
             cellStyle: pw.TextStyle(font: arabicFont, fontSize: 12),
             cellAlignment: pw.Alignment.centerRight,
             headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
-          )
+          ),
         ],
       ),
     );
