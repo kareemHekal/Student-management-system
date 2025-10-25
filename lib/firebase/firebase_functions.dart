@@ -205,7 +205,7 @@ class FirebaseFunctions {
     }
   }
 
-  static Future<void> resetGradeAndStudentSubscriptions(
+  static Future<void> resetGradeSubscriptionsAndAbsences(
       String gradeName) async {
     final firestore = FirebaseFirestore.instance;
 
@@ -224,19 +224,23 @@ class FirebaseFunctions {
 
     // 🔹 1. Clear all grade-level subscriptions
     await docRef.update({'subscriptions': []});
-
     print("✅ Grade-level subscriptions for '$gradeName' cleared.");
 
     // 🔹 2. Get all students for that grade
     final allStudents = await getAllStudentsByGrade_future(gradeName);
 
-    // 🔹 3. Clear their individual subscription data
+    // 🔹 3. Clear their individual subscription + absence data
     for (final student in allStudents) {
       final studentRef = getSecondaryCollection(gradeName).doc(student.id);
-      await studentRef.update({'studentPaidSubscriptions': []});
+
+      await studentRef.update({
+        'studentPaidSubscriptions': [],
+        'absencesNumbers': [], // ✅ clear absences list too
+      });
     }
 
-    print("✅ All students in '$gradeName' had their subscriptions reset.");
+    print(
+        "✅ All students in '$gradeName' had their subscriptions and absences reset.");
   }
 
   /// Deletes a `StudentModel` from a specific grade's collection
@@ -311,26 +315,28 @@ class FirebaseFunctions {
   static Future<void> addGradeToList(String newGrade) async {
     try {
       // Reference to the 'constants' collection and the 'grades' document
-      DocumentReference gradesDoc =
+      final gradesDoc =
           FirebaseFirestore.instance.collection('constants').doc('grades');
 
       // Get the current document data
-      DocumentSnapshot snapshot = await gradesDoc.get();
+      final snapshot = await gradesDoc.get();
 
       if (snapshot.exists) {
-        // Get the current list of grades
-        List<dynamic> gradesList = List.from(snapshot[
-            'grades']); // Clone the list to prevent modification of the original one
+        // ✅ If document exists, update the existing list
+        final data = snapshot.data() as Map<String, dynamic>;
+        final List<dynamic> gradesList = List.from(data['grades'] ?? []);
+        if (!gradesList.contains(newGrade)) {
+          gradesList.add(newGrade);
+        }
 
-        // Add the new grade to the list
-        gradesList.add(newGrade);
-
-        // Update the 'grades' field in the document with the modified list
         await gradesDoc.update({'grades': gradesList});
-
-        print("Grade added successfully.");
+        print("Grade added successfully (updated existing document).");
       } else {
-        print("Document does not exist.");
+        // ✅ If document doesn’t exist, create it with the new grade
+        await gradesDoc.set({
+          'grades': [newGrade],
+        });
+        print("Document created and grade added successfully.");
       }
     } catch (e) {
       print("Error adding grade: $e");
@@ -668,32 +674,33 @@ class FirebaseFunctions {
 
   // ------------------ FIREBASE HELPERS ------------------
 
-// 1. Get the current invoice ID
-  static Future<int> getNextInvoiceId() async {
+// ✅ 2. Get and increment invoice ID safely (single function)
+  static Future<int> getAndIncrementInvoiceId() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
-    DocumentSnapshot docSnapshot =
-        await firestore.collection('constants').doc('bills_ids').get();
+    DocumentReference docRef =
+        firestore.collection('constants').doc('bills_ids');
 
-    if (!docSnapshot.exists) {
-      throw Exception("bills_ids document not found!");
-    }
+    return await firestore.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(docRef);
 
-    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-    return data['bills_ids'] ?? 0;
-  }
+      int currentId = 0;
+      if (!snapshot.exists) {
+        transaction.set(docRef, {'bills_ids': 1});
+        return 1;
+      }
 
-// 2. Increment invoice ID after success
-  static Future<void> incrementInvoiceId(int newValue) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    await firestore
-        .collection('constants')
-        .doc('bills_ids')
-        .update({'bills_ids': newValue});
+      final data = snapshot.data() as Map<String, dynamic>?;
+      currentId = (data?['bills_ids'] ?? 0) + 1;
+
+      transaction.update(docRef, {'bills_ids': currentId});
+
+      return currentId;
+    });
   }
 
 // ------------------ MAIN FUNCTIONS ------------------
 
-// 3. Add Invoice to BigInvoice (invoices list only)
+// ✅ 3. Add Invoice to BigInvoice (invoices list only)
   static Future<void> addInvoiceToBigInvoices({
     required String date,
     required String day,
@@ -709,10 +716,10 @@ class FirebaseFunctions {
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-    // Get next invoice ID
-    int invoiceId = await getNextInvoiceId();
+    // ✅ Get and increment ID atomically
+    int invoiceId = await getAndIncrementInvoiceId();
 
-    // Create invoice with assigned ID
+    // ✅ Create invoice with assigned ID
     Invoice newInvoice = Invoice(
       id: invoiceId.toString(),
       studentId: studentId,
@@ -727,23 +734,19 @@ class FirebaseFunctions {
       dateTime: DateTime.now(),
     );
 
-    // Check if big invoice exists for this date
-    DocumentSnapshot docSnapshot =
-        await firestore.collection('big_invoices').doc(date).get();
+    // ✅ Check if big invoice exists for this date
+    DocumentReference docRef = firestore.collection('big_invoices').doc(date);
+
+    DocumentSnapshot docSnapshot = await docRef.get();
 
     if (docSnapshot.exists) {
       Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
       BigInvoice bigInvoice = BigInvoice.fromJson(data);
 
-      // Add invoice to list
       bigInvoice.invoices.add(newInvoice);
 
-      await firestore
-          .collection('big_invoices')
-          .doc(date)
-          .update(bigInvoice.toJson());
+      await docRef.update(bigInvoice.toJson());
     } else {
-      // Create new BigInvoice with this invoice
       BigInvoice bigInvoice = BigInvoice(
         date: date,
         day: day,
@@ -751,14 +754,9 @@ class FirebaseFunctions {
         payments: [],
       );
 
-      await firestore
-          .collection('big_invoices')
-          .doc(date)
-          .set(bigInvoice.toJson());
+      await docRef.set(bigInvoice.toJson());
     }
 
-    // Increment invoice ID only after success
-    await incrementInvoiceId(invoiceId + 1);
   }
 
 // 4. Update Invoice (by replacing it in invoices list)
@@ -1000,12 +998,23 @@ class FirebaseFunctions {
 
   static Future<bool> verifyPassword(String enteredPassword) async {
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('constants')
-          .doc('password')
-          .get();
-      final savedPassword = doc.data()?['password'] ?? '';
+      final docRef =
+          FirebaseFirestore.instance.collection('constants').doc('password');
+      final doc = await docRef.get();
 
+      if (!doc.exists) {
+        await docRef.set({'password': '0'});
+        return enteredPassword == '0';
+      }
+
+      final data = doc.data();
+      final savedPassword = data?['password'] ?? '0';
+
+      if (data == null || !data.containsKey('password')) {
+        await docRef.set({'password': '0'});
+      }
+
+      // ✅ Finally, compare passwords
       return enteredPassword == savedPassword;
     } catch (e) {
       print('Error verifying password: $e');

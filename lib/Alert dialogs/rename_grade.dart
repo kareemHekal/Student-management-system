@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../firebase/firebase_functions.dart';
+import 'verifiy_password.dart';
 
 Future<void> renameGrade({
   required BuildContext context,
@@ -47,8 +49,13 @@ Future<void> renameGrade({
                   borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () async {
-              FirebaseFunctions.renameGrade(oldGrade, gradeController.text);
-              Navigator.pop(context);
+              showVerifyPasswordDialog(
+                context: context,
+                onVerified: () {
+                  FirebaseFunctions.renameGrade(oldGrade, gradeController.text);
+                  Navigator.pop(context);
+                },
+              );
             },
             child: const Text('تأكيد'),
           ),

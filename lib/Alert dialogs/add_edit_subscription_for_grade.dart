@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../colors_app.dart'; // For your custom green theme
 import '../firebase/firebase_functions.dart';
 import '../models/subscription_fee.dart';
+import 'verifiy_password.dart';
 
 Future<void> showAddOrEditSubscriptionDialog(
   BuildContext context,
@@ -119,37 +120,42 @@ Future<void> showAddOrEditSubscriptionDialog(
             ),
             child: Text(isEdit ? 'تعديل' : 'حفظ'),
             onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                if (isEdit) {
-                  await FirebaseFunctions.updateSubscriptionInGrade(
-                    gradeName,
-                    SubscriptionFee(
-                      id: subscriptionFee.id,
-                      subscriptionName: nameController.text.trim(),
-                      subscriptionAmount:
-                          double.tryParse(amountController.text.trim()) ?? 0.0,
-                    ),
-                  );
-                } else {
-                  await FirebaseFunctions.addSubscriptionToGrade(
-                    gradeName,
-                    nameController.text.trim(),
-                    double.tryParse(amountController.text.trim()) ?? 0.0,
-                  );
-                }
+              showVerifyPasswordDialog(
+                context: context,
+                onVerified: () async {
+                  if (formKey.currentState!.validate()) {
+                    if (isEdit) {
+                      await FirebaseFunctions.updateSubscriptionInGrade(
+                        gradeName,
+                        SubscriptionFee(
+                          id: subscriptionFee.id,
+                          subscriptionName: nameController.text.trim(),
+                          subscriptionAmount:
+                              double.tryParse(amountController.text.trim()) ?? 0.0,
+                        ),
+                      );
+                    } else {
+                      await FirebaseFunctions.addSubscriptionToGrade(
+                        gradeName,
+                        nameController.text.trim(),
+                        double.tryParse(amountController.text.trim()) ?? 0.0,
+                      );
+                    }
 
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isEdit
-                          ? 'تم تعديل الاشتراك بنجاح'
-                          : 'تم إضافة الاشتراك بنجاح',
-                    ),
-                    backgroundColor: accentColor,
-                  ),
-                );
-              }
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isEdit
+                              ? 'تم تعديل الاشتراك بنجاح'
+                              : 'تم إضافة الاشتراك بنجاح',
+                        ),
+                        backgroundColor: accentColor,
+                      ),
+                    );
+                  }
+                },
+              );
             },
           ),
         ],

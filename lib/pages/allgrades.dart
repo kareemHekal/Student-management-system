@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../Alert dialogs/delete_grade.dart';
 import '../Alert dialogs/rename_grade.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
@@ -69,7 +70,7 @@ class _AllgradesState extends State<Allgrades> {
                       elevation: 5,
                       child: GestureDetector(
                         onLongPress: () {
-                          onLongPressDelete(context, secondaries[index]);
+                          DeleteGradeDialog(context, secondaries[index]);
                         },
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16),
@@ -125,36 +126,7 @@ class _AllgradesState extends State<Allgrades> {
     );
   }
 
-  void onLongPressDelete(BuildContext context, String gradeToDelete) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("حذف الصف"),
-          content: Text("هل أنت متأكد أنك تريد حذف الصف: $gradeToDelete؟"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("إلغاء"),
-            ),
-            TextButton(
-              onPressed: () async {
-                await FirebaseFunctions.deleteGradeFromList(gradeToDelete);
-                Navigator.pop(context);
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("تم حذف الصف بنجاح")),
-                );
-              },
-              child: const Text("حذف"),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   void showAddGradeDialog(BuildContext context) {
     TextEditingController gradeController = TextEditingController();

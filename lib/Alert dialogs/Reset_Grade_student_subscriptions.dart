@@ -24,15 +24,17 @@ class ResetGradeAndStudentSubscriptionsDialog extends StatelessWidget {
         child: const Text(
           'هل أنت متأكد أنك تريد حذف جميع الاشتراكات الخاصة بكل المراحل والطلاب؟\n\n'
           'عند تنفيذ هذه العملية سيتم:\n'
-          '🟥   حذف جميع الاشتراكات المسجلة لكل مرحلة.\n'
-          '🟥   حذف جميع الاشتراكات المدفوعة لكل الطلاب في هذه المراحل.\n\n'
+          '🟥 حذف جميع الاشتراكات المسجلة لكل مرحلة.\n'
+          '🟥 حذف جميع الاشتراكات المدفوعة لكل الطلاب في هذه المراحل.\n'
+          '🟥 حذف عدد أيام الغياب والحضور المسجل لكل طالب.\n\n'
           '⚠️ هذا الإجراء لا يمكن التراجع عنه، تأكد قبل المتابعة.',
           textAlign: TextAlign.right,
           textDirection: TextDirection.rtl,
           style: TextStyle(
             color: Colors.red,
-            height: 1.4,
+            height: 1.5,
             fontSize: 16,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -59,9 +61,8 @@ class ResetGradeAndStudentSubscriptionsDialog extends StatelessWidget {
                 try {
                   List<String> fetchedGrades =
                       await FirebaseFunctions.getGradesList();
-
                   for (final grade in fetchedGrades) {
-                    await FirebaseFunctions.resetGradeAndStudentSubscriptions(
+                    await FirebaseFunctions.resetGradeSubscriptionsAndAbsences(
                         grade);
                   }
 

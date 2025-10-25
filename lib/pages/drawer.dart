@@ -265,7 +265,8 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       );
                     },
                     child: ListTile(
-                      leading: Image.asset("assets/images/edit-table.png", width: 40),
+                      leading: Image.asset("assets/images/edit-table.png",
+                          width: 40),
                       title: const Text(
                         "مراحل الدراسة",
                         style: TextStyle(color: app_colors.green, fontSize: 15),
@@ -303,8 +304,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       leading: const Icon(Icons.lock),
                       title: const Text(
                         "تغيير كلمة المرور",
-                        style:
-                        TextStyle(color: app_colors.green, fontSize: 15),
+                        style: TextStyle(color: app_colors.green, fontSize: 15),
                       ),
                     ),
                   ),
@@ -460,8 +460,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                               },
                               choiceItems: C2Choice.listFrom<String, String>(
                                 source: options,
-                                value: (i, v) =>
-                                    "$v-$i", // اضف index لتفادي التكرار
+                                value: (i, v) => v, // ✅ remove the "-$i"
                                 label: (i, v) => v,
                               ),
                               choiceStyle: C2ChipStyle.outlined(
@@ -498,6 +497,8 @@ class _CustomDrawerState extends State<CustomDrawer> {
                                   ],
                                 ),
                                 onPressed: () {
+                                  print('Selected tags: $tags');
+
                                   showDialog(
                                     context: context,
                                     builder: (context) {
@@ -514,7 +515,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                                             } else if (tag == 'bills') {
                                               FirebaseFunctions
                                                   .deleteBigInvoiceCollection();
-                                            } else {
+                                            } else if (tag == "Absence") {
                                               List<String> allDaysOfWeek = [
                                                 "Monday",
                                                 "Tuesday",
