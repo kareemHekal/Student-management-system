@@ -28,11 +28,18 @@ class DeleteSubscriptionDialog extends StatelessWidget {
           fontSize: 18,
         ),
       ),
-      content: Text(
-        "هل أنت متأكد أنك تريد حذف هذا الاشتراك؟",
-        style: TextStyle(
-          color: Colors.red[700],
-          fontSize: 16,
+      content: SingleChildScrollView(
+        child: Text(
+          'هل أنت متأكد أنك تريد حذف هذا الاشتراك؟\n\n'
+          'عند تنفيذ هذه العملية سيتم أيضًا حذف اسم هذا الاشتراك من جميع الفواتير المرتبطة به، '
+          'ولكن ستظل تفاصيل الفواتير كما هي دون حذف.',
+          textAlign: TextAlign.right,
+          textDirection: TextDirection.rtl,
+          style: TextStyle(
+            color: Colors.red[700],
+            fontSize: 16,
+            height: 1.4,
+          ),
         ),
       ),
       actions: [

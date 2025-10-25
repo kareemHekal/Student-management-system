@@ -52,10 +52,14 @@ class Magmo3aWidget extends StatelessWidget {
                           ),
                         ),
                         content: Text(
-                          'هل أنت متأكد أنك تريد حذف هذه المجموعة؟',
+                          'هل أنت متأكد أنك تريد حذف هذه المجموعة؟\n\n'
+                          'عند تنفيذ هذه العملية سيتم أيضًا حذف اسم هذه المجموعة من قائمة المجموعات الخاصة بالطلاب المنتمين إليها.',
+                          textAlign: TextAlign.right,
+                          textDirection: TextDirection.rtl,
                           style: TextStyle(
                             color: Colors.red[700],
                             fontSize: 16,
+                            height: 1.4,
                           ),
                         ),
                         actions: [
