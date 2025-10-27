@@ -1,12 +1,11 @@
-import 'package:fatma_elorbany/models/subscription_fee.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-
 import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Invoice.dart';
+import '../models/subscription_fee.dart';
 
 class InvoiceWidget extends StatefulWidget {
   final Invoice invoice;

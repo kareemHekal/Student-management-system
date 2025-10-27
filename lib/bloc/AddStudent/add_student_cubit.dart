@@ -1,4 +1,3 @@
-import 'package:fatma_elorbany/models/student_paid_subscription.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -7,6 +6,7 @@ import '../../firebase/firebase_functions.dart';
 import '../../home.dart';
 import '../../models/Magmo3aModel.dart';
 import '../../models/Studentmodel.dart';
+import '../../models/student_paid_subscription.dart';
 import 'add_student_state.dart';
 
 class StudentCubit extends Cubit<StudentState> {

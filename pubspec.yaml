@@ -1,4 +1,4 @@
-name: fatma_elorbany
+name: student_management_system
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -53,6 +53,7 @@ dependencies:
   chips_choice: ^3.0.1
   bloc: ^9.0.0
   flutter_bloc: ^9.0.0
+  rename_app: ^1.6.5
 
 flutter_native_splash:
   color: "#D9EDBF"
