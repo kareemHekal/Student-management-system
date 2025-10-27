@@ -120,42 +120,43 @@ Future<void> showAddOrEditSubscriptionDialog(
             ),
             child: Text(isEdit ? 'تعديل' : 'حفظ'),
             onPressed: () async {
-              showVerifyPasswordDialog(
-                context: context,
-                onVerified: () async {
-                  if (formKey.currentState!.validate()) {
-                    if (isEdit) {
+              if (formKey.currentState!.validate()) {
+                if (isEdit) {
+                  showVerifyPasswordDialog(
+                    context: context,
+                    onVerified: () async {
                       await FirebaseFunctions.updateSubscriptionInGrade(
                         gradeName,
                         SubscriptionFee(
                           id: subscriptionFee.id,
                           subscriptionName: nameController.text.trim(),
                           subscriptionAmount:
-                              double.tryParse(amountController.text.trim()) ?? 0.0,
+                              double.tryParse(amountController.text.trim()) ??
+                                  0.0,
                         ),
                       );
-                    } else {
-                      await FirebaseFunctions.addSubscriptionToGrade(
-                        gradeName,
-                        nameController.text.trim(),
-                        double.tryParse(amountController.text.trim()) ?? 0.0,
-                      );
-                    }
+                    },
+                  );
+                } else {
+                  await FirebaseFunctions.addSubscriptionToGrade(
+                    gradeName,
+                    nameController.text.trim(),
+                    double.tryParse(amountController.text.trim()) ?? 0.0,
+                  );
+                }
 
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isEdit
-                              ? 'تم تعديل الاشتراك بنجاح'
-                              : 'تم إضافة الاشتراك بنجاح',
-                        ),
-                        backgroundColor: accentColor,
-                      ),
-                    );
-                  }
-                },
-              );
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isEdit
+                          ? 'تم تعديل الاشتراك بنجاح'
+                          : 'تم إضافة الاشتراك بنجاح',
+                    ),
+                    backgroundColor: accentColor,
+                  ),
+                );
+              }
             },
           ),
         ],
