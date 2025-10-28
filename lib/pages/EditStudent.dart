@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 
 import '../Alert dialogs/RemoveFromGroupsListDialog.dart';
+import '../Alert dialogs/add_exam_degree.dart';
 import '../bloc/Edit Student/edit_student_cubit.dart';
 import '../bloc/Edit Student/edit_student_state.dart';
 import '../cards/groupSmallCard.dart';
@@ -60,6 +61,19 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                     },
                     icon: Icon(
                       Icons.list_alt,
+                      size: 30,
+                      color: app_colors.green,
+                    )),
+                IconButton(
+                    onPressed: () {
+                      showAddStudentExamGradeDialog(
+                        context: context,
+                        gradeName: widget.student.grade ?? "",
+                        studentId: widget.student.id,
+                      );
+                    },
+                    icon: Icon(
+                      Icons.assessment,
                       size: 30,
                       color: app_colors.green,
                     )),
@@ -240,12 +254,16 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                           children: [
                                             showNumberOfAbsenceAndPresence(
                                                 "أيام الحضور",
-                                                widget.student
-                                                    .numberOfAttendantDays),
+                                                widget
+                                                    .student
+                                                    .countingAttendedDays
+                                                    ?.length),
                                             showNumberOfAbsenceAndPresence(
                                                 "أيام الغياب",
-                                                widget.student
-                                                    .numberOfAbsentDays),
+                                                widget
+                                                    .student
+                                                    .countingAbsentDays
+                                                    ?.length),
                                             IconButton(
                                               onPressed: () {
                                                 Navigator.push(
@@ -451,7 +469,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     );
   }
 
-
   Widget showNumberOfAbsenceAndPresence(
     String label,
     int? number,
@@ -539,7 +556,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       ],
     );
   }
-
 
   Widget NotesPart(BuildContext context) {
     final cubit = StudentEditCubit.get(context);

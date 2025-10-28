@@ -5,6 +5,7 @@ import '../Alert dialogs/rename_grade.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/grade_subscriptions_model.dart';
+import 'exams_for_grade.dart';
 import 'subscriptions_for_grade.dart';
 
 class Allgrades extends StatefulWidget {
@@ -84,6 +85,7 @@ class _AllgradesState extends State<Allgrades> {
                             ),
                           ),
                           trailing: Row(
+                            spacing: 10,
                             mainAxisSize: MainAxisSize.min,
                             // important to prevent overflow
                             children: [
@@ -96,8 +98,21 @@ class _AllgradesState extends State<Allgrades> {
                                       oldGrade: secondaries[index]);
                                 },
                               ),
-                              const SizedBox(
-                                  width: 10), // use SizedBox for spacing
+
+                              IconButton(
+                                icon: const Icon(Icons.assignment,
+                                    color: app_colors.green),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ExamsForGrade(
+                                        gradeName: secondaries[index],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ), // use SizedBox for spacing
                               IconButton(
                                 icon: const Icon(
                                     Icons.arrow_forward_ios_outlined,

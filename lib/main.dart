@@ -1,19 +1,15 @@
 
 import 'package:bloc/bloc.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'auth/forgetPasswordPage.dart';
-import 'auth/login.dart';
+
 import 'auth/noInternetConnection.dart';
-import 'auth/sign up page.dart';
 import 'bloc/observer.dart';
 import 'colors_app.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'firebase/firebase_options.dart';
 import 'home.dart';
 import 'pages/AllStudentPage.dart';
-import 'provider.dart'; // Import connectivity_plus
 
 void main() async {
   Bloc.observer = MyBlocObserver();
@@ -27,10 +23,7 @@ void main() async {
   bool hasConnection = (connectivityResult != ConnectivityResult.none);
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => DataProvider(),
-      child: MyApp(hasConnection: hasConnection), // Pass the connection status
-    ),
+    MyApp(hasConnection: hasConnection),
   );
 }
 
@@ -41,7 +34,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var dataprovider = Provider.of<DataProvider>(context);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -56,12 +48,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: hasConnection
-          ? (dataprovider.firebaseUser != null ? const Homescreen() :const LoginPage())
+          ? const Homescreen()
           : NoConnectionPage(), // Show NoConnectionPage if no internet
       routes: {
-        '/SignupPage': (context) =>const SignupPage(),
-        '/Forgetpasswordpage': (context) =>ForgetPasswordPage(),
-        '/LoginPage': (context) =>  const LoginPage(),
         '/HomeScreen': (context) => const Homescreen(),
         '/StudentsTab': (context) => const AllStudentsTab(),
       },

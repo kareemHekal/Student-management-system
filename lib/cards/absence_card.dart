@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../colors_app.dart';
 import '../models/absence_model.dart';
 
@@ -9,8 +10,8 @@ class AbsenceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int attended = absence.attendedDays ?? 0;
-    int absent = absence.absentDays ?? 0;
+    int attended = absence.attendedDays.length;
+    int absent = absence.absentDays.length;
     int total = attended + absent;
     double attendanceRatio = total == 0 ? 0 : attended / total;
 

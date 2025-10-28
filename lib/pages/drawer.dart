@@ -1,6 +1,5 @@
 import 'package:chips_choice/chips_choice.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -392,53 +391,6 @@ class _CustomDrawerState extends State<CustomDrawer> {
                         const Divider(
                           endIndent: 15,
                           indent: 15,
-                          color: Colors.red,
-                          thickness: 2,
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Padding(
-                              padding: EdgeInsets.only(left: 8),
-                              child: Text("تسجيل الخروج",
-                                  style: TextStyle(
-                                      color: app_colors.green, fontSize: 20)),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xffFF0000),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.logout,
-                                        color: Colors.white, size: 30),
-                                    SizedBox(width: 15),
-                                    Text(
-                                      "تسجيل الخروج",
-                                      style: TextStyle(
-                                          color: app_colors.white,
-                                          fontSize: 18),
-                                    ),
-                                  ],
-                                ),
-                                onPressed: () {
-                                  FirebaseAuth.instance.signOut();
-                                  Navigator.pushNamedAndRemoveUntil(
-                                      context, '/LoginPage', (route) => false);
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Divider(
-                          endIndent: 8,
-                          indent: 8,
                           color: Colors.red,
                           thickness: 2,
                         ),

@@ -1,15 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/Big invoice.dart';
 import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Studentmodel.dart';
 import '../models/absence_model.dart';
+import '../models/exam_model.dart';
 import '../models/grade_subscriptions_model.dart';
 import '../models/payment.dart';
 import '../models/subscription_fee.dart';
-import '../models/usermodel.dart';
+import 'exams_functions.dart';
 
 class FirebaseFunctions {
   // =============================== Magmo3a Functions ===============================
@@ -88,14 +88,7 @@ class FirebaseFunctions {
   /// Retrieves all documents in a specific day's collection for the current user
   static Stream<List<Magmo3amodel>> getAllDocsFromDay(String day) {
     CollectionReference<Magmo3amodel> dayCollection = getDayCollection(day);
-    String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
-
-    if (currentUserId == null) {
-      throw Exception("No user is currently logged in.");
-    }
-
     return dayCollection
-        .where("userid", isEqualTo: currentUserId)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
@@ -104,14 +97,8 @@ class FirebaseFunctions {
   static Stream<List<Magmo3amodel>> getAllDocsFromDayWithGrade(
       String day, String grade) {
     CollectionReference<Magmo3amodel> dayCollection = getDayCollection(day);
-    String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
-
-    if (currentUserId == null) {
-      throw Exception("No user is currently logged in.");
-    }
 
     return dayCollection
-        .where("userid", isEqualTo: currentUserId)
         .where("grade", isEqualTo: grade)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
@@ -181,8 +168,8 @@ class FirebaseFunctions {
         // Create a new AbsenceModel with current attendance counts
         AbsenceModel newAbsence = AbsenceModel(
           monthName: monthName,
-          absentDays: student.numberOfAbsentDays ?? 0,
-          attendedDays: student.numberOfAttendantDays ?? 0,
+          absentDays: student.countingAbsentDays ?? [],
+          attendedDays: student.countingAttendedDays ?? [],
         );
 
         // Add the new AbsenceModel to the student's list
@@ -196,8 +183,8 @@ class FirebaseFunctions {
         // Update the student document
         await collection.doc(doc.id).update({
           'absencesNumbers': updatedAbsences,
-          'numberOfAbsentDays': 0, // reset counters for new month
-          'numberOfAttendantDays': 0,
+          'countingAttendedDays': [], // reset counters for new month
+          'countingAbsentDays': [],
         });
 
         print('Saved month "$monthName" for student: ${student.name}');
@@ -235,12 +222,30 @@ class FirebaseFunctions {
 
       await studentRef.update({
         'studentPaidSubscriptions': [],
+        'studentExamsGrades': [],
         'absencesNumbers': [], // ✅ clear absences list too
       });
     }
 
     print(
         "✅ All students in '$gradeName' had their subscriptions and absences reset.");
+
+    // 🔹 4. Delete all exams for this grade
+    try {
+      final exams = await FirebaseExams.getExams(gradeName);
+
+      if (exams.isEmpty) {
+        print("⚠️ No exams found for grade '$gradeName'.");
+      } else {
+        // Delete the entire exams document for this grade
+        final examsDocRef =
+            FirebaseFirestore.instance.collection('exams').doc(gradeName);
+        await examsDocRef.delete();
+        print("✅ All exams for grade '$gradeName' deleted successfully.");
+      }
+    } catch (e) {
+      print("❌ Error deleting exams for grade '$gradeName': $e");
+    }
   }
 
   /// Deletes a `StudentModel` from a specific grade's collection
@@ -310,6 +315,87 @@ class FirebaseFunctions {
     for (var doc in snapshot.docs) {
       await doc.reference.delete();
     }
+  }
+
+  /// Add a new exam to a student's exams list
+  static Future<void> addExam({
+    required String gradeName,
+    required String studentId,
+    required ExamModel exam,
+  }) async {
+    final docRef =
+        FirebaseFirestore.instance.collection(gradeName).doc(studentId);
+
+    // 🔹 Generate Firestore auto ID if exam.id is null or empty
+    final newId = exam.id?.isNotEmpty == true
+        ? exam.id!
+        : FirebaseFirestore.instance
+            .collection('tmp')
+            .doc()
+            .id; // just to get an ID
+
+    final newExam = exam.copyWith(id: newId);
+
+    await docRef.update({
+      'studentExamsGrades': FieldValue.arrayUnion([newExam.toJson()]),
+    });
+  }
+
+  /// Update an existing exam by matching its ID
+  static Future<void> updateExam({
+    required String gradeName,
+    required String studentId,
+    required ExamModel updatedExam,
+  }) async {
+    final docRef =
+        FirebaseFirestore.instance.collection(gradeName).doc(studentId);
+    final snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      throw Exception('Student not found');
+    }
+
+    final data = snapshot.data();
+    if (data == null || data['studentExamsGrades'] == null) return;
+
+    // Convert current exams list
+    final List<dynamic> exams = data['studentExamsGrades'];
+    final updatedExams = exams.map((e) {
+      final exam = ExamModel.fromJson(Map<String, dynamic>.from(e));
+      return exam.id == updatedExam.id ? updatedExam.toJson() : exam.toJson();
+    }).toList();
+
+    await docRef.update({'studentExamsGrades': updatedExams});
+  }
+
+  /// Delete an exam from the list by ID
+  static Future<void> deleteExam({
+    required String gradeName,
+    required String studentId,
+    required String examId,
+  }) async {
+    final docRef =
+        FirebaseFirestore.instance.collection(gradeName).doc(studentId);
+    final snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      throw Exception('Student not found');
+    }
+
+    final data = snapshot.data();
+    if (data == null || data['studentExamsGrades'] == null) return;
+
+    // Filter out the exam to delete
+    final List<dynamic> exams = data['studentExamsGrades'];
+    final updatedExams = exams
+        .where((e) {
+          final exam = ExamModel.fromJson(Map<String, dynamic>.from(e));
+          return exam.id != examId;
+        })
+        .map((e) => e)
+        .toList();
+
+    await docRef.update({'studentExamsGrades': updatedExams});
   }
 
   static Future<void> addGradeToList(String newGrade) async {
@@ -466,14 +552,10 @@ class FirebaseFunctions {
       final oldSubDocSnapshot = await oldSubDocRef.get();
 
       if (oldSubDocSnapshot.exists) {
-        // Deserialize
         final oldModel =
             GradeSubscriptionsModel.fromJson(oldSubDocSnapshot.data()!);
-
-        // Update the grade name in the model
         oldModel.gradeName = newGrade;
 
-        // Save it as new document
         final newSubDocRef = firestore
             .collection('constants')
             .doc('grades_subscriptions')
@@ -481,13 +563,31 @@ class FirebaseFunctions {
             .doc(newGrade);
 
         await newSubDocRef.set(oldModel.toJson());
-
-        // Delete the old document
         await oldSubDocRef.delete();
 
         print('✅ Grade subscription renamed successfully.');
       } else {
         print('⚠️ No subscription document found for $oldGrade.');
+      }
+
+      // 6️⃣ Rename exam document in 'exams' collection
+      final oldExamDocRef = firestore.collection('exams').doc(oldGrade);
+      final oldExamDocSnapshot = await oldExamDocRef.get();
+
+      if (oldExamDocSnapshot.exists) {
+        final oldExamData = oldExamDocSnapshot.data();
+        final newExamDocRef = firestore.collection('exams').doc(newGrade);
+
+        if (oldExamData != null) {
+          final updatedExamData = Map<String, dynamic>.from(oldExamData);
+          updatedExamData['gradeName'] = newGrade;
+          await newExamDocRef.set(updatedExamData);
+        }
+
+        await oldExamDocRef.delete();
+        print('✅ Exam document renamed successfully.');
+      } else {
+        print('⚠️ No exam document found for $oldGrade.');
       }
 
       print('🎉 Grade renamed successfully from "$oldGrade" to "$newGrade".');
@@ -511,72 +611,6 @@ class FirebaseFunctions {
     });
   }
 
-  // =============================== Authentication Functions ===============================
-
-  /// Creates a new account in Firebase and saves the user data
-  static createAccount(
-    String emailAddress,
-    String password, {
-    required Function onSucsses,
-    required Function onEror,
-    required String Username,
-  }) async {
-    try {
-      final credential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailAddress,
-        password: password,
-      );
-      credential.user?.sendEmailVerification();
-      Usermodel user = Usermodel(
-          id: credential.user!.uid, name: Username, email: emailAddress);
-      addUser(user);
-      onSucsses();
-    } on FirebaseAuthException catch (e) {
-      onEror(e.message);
-    }
-  }
-
-  /// Logs in the user and verifies their email
-  static login(String emailAddress, String password,
-      {required String Username,
-      required Function onSucsses,
-      required Function onEror}) async {
-    try {
-      final credential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: emailAddress, password: password);
-      if (credential.user?.emailVerified == true) {
-        onSucsses();
-      }
-    } on FirebaseAuthException catch (e) {
-      onEror(e.message);
-    }
-  }
-
-  /// Reads user data from the `users` collection
-  static Future<Usermodel?> ReadUserData() async {
-    var collection = getUsersCollection();
-    DocumentSnapshot<Usermodel> docUser =
-        await collection.doc(FirebaseAuth.instance.currentUser!.uid).get();
-    return docUser.data();
-  }
-
-  /// Adds a new user to the `users` collection
-  static addUser(Usermodel user) {
-    var colliction = getUsersCollection();
-    var docref = colliction.doc(user.id);
-    docref.set(user);
-  }
-
-  /// Returns a reference to the `users` collection
-  static CollectionReference<Usermodel> getUsersCollection() {
-    return FirebaseFirestore.instance
-        .collection("users")
-        .withConverter<Usermodel>(
-          fromFirestore: (snapshot, _) => Usermodel.fromJson(snapshot.data()!),
-          toFirestore: (value, _) => value.tojson(),
-        );
-  }
 
   //=============================== BigInvoices Functions ===============================
   static Future<void> createBigInvoiceCollection() async {
