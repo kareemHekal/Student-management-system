@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+
+import '../Alert dialogs/DeleteIncomeBillDialog.dart';
 import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
@@ -43,40 +45,103 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Card(
-        elevation: 5,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        color: app_colors.ligthGreen,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              const Divider(color: app_colors.darkGrey, thickness: 1),
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                  context, false, "اسم الطالب:", widget.invoice.studentName),
-              _buildInfoRow(context, true, "رقم الطالب:",
-                  widget.invoice.studentPhoneNumber),
-              _buildInfoRow(
-                  context, true, "رقم الأم:", widget.invoice.momPhoneNumber),
-              _buildInfoRow(
-                  context, true, "رقم الأب:", widget.invoice.dadPhoneNumber),
-              _buildInfoRow(context, false, "الصف:", widget.invoice.grade),
-              _buildInfoRow(context, false, "المبلغ:",
-                  "${widget.invoice.amount.toStringAsFixed(2)} جنيه"),
-              _buildInfoRow(context, false, "اسم الأشتراك:",
-                  subscriptionFee?.subscriptionName ?? ""),
-              _buildInfoRow(
-                  context, false, "الوصف:", widget.invoice.description),
-              _buildInfoRow(context, false, "التاريخ:",
-                  DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime)),
-              _buildInfoRow(context, false, "الوقت:",
-                  DateFormat('hh:mm a').format(widget.invoice.dateTime)),
-            ],
+      child: GestureDetector(
+        onLongPress: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext dialogContext) {
+              return DeleteIncomeBillDialog(
+                onConfirm: () async {
+                  // Close the confirmation dialog first
+                  Navigator.of(dialogContext).pop();
+
+                  // Use the parent context for dialogs and ScaffoldMessenger
+                  final parentContext = context;
+
+                  await showVerifyPasswordDialog(
+                    context: parentContext,
+                    onVerified: () async {
+                      try {
+                        await FirebaseFunctions.deleteInvoiceFromBigInvoices(
+                          date: DateFormat('yyyy-MM-dd')
+                              .format(widget.invoice.dateTime),
+                          invoiceId: widget.invoice.id,
+                        );
+
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم حذف الفاتورة بنجاح'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+
+                        // Navigate safely
+                        if (parentContext.mounted) {
+                          Navigator.pushNamedAndRemoveUntil(
+                              parentContext, '/HomeScreen', (_) => false);
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          SnackBar(
+                            content: Text('حدث خطأ أثناء حذف الفاتورة: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                  );
+                },
+                title: 'حذف فاتورة الإيراد',
+                content: 'هل أنت متأكد أنك تريد حذف هذه الفاتورة؟',
+              );
+            },
+          );
+        },
+        child: Card(
+          elevation: 5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          color: app_colors.ligthGreen,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context),
+                const Divider(color: app_colors.darkGrey, thickness: 1),
+                const SizedBox(height: 8),
+                _buildInfoRow(
+                    context, false, "اسم الطالب:", widget.invoice.studentName),
+                _buildInfoRow(context, true, "رقم الطالب:",
+                    widget.invoice.studentPhoneNumber),
+                _buildInfoRow(
+                    context, true, "رقم الأم:", widget.invoice.momPhoneNumber),
+                _buildInfoRow(
+                    context, true, "رقم الأب:", widget.invoice.dadPhoneNumber),
+                _buildInfoRow(context, false, "الصف:", widget.invoice.grade),
+                _buildInfoRow(context, false, "المبلغ:",
+                    "${widget.invoice.amount.toStringAsFixed(2)} جنيه"),
+                _buildInfoRow(
+                    context,
+                    false,
+                    "اسم الأشتراك:",
+                    subscriptionFee?.subscriptionName ??
+                        " الاشتراك لم يعد موجود "),
+                _buildInfoRow(
+                  context,
+                  false,
+                  "الوصف:",
+                  widget.invoice.description.isEmpty
+                      ? "لا يوجد وصف"
+                      : widget.invoice.description,
+                ),
+                _buildInfoRow(context, false, "التاريخ:",
+                    DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime)),
+                _buildInfoRow(context, false, "الوقت:",
+                    DateFormat('hh:mm a').format(widget.invoice.dateTime)),
+              ],
+            ),
           ),
         ),
       ),

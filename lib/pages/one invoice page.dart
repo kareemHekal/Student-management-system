@@ -181,30 +181,61 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onLongPress: () async {
-                          showVerifyPasswordDialog(
-                              context: context,
-                              onVerified: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return DeleteOutcomeBillDialog(
-                                      title: 'حذف فاتورة المصروفات',
-                                      content:
-                                          'هل أنت متأكد أنك تريد حذف هذه الفاتورة؟',
-                                      onConfirm: () async {
+                          final parentContext =
+                              context; // context of the surrounding widget
+
+                          showDialog(
+                            context: parentContext,
+                            builder: (BuildContext dialogContext) {
+                              return DeleteOutcomeBillDialog(
+                                title: 'حذف فاتورة المصروفات',
+                                content:
+                                    'هل أنت متأكد أنك تريد حذف هذه الفاتورة؟',
+                                onConfirm: () async {
+                                  // Close the confirmation dialog first
+                                  Navigator.of(dialogContext).pop();
+
+                                  // Show password verification
+                                  await showVerifyPasswordDialog(
+                                    context: parentContext,
+                                    onVerified: () async {
+                                      try {
                                         widget.invoice.payments.remove(
                                             widget.invoice.payments[index]);
                                         await FirebaseFunctions
                                             .updateBigInvoice(
-                                                widget.invoice.date,
-                                                widget.invoice);
-                                        setState(() {});
-                                        print("تم حذف الفاتورة");
-                                      },
-                                    );
-                                  },
-                                );
-                              });
+                                          widget.invoice.date,
+                                          widget.invoice,
+                                        );
+
+                                        // Update UI
+                                        if (mounted) setState(() {});
+
+                                        // Show SnackBar
+                                        ScaffoldMessenger.of(parentContext)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content:
+                                                Text('تم حذف الفاتورة بنجاح'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(parentContext)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'حدث خطأ أثناء حذف الفاتورة: $e'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          );
                         },
                         child: PaymentWidget(
                           paymentIndex: index,

@@ -121,41 +121,55 @@ Future<void> showAddOrEditSubscriptionDialog(
             child: Text(isEdit ? 'تعديل' : 'حفظ'),
             onPressed: () async {
               if (formKey.currentState!.validate()) {
-                if (isEdit) {
-                  showVerifyPasswordDialog(
-                    context: context,
-                    onVerified: () async {
-                      await FirebaseFunctions.updateSubscriptionInGrade(
-                        gradeName,
-                        SubscriptionFee(
-                          id: subscriptionFee.id,
-                          subscriptionName: nameController.text.trim(),
-                          subscriptionAmount:
-                              double.tryParse(amountController.text.trim()) ??
-                                  0.0,
-                        ),
-                      );
-                    },
-                  );
-                } else {
-                  await FirebaseFunctions.addSubscriptionToGrade(
-                    gradeName,
-                    nameController.text.trim(),
-                    double.tryParse(amountController.text.trim()) ?? 0.0,
+                try {
+                  if (isEdit) {
+                    await showVerifyPasswordDialog(
+                      context: context,
+                      onVerified: () async {
+                        await FirebaseFunctions.updateSubscriptionInGrade(
+                          gradeName,
+                          SubscriptionFee(
+                            id: subscriptionFee.id,
+                            subscriptionName: nameController.text.trim(),
+                            subscriptionAmount:
+                                double.tryParse(amountController.text.trim()) ??
+                                    0.0,
+                          ),
+                        );
+
+                        // Show SnackBar only if update succeeds
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('تم تعديل الاشتراك بنجاح'),
+                            backgroundColor: accentColor,
+                          ),
+                        );
+                      },
+                    );
+                  } else {
+                    await FirebaseFunctions.addSubscriptionToGrade(
+                      gradeName,
+                      nameController.text.trim(),
+                      double.tryParse(amountController.text.trim()) ?? 0.0,
+                    );
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('تم إضافة الاشتراك بنجاح'),
+                        backgroundColor: accentColor,
+                      ),
+                    );
+                  }
+
+                  Navigator.pop(context);
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('حدث خطأ: $e'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
-
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isEdit
-                          ? 'تم تعديل الاشتراك بنجاح'
-                          : 'تم إضافة الاشتراك بنجاح',
-                    ),
-                    backgroundColor: accentColor,
-                  ),
-                );
               }
             },
           ),

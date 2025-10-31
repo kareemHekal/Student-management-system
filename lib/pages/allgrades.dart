@@ -73,36 +73,36 @@ class _AllgradesState extends State<Allgrades> {
                         onLongPress: () {
                           DeleteGradeDialog(context, secondaries[index]);
                         },
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          leading:
-                              const Icon(Icons.school, color: app_colors.green),
-                          title: Text(
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(16),
+                            leading: const Icon(Icons.school,
+                                color: app_colors.green),
+                            title: Text(
                             secondaries[index],
-                            style: const TextStyle(
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: true,
+                              style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           trailing: Row(
-                            spacing: 10,
                             mainAxisSize: MainAxisSize.min,
-                            // important to prevent overflow
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.edit,
-                                    color: app_colors.green),
-                                onPressed: () {
-                                  renameGrade(
-                                      context: context,
-                                      oldGrade: secondaries[index]);
-                                },
+                                  icon: const Icon(Icons.edit,
+                                      color: app_colors.green),
+                                  onPressed: () {
+                                    renameGrade(
+                                        context: context,
+                                        oldGrade: secondaries[index]);
+                                  },
                               ),
-
                               IconButton(
-                                icon: const Icon(Icons.assignment,
-                                    color: app_colors.green),
-                                onPressed: () {
+                                  icon: const Icon(Icons.assignment,
+                                      color: app_colors.green),
+                                  onPressed: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -112,18 +112,17 @@ class _AllgradesState extends State<Allgrades> {
                                     ),
                                   );
                                 },
-                              ), // use SizedBox for spacing
-                              IconButton(
-                                icon: const Icon(
-                                    Icons.arrow_forward_ios_outlined,
-                                    color: app_colors.green),
-                                onPressed: () {
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.monetization_on,
+                                      color: app_colors.green),
+                                  onPressed: () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) =>
-                                          SubscriptionsForGrade(
-                                        gradeName: secondaries[index],
+                                        builder: (context) =>
+                                            SubscriptionsForGrade(
+                                          gradeName: secondaries[index],
                                       ),
                                     ),
                                   );
@@ -131,8 +130,7 @@ class _AllgradesState extends State<Allgrades> {
                               ),
                             ],
                           ),
-                        ),
-                      ),
+                          )),
                     );
                   },
                 );

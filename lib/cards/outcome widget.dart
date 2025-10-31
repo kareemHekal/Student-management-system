@@ -74,12 +74,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
             size: 30,
           ),
           onPressed: () {
-            showVerifyPasswordDialog(
-              context: context,
-              onVerified: () {
-                _showEditDialog(context);
-              },
-            );
+            _showEditDialog(context);
           },
         ),
       ],
@@ -150,31 +145,36 @@ class _PaymentWidgetState extends State<PaymentWidget> {
               child: const Text("إلغاء"),
             ),
             TextButton(
-              onPressed: () async {
-                String formattedDate =
-                    DateFormat('yyyy-MM-dd').format(widget.payment.dateTime);
-                double parsedAmount = double.tryParse(amountController.text) ??
-                    widget.payment.amount;
+              onPressed: () {
+                showVerifyPasswordDialog(
+                  context: context,
+                  onVerified: () async {
+                    String formattedDate = DateFormat('yyyy-MM-dd').format(widget.payment.dateTime);
+                    double parsedAmount =
+                        double.tryParse(amountController.text) ??
+                            widget.payment.amount;
 
-                Payment updatedPayment = Payment(
-                  amount: parsedAmount,
-                  description: descriptionController.text,
-                  dateTime: widget.payment.dateTime,
+                    Payment updatedPayment = Payment(
+                      amount: parsedAmount,
+                      description: descriptionController.text,
+                      dateTime: widget.payment.dateTime,
+                    );
+
+                    await FirebaseFunctions.updatePaymentInBigInvoice(
+                      date: formattedDate,
+                      updatedPayment: updatedPayment,
+                      paymentIndex: widget.paymentIndex,
+                    );
+
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, "/HomeScreen", (route) => false);
+
+                    setState(() {
+                      widget.payment.amount = updatedPayment.amount;
+                      widget.payment.description = updatedPayment.description;
+                    });
+                  },
                 );
-
-                await FirebaseFunctions.updatePaymentInBigInvoice(
-                  date: formattedDate,
-                  updatedPayment: updatedPayment,
-                  paymentIndex: widget.paymentIndex,
-                );
-
-                Navigator.pushNamedAndRemoveUntil(
-                    context, "/HomeScreen", (route) => false);
-
-                setState(() {
-                  widget.payment.amount = updatedPayment.amount;
-                  widget.payment.description = updatedPayment.description;
-                });
               },
               child: const Text("تأكيد"),
               style: TextButton.styleFrom(

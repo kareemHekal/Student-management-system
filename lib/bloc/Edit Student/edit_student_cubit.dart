@@ -58,7 +58,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
     day = weekdays[now.weekday];
   }
 
-
   void updateGroup(BuildContext context, Magmo3amodel? result) {
     if (result != null) {
       bool groupExists =
@@ -95,7 +94,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       emit(StudentValidationError(e.toString()));
     }
   }
-
 
   Future<void> EditStudent(BuildContext context, level) async {
     if (hisGroups == []) {
@@ -142,13 +140,16 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       return;
     }
 
-
     Studentmodel submodel = Studentmodel(
       id: student.id,
       dateofadd: student.dateofadd,
       name: name_controller.text,
       gender: selectedGender,
       hisGroups: hisGroups,
+      studentExamsGrades: student.studentExamsGrades,
+      absencesNumbers: student.absencesNumbers,
+      countingAbsentDays: student.countingAbsentDays,
+      countingAttendedDays: student.countingAttendedDays,
       studentPaidSubscriptions: studentPaidSubscriptions,
       hisGroupsId: hisGroupsId,
       grade: level,
@@ -182,7 +183,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
     );
   }
 
-
   void setTheSelectedGenderByNull() {
     selectedGender = null;
     emit(StudentUpdatedInEditPage());
@@ -209,27 +209,25 @@ class StudentEditCubit extends Cubit<StudentEditState> {
               -1;
 
           if (index != -1) {
-                // Overwrite the existing entry
-                studentPaidSubscriptions?[index] = StudentPaidSubscriptions(
-                    description: comingDescription,
-                    paidAmount: allAmount,
-                    subscriptionId: studentPaidSubscription.subscriptionId);
-              } else {
-                // Add new entry
-                studentPaidSubscriptions?.add(StudentPaidSubscriptions(
-                    description: comingDescription,
-                    paidAmount: allAmount,
-                    subscriptionId: studentPaidSubscription.subscriptionId));
-              }
-              newPaidSubscriptions?.add(StudentPaidSubscriptions(
-                  description: comingDescription,
-                  paidAmount: newAmount,
-                  subscriptionId: studentPaidSubscription.subscriptionId));
-              emit(StudentEditInitial());
-            },
-          ),
+            // Overwrite the existing entry
+            studentPaidSubscriptions?[index] = StudentPaidSubscriptions(
+                description: comingDescription,
+                paidAmount: allAmount,
+                subscriptionId: studentPaidSubscription.subscriptionId);
+          } else {
+            // Add new entry
+            studentPaidSubscriptions?.add(StudentPaidSubscriptions(
+                description: comingDescription,
+                paidAmount: allAmount,
+                subscriptionId: studentPaidSubscription.subscriptionId));
+          }
+          newPaidSubscriptions?.add(StudentPaidSubscriptions(
+              description: comingDescription,
+              paidAmount: newAmount,
+              subscriptionId: studentPaidSubscription.subscriptionId));
+          emit(StudentEditInitial());
+        },
+      ),
     );
   }
-
-
 }

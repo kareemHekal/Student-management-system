@@ -32,45 +32,67 @@ class ExamsForGrade extends StatelessWidget {
         title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),
-      body: StreamBuilder<List<ExamModel>>(
-        stream: FirebaseExams.getExamsStream(gradeName),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'حدث خطأ أثناء تحميل البيانات',
-                style: TextStyle(color: Colors.red),
+      body: Column(
+        children: [
+          // ✅ Header text
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Text(
+              'جميع الامتحانات الخاصة بمرحلة $gradeName',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: app_colors.green,
               ),
-            );
-          }
+            ),
+          ),
 
-          final exams = snapshot.data ?? [];
+          // ✅ Exams List
+          Expanded(
+            child: StreamBuilder<List<ExamModel>>(
+              stream: FirebaseExams.getExamsStream(gradeName),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Text(
+                      'حدث خطأ أثناء تحميل البيانات',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
 
-          if (exams.isEmpty) {
-            return Center(
-              child: Text(
-                'لا توجد امتحانات لهذه المرحلة',
-                style: TextStyle(fontSize: 18),
-              ),
-            );
-          }
+                final exams = snapshot.data ?? [];
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(12),
-            itemCount: exams.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final exam = exams[index];
-              return ExamCard(
-                exam: exam,
-                gradeName: gradeName,
-              );
-            },
-          );
-        },
+                if (exams.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'لا توجد امتحانات لهذه المرحلة',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: exams.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final exam = exams[index];
+                    return ExamCard(
+                      exam: exam,
+                      gradeName: gradeName,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
