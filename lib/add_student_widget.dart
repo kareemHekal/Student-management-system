@@ -89,6 +89,8 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                 ),
                 width: double.infinity,
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Padding(
                     padding: const EdgeInsets.all(2.0),
                     child: Container(

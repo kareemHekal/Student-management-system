@@ -162,6 +162,9 @@ Future<void> showAddStudentExamGradeDialog({
                     }
                   } else {
                     if (_formKey.currentState!.validate()) {
+                      final parentContext =
+                          Navigator.of(context, rootNavigator: true).context;
+
                       final gradeValue =
                           double.parse(studentGradeController.text.trim());
 
@@ -173,9 +176,32 @@ Future<void> showAddStudentExamGradeDialog({
                       );
 
                       await FirebaseExams.addStudentExamGrade(
-                          gradeName, studentId, newGrade);
+                        gradeName,
+                        studentId,
+                        newGrade,
+                      );
 
-                      Navigator.pop(context);
+                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            "✅ تم إضافة درجة الطالب بنجاح",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
+                          duration: Duration(seconds: 2),
+                          margin: const EdgeInsets.only(
+                              bottom: 70, left: 10, right: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                      Navigator.pushNamedAndRemoveUntil(
+                        parentContext,
+                        '/StudentsTab',
+                        (route) => false,
+                      );
                     }
                   }
                 },

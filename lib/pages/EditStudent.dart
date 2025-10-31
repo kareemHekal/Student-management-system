@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 
 import '../Alert dialogs/RemoveFromGroupsListDialog.dart';
-import '../Alert dialogs/add_exam_degree.dart';
+import '../BottomSheets/student_actions_bottom_sheet.dart';
 import '../bloc/Edit Student/edit_student_cubit.dart';
 import '../bloc/Edit Student/edit_student_state.dart';
 import '../cards/groupSmallCard.dart';
@@ -19,7 +19,6 @@ import '../models/grade_subscriptions_model.dart';
 import '../models/student_paid_subscription.dart';
 import 'Pick Groups Page.dart';
 import 'all_absent_numbers.dart';
-import 'all_bills_for_student.dart';
 
 class EditStudentScreen extends StatefulWidget {
   Studentmodel student;
@@ -51,32 +50,18 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               centerTitle: true,
               actions: [
                 IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => AllBillsForStudent(
-                                    studentId: widget.student.id,
-                                  )));
-                    },
-                    icon: Icon(
-                      Icons.list_alt,
-                      size: 30,
-                      color: app_colors.green,
-                    )),
-                IconButton(
-                    onPressed: () {
-                      showAddStudentExamGradeDialog(
-                        context: context,
-                        gradeName: widget.student.grade ?? "",
-                        studentId: widget.student.id,
-                      );
-                    },
-                    icon: Icon(
-                      Icons.assessment,
-                      size: 30,
-                      color: app_colors.green,
-                    )),
+                  icon: const Icon(
+                    Icons.more_vert,
+                    size: 30,
+                    color: app_colors.green,
+                  ),
+                  onPressed: () {
+                    StudentActionsBottomSheet.show(
+                      context: context,
+                      student: widget.student,
+                    );
+                  },
+                ),
               ],
               leading: IconButton(
                 onPressed: () {
@@ -159,6 +144,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                             child: BackdropFilter(
                               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                               child: SingleChildScrollView(
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
                                 child: Padding(
                                   padding: const EdgeInsets.all(2.0),
                                   child: Container(
@@ -233,13 +220,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                           height: 15,
                                         ),
                                         paymentsPart(context),
-                                        const SizedBox(
-                                          height: 10,
-                                        ),
-                                        const Divider(
-                                          color: app_colors.green,
-                                          thickness: 4,
-                                        ),
                                         const SizedBox(
                                           height: 10,
                                         ),
@@ -628,7 +608,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               const SizedBox(height: 16),
               // Show cards horizontally
               SizedBox(
-                height: 180,
+                height: 200,
                 child: ListView.builder(
                   scrollDirection: Axis.vertical,
                   itemCount: subscriptions.length,

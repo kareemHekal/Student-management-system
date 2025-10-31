@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../firebase/exams_functions.dart';
@@ -65,6 +64,8 @@ Future<void> showAddEditExamDialog({
             child: SizedBox(
               width: double.maxFinite,
               child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 controller: scrollController,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -188,18 +189,22 @@ Future<void> showAddEditExamDialog({
                   final newExam = ExamModel(
                     id: exam?.id,
                     name: examNameController.text.trim(),
-                    miniExams: miniExamFields
-                        .map((f) => MiniExam(
-                              miniExamName:
-                                  f.miniExamNameController.text.trim(),
-                              id: FirebaseFirestore.instance
-                                  .collection('auto_ids')
-                                  .doc()
-                                  .id, // ✅ unique each time
-                              fullGrade:
-                                  double.parse(f.fullGradeController.text),
-                            ))
-                        .toList(),
+                    miniExams: List.generate(miniExamFields.length, (i) {
+                      final oldMini =
+                          exam?.miniExams != null && i < exam!.miniExams!.length
+                              ? exam.miniExams![i]
+                              : null;
+
+                      return MiniExam(
+                        id: oldMini?.id ?? "",
+                        miniExamName: miniExamFields[i]
+                            .miniExamNameController
+                            .text
+                            .trim(),
+                        fullGrade: double.parse(
+                            miniExamFields[i].fullGradeController.text),
+                      );
+                    }),
                   );
 
                   // Firestore add or update

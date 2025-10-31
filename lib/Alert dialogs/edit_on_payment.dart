@@ -34,6 +34,7 @@ class _EditPaidDialogState extends State<EditPaidDialog> {
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
