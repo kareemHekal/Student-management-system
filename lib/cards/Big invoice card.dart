@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../colors_app.dart';
 import '../models/Big invoice.dart';
 import '../pages/one invoice page.dart';
-import '../pages/pdfGnerator.dart';
+import '../pages/pdf_genrators/pdfGnerator.dart';
 
 class BigInvoiceCard extends StatefulWidget {
   final BigInvoice invoice;

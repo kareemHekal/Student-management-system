@@ -154,40 +154,34 @@ class FirebaseFunctions {
     List<String> grades = await FirebaseFunctions.getGradesList();
 
     for (var grade in grades) {
-      // Get the collection for each grade
-      CollectionReference<Studentmodel> collection =
-          getSecondaryCollection(grade);
+      // ❗ Don't type it as Studentmodel
+      CollectionReference collection = getSecondaryCollection(grade);
 
-      // Get all students in the grade collection
       QuerySnapshot snapshot = await collection.get();
 
       for (var doc in snapshot.docs) {
-        // Cast the data to Studentmodel
         Studentmodel student = doc.data() as Studentmodel;
 
-        // Create a new AbsenceModel with current attendance counts
         AbsenceModel newAbsence = AbsenceModel(
           monthName: monthName,
-          absentDays: student.countingAbsentDays ?? [],
           attendedDays: student.countingAttendedDays ?? [],
+          absentDays: student.countingAbsentDays ?? [],
         );
 
-        // Add the new AbsenceModel to the student's list
-        List<Map<String, dynamic>> updatedAbsences = [];
-        if (student.absencesNumbers != null) {
-          updatedAbsences =
-              student.absencesNumbers!.map((e) => e.toJson()).toList();
-        }
+        List<Map<String, dynamic>> updatedAbsences =
+            student.absencesNumbers != null
+                ? student.absencesNumbers!.map((e) => e.toJson()).toList()
+                : [];
+
         updatedAbsences.add(newAbsence.toJson());
 
-        // Update the student document
         await collection.doc(doc.id).update({
           'absencesNumbers': updatedAbsences,
-          'countingAttendedDays': [], // reset counters for new month
+          'countingAttendedDays': [],
           'countingAbsentDays': [],
         });
 
-        print('Saved month "$monthName" for student: ${student.name}');
+        print('✅ Saved month "$monthName" for student: ${student.name}');
       }
     }
   }

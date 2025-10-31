@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 
 import '../colors_app.dart';
+import '../firebase/firebase_functions.dart';
+import '../models/Invoice.dart';
 import '../models/Studentmodel.dart';
+import '../models/subscription_fee.dart';
 import '../pages/all_bills_for_student.dart';
 import '../pages/all_student_exam_grades.dart';
+import '../pages/pdf_genrators/student_pdf_generator.dart';
 
 class StudentActionsBottomSheet {
   static void show({
@@ -47,6 +52,41 @@ class StudentActionsBottomSheet {
                           AllStudentExamGrades(student: student),
                     ),
                   );
+                },
+              ),
+              _ActionItem(
+                icon: Icons.print,
+                label: "تقرير شامل",
+                onPressed: () async {
+                  try {
+                    // 1️⃣ تحميل كل الفواتير الخاصة بالطالب
+                    List<Invoice> invoices =
+                        await FirebaseFunctions.getInvoicesByStudentNumber(
+                            student.id);
+
+                    // 2️⃣ تحميل كل الاشتراكات المرتبطة بالفواتير
+                    Map<String, SubscriptionFee> subscriptionFees = {};
+                    for (var invoice in invoices) {
+                      final sub = await FirebaseFunctions.getSubscriptionById(
+                          invoice.grade, invoice.subscriptionFeeID);
+                      subscriptionFees[invoice.subscriptionFeeID] = sub!;
+                    }
+
+                    // 3️⃣ توليد الـ PDF
+                    final pdfBytes = await generateFullStudentPdf(
+                      student: student,
+                      invoices: invoices,
+                      subscriptionFees: subscriptionFees,
+                    );
+
+                    // 4️⃣ عرض نافذة الطباعة / حفظ PDF
+                    await Printing.layoutPdf(
+                      onLayout: (format) async => pdfBytes,
+                      name: "${student.name}_full_report.pdf",
+                    );
+                  } catch (e) {
+                    print("❌ حدث خطأ أثناء إنشاء التقرير: $e");
+                  }
                 },
               ),
             ],

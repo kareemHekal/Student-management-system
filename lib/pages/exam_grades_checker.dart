@@ -6,7 +6,7 @@ import '../colors_app.dart';
 import '../firebase/exams_functions.dart';
 import '../models/Studentmodel.dart';
 import '../models/exam_model.dart';
-import 'exam_pdf_generator.dart';
+import 'pdf_genrators/exam_pdf_generator.dart';
 
 class ExamResultPage extends StatefulWidget {
   final String gradeName;

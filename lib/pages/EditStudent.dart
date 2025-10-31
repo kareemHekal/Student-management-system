@@ -253,6 +253,17 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                                       context,
                                                     ) =>
                                                         AbsencesListPage(
+                                                      studentName:
+                                                          widget.student.name ??
+                                                              "",
+                                                      currentAbsentDays: widget
+                                                              .student
+                                                              .countingAbsentDays ??
+                                                          [],
+                                                      currentAttendedDays: widget
+                                                              .student
+                                                              .countingAttendedDays ??
+                                                          [],
                                                       absences: widget.student
                                                               .absencesNumbers ??
                                                           [],

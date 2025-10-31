@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class Magmo3amodel {
   String? days; // Days the group meets (e.g., "Monday, Wednesday")
-  String id; // Unique identifier for the group
   String? grade; // Grade level associated with the group
   TimeOfDay? time; // Time the group meets
+  String id; // Unique identifier for the group
   String? userid; // User ID of the group creator
 
   // Constructor
