@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../cards/magmo3afor display widget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loadingWidget.dart';
-import '../cards/magmo3afor display widget.dart';
 import '../models/Magmo3aModel.dart';
 
 class ChoosedaysToAttend extends StatefulWidget {
@@ -44,7 +44,7 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
         ),
         backgroundColor: app_colors.darkGrey,
         title: Image.asset(
-          "assets/images/2....2.png",
+          "assets/images/logo.png",
           height: 100,
           width: 90,
         ),
@@ -89,7 +89,7 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 60),
-          child: Center(child: Image.asset("assets/images/1......1.png")),
+          child: Center(child: Image.asset("assets/images/logo.png")),
         ),
         SizedBox(
           height: double.infinity,

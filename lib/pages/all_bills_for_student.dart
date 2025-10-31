@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../Alert dialogs/DeleteIncomeBillDialog.dart';
 import '../cards/In come widget.dart';
 import '../colors_app.dart';
@@ -66,7 +67,7 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
           icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
         ),
         backgroundColor: app_colors.darkGrey,
-        title: Image.asset("assets/images/2....2.png", height: 100, width: 90),
+        title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),
       body: isLoading

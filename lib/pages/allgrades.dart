@@ -38,7 +38,7 @@ class _AllgradesState extends State<Allgrades> {
         ),
         backgroundColor: app_colors.darkGrey,
         title: Image.asset(
-          "assets/images/2....2.png",
+          "assets/images/logo.png",
           height: 100,
           width: 90,
         ),

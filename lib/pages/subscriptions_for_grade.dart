@@ -30,7 +30,7 @@ class SubscriptionsForGrade extends StatelessWidget {
           icon: Icon(Icons.arrow_back_ios, color: app_colors.green),
         ),
         backgroundColor: app_colors.darkGrey,
-        title: Image.asset("assets/images/2....2.png", height: 100, width: 90),
+        title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),
       body: StreamBuilder<GradeSubscriptionsModel?>(

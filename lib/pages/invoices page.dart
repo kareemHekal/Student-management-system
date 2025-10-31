@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
 import '../cards/Big invoice card.dart';
 import '../colors_app.dart';
 import '../home.dart';
@@ -61,7 +62,7 @@ class _InvoicespageState extends State<Invoicespage> {
         ),
         backgroundColor: app_colors.darkGrey,
         title: Image.asset(
-          "assets/images/2....2.png",
+          "assets/images/logo.png",
           height: 100,
           width: 90,
         ),
@@ -71,7 +72,7 @@ class _InvoicespageState extends State<Invoicespage> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 60),
-            child: Center(child: Image.asset("assets/images/1......1.png")),
+            child: Center(child: Image.asset("assets/images/logo.png")),
           ),
           Column(
             children: [

@@ -13,8 +13,8 @@ class Sunday extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 60),
-          child: Center(child: Image.asset("assets/images/1......1.png")),
-        ),
+            child: Center(child: Image.asset("assets/images/logo.png")),
+          ),
         SizedBox(height: 50)
       ],
     ),Magmo3as(day: "Sunday",)]);

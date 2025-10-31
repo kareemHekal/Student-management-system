@@ -1,5 +1,6 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
+
 import 'Nav_Bar_Tabs/Add_student_tab.dart';
 import 'Nav_Bar_Tabs/groups_tab.dart';
 import 'colors_app.dart';
@@ -29,7 +30,7 @@ class _HomescreenState extends State<Homescreen> {
         centerTitle: true,
         backgroundColor: app_colors.darkGrey,
         title: Image.asset(
-          "assets/images/2....2.png",
+          "assets/images/logo.png",
           height: 100,
           width: 90,
         ),

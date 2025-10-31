@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../Appbar_TAbs/days of home page/Friday.dart';
 import '../Appbar_TAbs/days of home page/Monday.dart';
 import '../Appbar_TAbs/days of home page/Saturday.dart';
@@ -17,7 +18,7 @@ class GroupsTab extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 60),
-          child: Center(child: Image.asset("assets/images/1......1.png")),
+          child: Center(child: Image.asset("assets/images/logo.png")),
         ),
         DefaultTabController(
           length: 7,

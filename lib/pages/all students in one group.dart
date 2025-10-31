@@ -73,7 +73,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
         ),
         backgroundColor: app_colors.darkGrey,
         title: Image.asset(
-          "assets/images/2....2.png",
+          "assets/images/logo.png",
           height: 100,
           width: 90,
         ),
@@ -86,7 +86,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 60),
-              child: Center(child: Image.asset("assets/images/1......1.png")),
+              child: Center(child: Image.asset("assets/images/logo.png")),
             ),
             Positioned.fill(
               child: Padding(

@@ -4,6 +4,7 @@ import 'package:lite_rolling_switch/lite_rolling_switch.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+
 import '../cards/StudentWidget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
@@ -56,7 +57,7 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 60),
-              child: Center(child: Image.asset("assets/images/1......1.png")),
+              child: Center(child: Image.asset("assets/images/logo.png")),
             ),
             Positioned.fill(
               child: Padding(

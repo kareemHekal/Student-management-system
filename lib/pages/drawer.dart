@@ -84,7 +84,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
                 children: [
                   const SizedBox(height: 10),
                   Image.asset(
-                    "assets/images/1......1.png",
+                    "assets/images/logo.png",
                     height: 120,
                     width: 120,
                   ),
