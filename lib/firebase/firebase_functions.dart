@@ -218,6 +218,9 @@ class FirebaseFunctions {
         'studentPaidSubscriptions': [],
         'studentExamsGrades': [],
         'absencesNumbers': [], // ✅ clear absences list too
+        'countingAttendedDays': [], // ✅ clear absences list too
+        'countingAbsentDays': [], // ✅ clear absences list too
+        'notes': [], // ✅ clear absences list too
       });
     }
 
