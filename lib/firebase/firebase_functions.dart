@@ -789,10 +789,10 @@ class FirebaseFunctions {
     }
 
   }
-
 // 4. Update Invoice (by replacing it in invoices list)
   static Future<void> updateInvoiceInBigInvoices({
     required String date,
+    required double differenceAmount,
     required Invoice updatedInvoice,
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -817,17 +817,40 @@ class FirebaseFunctions {
     // Replace invoice
     bigInvoice.invoices[index] = updatedInvoice;
 
+    // ✅ Save updated big invoice
     await firestore
         .collection('big_invoices')
         .doc(date)
         .update(bigInvoice.toJson());
+
+    // ✅ Fetch the student using your function
+    Studentmodel? student = await FirebaseExams.getStudent(
+      updatedInvoice.grade,
+      updatedInvoice.studentId,
+    );
+
+    if (student != null) {
+      // ✅ Update the paidAmount in student model
+      for (var sub in student.studentPaidSubscriptions!) {
+        if (sub.subscriptionId == updatedInvoice.subscriptionFeeID) {
+          sub.paidAmount += differenceAmount;
+          break;
+        }
+      }
+
+      // ✅ Save updated student back to Firestore
+      await FirebaseFunctions.getSecondaryCollection(updatedInvoice.grade)
+          .doc(updatedInvoice.studentId)
+          .update(student.toJson());
+    }
   }
 
   static Future<void> deleteInvoiceFromBigInvoices({
     required String date,
-    required String invoiceId,
+    required Invoice invoice,
   }) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
+
     DocumentSnapshot docSnapshot =
         await firestore.collection('big_invoices').doc(date).get();
 
@@ -838,21 +861,41 @@ class FirebaseFunctions {
     Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
     BigInvoice bigInvoice = BigInvoice.fromJson(data);
 
-    // Find invoice index by id
-    int index =
-        bigInvoice.invoices.indexWhere((invoice) => invoice.id == invoiceId);
+    // Find invoice index in big invoice
+    int index = bigInvoice.invoices.indexWhere((inv) => inv.id == invoice.id);
 
     if (index == -1) {
-      throw Exception("Invoice with ID $invoiceId not found");
+      throw Exception("Invoice with ID ${invoice.id} not found");
     }
 
-    // Remove invoice
+    // ✅ Remove from big invoices list
     bigInvoice.invoices.removeAt(index);
 
     await firestore
         .collection('big_invoices')
         .doc(date)
         .update(bigInvoice.toJson());
+
+    // ✅ Now remove it from the student's records
+    Studentmodel? student = await FirebaseExams.getStudent(
+      invoice.grade,
+      invoice.studentId,
+    );
+
+    if (student != null && student.studentPaidSubscriptions != null) {
+      for (var sub in student.studentPaidSubscriptions!) {
+        if (sub.subscriptionId == invoice.subscriptionFeeID) {
+          sub.paidAmount -= invoice.amount;
+          if (sub.paidAmount < 0) sub.paidAmount = 0;
+          break;
+        }
+      }
+
+      // ✅ حفظ التحديث في Firebase
+      await FirebaseFunctions.getSecondaryCollection(invoice.grade)
+          .doc(invoice.studentId)
+          .update(student.toJson());
+    }
   }
 
   static Future<List<Invoice>> getInvoicesByStudentNumber(

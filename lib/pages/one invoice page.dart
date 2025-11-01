@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../Alert dialogs/DeleteIncomeBillDialog.dart';
 import '../Alert dialogs/DeleteOutcomeBillDialog.dart';
 import '../Alert dialogs/verifiy_password.dart';
 import '../cards/In come widget.dart';
@@ -128,36 +127,8 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                   child: ListView.builder(
                     itemCount: filteredIncomeInvoices.length,
                     itemBuilder: (context, filteredIndex) {
-                      return GestureDetector(
-                        onLongPress: () {
-                          showVerifyPasswordDialog(
-                            context: context,
-                            onVerified: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return DeleteIncomeBillDialog(
-                                    onConfirm: () async {
-                                      await FirebaseFunctions
-                                          .deleteInvoiceFromBigInvoices(
-                                              date: widget.invoice.date,
-                                              invoiceId: widget.invoice
-                                                  .invoices[filteredIndex].id);
-                                      setState(() {});
-                                      print("تم حذف الفاتورة");
-                                    },
-                                    title: 'حذف فاتورة الإيراد',
-                                    content:
-                                        'هل أنت متأكد أنك تريد حذف هذه الفاتورة؟',
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        },
-                        child: InvoiceWidget(
-                          invoice: filteredIncomeInvoices[filteredIndex],
-                        ),
+                      return InvoiceWidget(
+                        invoice: filteredIncomeInvoices[filteredIndex],
                       );
                     },
                   ),

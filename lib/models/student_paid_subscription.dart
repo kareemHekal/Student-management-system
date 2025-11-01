@@ -1,5 +1,5 @@
 class StudentPaidSubscriptions {
-  final double paidAmount;
+  double paidAmount;
   final String subscriptionId;
   final String description;
 

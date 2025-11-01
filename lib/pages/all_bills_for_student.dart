@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-import '../Alert dialogs/DeleteIncomeBillDialog.dart';
 import '../cards/In come widget.dart';
 import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
@@ -87,34 +85,8 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
           : ListView.builder(
         itemCount: invoices.length,
         itemBuilder: (context, index) {
-          return GestureDetector(
-            onLongPress: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return DeleteIncomeBillDialog(
-                    onConfirm: () async {
-                      String formattedDate =
-                      DateFormat('yyyy-MM-dd').format(
-                          invoices[index].dateTime);
-
-                      await FirebaseFunctions
-                          .deleteInvoiceFromBigInvoices(
-                        date: formattedDate,
-                        invoiceId: invoices[index].id,
-                      );
-
-                      await _loadInvoices();
-                    },
-                    title: 'حذف فاتورة الدخل',
-                    content: 'هل أنت متأكد من حذف هذه الفاتورة؟',
-                  );
-                },
-              );
-            },
-            child: InvoiceWidget(invoice: invoices[index]),
-          );
-        },
+                    return InvoiceWidget(invoice: invoices[index]);
+                  },
       ),
     );
   }

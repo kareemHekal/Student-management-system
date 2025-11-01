@@ -65,7 +65,7 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                         await FirebaseFunctions.deleteInvoiceFromBigInvoices(
                           date: DateFormat('yyyy-MM-dd')
                               .format(widget.invoice.dateTime),
-                          invoiceId: widget.invoice.id,
+                          invoice: widget.invoice,
                         );
 
                         ScaffoldMessenger.of(parentContext).showSnackBar(
@@ -270,6 +270,11 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                 double parsedAmount = double.tryParse(amountController.text) ??
                     widget.invoice.amount;
 
+                double differenceAmount = (widget.invoice.amount -
+                        (double.tryParse(amountController.text) ?? 0)) *
+                    -1;
+                ;
+
                 Invoice updatedInvoice = Invoice(
                   studentId: widget.invoice.studentId,
                   id: widget.invoice.id,
@@ -285,6 +290,7 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
                 );
 
                 FirebaseFunctions.updateInvoiceInBigInvoices(
+                  differenceAmount: differenceAmount,
                   updatedInvoice: updatedInvoice,
                   date: formattedDate,
                 );
