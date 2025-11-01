@@ -5,7 +5,6 @@ class Magmo3amodel {
   String? grade; // Grade level associated with the group
   TimeOfDay? time; // Time the group meets
   String id; // Unique identifier for the group
-  String? userid; // User ID of the group creator
 
   // Constructor
   Magmo3amodel({
@@ -13,13 +12,11 @@ class Magmo3amodel {
     this.grade,
     this.days,
     this.time,
-    this.userid,
   });
 
   /// Factory method to create a `Magmo3amodel` instance from a JSON object.
   factory Magmo3amodel.fromJson(Map<String, dynamic> json) {
     return Magmo3amodel(
-      userid: json['userid'],
       days: json["days"], // Expecting a string, e.g., "Monday, Wednesday"
       id: json['id'] ?? "", // Default to an empty string if null
       grade: json["grade"],
@@ -35,7 +32,6 @@ class Magmo3amodel {
   /// Converts the `Magmo3amodel` instance to a JSON object.
   Map<String, dynamic> toJson() {
     return {
-      'userid': userid,
       "days": days, // Days as a string, e.g., "Monday, Wednesday"
       "id": id, // Group ID
       "grade": grade, // Grade level
