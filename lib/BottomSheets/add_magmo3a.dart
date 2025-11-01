@@ -98,7 +98,6 @@ class AddMagmo3a extends StatelessWidget {
                                 days: cubit.chosenDay,
                                 grade: cubit.selectedSecondary,
                                 time: cubit.timeOfDay,
-                                userid: existingMagmo3a!.userid,
                               );
 
                               await FirebaseFunctions.editMagmo3aInDay(

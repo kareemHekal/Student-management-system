@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
 import 'add_mogmo3a_state.dart';
@@ -65,7 +65,6 @@ class Magmo3aCubit extends Cubit<Magmo3aState> {
     emit(Magmo3aLoading());
 
     Magmo3amodel magmo3amodel = Magmo3amodel(
-      userid: FirebaseAuth.instance.currentUser!.uid,
       days: chosenDay!,
       time: timeOfDay,
       grade: selectedSecondary!,
