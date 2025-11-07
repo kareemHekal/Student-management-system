@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/exams_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 import '../models/exam_model.dart';
 import '../models/mini_exam.dart';
 import '../models/student_exam_grade.dart';
@@ -161,10 +162,11 @@ Future<void> showAddStudentExamGradeDialog({
                       setState(() => step = 2);
                     }
                   } else {
-                    if (_formKey.currentState!.validate()) {
+                    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+                    await runWithLoading(context, () async {
                       final parentContext =
                           Navigator.of(context, rootNavigator: true).context;
-
                       final gradeValue =
                           double.parse(studentGradeController.text.trim());
 
@@ -181,28 +183,31 @@ Future<void> showAddStudentExamGradeDialog({
                         newGrade,
                       );
 
-                      ScaffoldMessenger.of(parentContext).showSnackBar(
-                        SnackBar(
-                          content: const Text(
-                            "✅ تم إضافة درجة الطالب بنجاح",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          SnackBar(
+                            content: const Text(
+                              "✅ تم إضافة درجة الطالب بنجاح",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                            margin: const EdgeInsets.only(
+                                bottom: 70, left: 10, right: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                          backgroundColor: Colors.green,
-                          behavior: SnackBarBehavior.floating,
-                          duration: Duration(seconds: 2),
-                          margin: const EdgeInsets.only(
-                              bottom: 70, left: 10, right: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
-                      Navigator.pushNamedAndRemoveUntil(
-                        parentContext,
-                        '/StudentsTab',
-                        (route) => false,
-                      );
-                    }
+                        );
+
+                        Navigator.pushNamedAndRemoveUntil(
+                          parentContext,
+                          '/StudentsTab',
+                          (route) => false,
+                        );
+                      }
+                    });
                   }
                 },
                 child: const Text(

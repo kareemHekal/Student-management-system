@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../colors_app.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart'; // make sure this is where runWithLoading is
 
 class SelectRecipientDialogContent extends StatelessWidget {
-  final VoidCallback sendMessageToFather;
-  final VoidCallback sendMessageToMother;
-  final VoidCallback sendMessageToStudent;
+  final Future<void> Function() sendMessageToFather;
+  final Future<void> Function() sendMessageToMother;
+  final Future<void> Function() sendMessageToStudent;
 
   const SelectRecipientDialogContent({
     Key? key,
@@ -21,24 +23,30 @@ class SelectRecipientDialogContent extends StatelessWidget {
         ListTile(
           title: Text('ولي الأمر (الأب)',
               style: TextStyle(color: app_colors.green)),
-          onTap: () {
+          onTap: () async {
             Navigator.of(context).pop();
-            sendMessageToFather();
+            runWithLoading(context, () async {
+              await sendMessageToFather();
+            });
           },
         ),
         ListTile(
           title: Text('ولي الأمر (الأم)',
               style: TextStyle(color: app_colors.green)),
-          onTap: () {
+          onTap: () async {
             Navigator.of(context).pop();
-            sendMessageToMother();
+            runWithLoading(context, () async {
+              await sendMessageToMother();
+            });
           },
         ),
         ListTile(
           title: Text('الطالب', style: TextStyle(color: app_colors.green)),
-          onTap: () {
+          onTap: () async {
             Navigator.of(context).pop();
-            sendMessageToStudent();
+            runWithLoading(context, () async {
+              await sendMessageToStudent();
+            });
           },
         ),
       ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../firebase/firebase_functions.dart';
 
 Future<void> showVerifyPasswordDialog({
@@ -50,8 +51,9 @@ Future<void> showVerifyPasswordDialog({
             ),
             onPressed: () async {
               if (formKey.currentState!.validate()) {
-                final isCorrect =
-                await FirebaseFunctions.verifyPassword(passwordController.text);
+                final isCorrect = await FirebaseFunctions.verifyPassword(
+                    passwordController.text);
+
                 if (isCorrect) {
                   Navigator.pop(context);
                   onVerified();

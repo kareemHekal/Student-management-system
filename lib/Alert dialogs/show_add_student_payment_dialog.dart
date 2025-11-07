@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../loadingFile/loading_alert/run_with_loading.dart';
+
 class PaidDialog extends StatefulWidget {
   final double paidAmount;
   final double fullPrice;
@@ -117,13 +119,14 @@ class _PaidDialogState extends State<PaidDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green[700],
           ),
-          onPressed: () {
+          onPressed: () async {
             if (_formKey.currentState!.validate()) {
               final enteredAmount =
                   double.tryParse(amountController.text) ?? 0.0;
               final description = descriptionController.text.trim();
-
-              widget.onSave(enteredAmount, description);
+              await runWithLoading(context, () async {
+                await widget.onSave(enteredAmount, description);
+              });
               Navigator.pop(context);
             }
           },

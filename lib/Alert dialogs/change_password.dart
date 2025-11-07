@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../firebase/firebase_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 
 Future<void> showChangePasswordDialog(BuildContext context) async {
   final TextEditingController newPasswordController = TextEditingController();
@@ -46,21 +48,35 @@ Future<void> showChangePasswordDialog(BuildContext context) async {
               ),
             ),
             onPressed: () async {
-              if (formKey.currentState!.validate()) {
+              if (!formKey.currentState!.validate()) return;
+
+              await runWithLoading(context, () async {
                 final success = await FirebaseFunctions.changePassword(
-                    newPasswordController.text);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'تم تغيير كلمة المرور بنجاح'
-                          : 'حدث خطأ أثناء تغيير كلمة المرور',
-                    ),
-                    backgroundColor: success ? Colors.green : Colors.red,
-                  ),
+                  newPasswordController.text.trim(),
                 );
-              }
+
+                if (context.mounted) {
+                  Navigator.pop(context); // Close dialog first
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'تم تغيير كلمة المرور بنجاح'
+                            : 'حدث خطأ أثناء تغيير كلمة المرور',
+                      ),
+                      backgroundColor: success ? Colors.green : Colors.red,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 2),
+                      margin: const EdgeInsets.only(
+                          bottom: 70, left: 10, right: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                }
+              });
             },
             child: const Text('حفظ'),
           ),

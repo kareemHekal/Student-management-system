@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../loadingFile/loading_alert/run_with_loading.dart';
+
 class CustomConfirmDialog extends StatelessWidget {
   final String title;
   final String content;
@@ -73,11 +75,20 @@ class CustomConfirmDialog extends StatelessWidget {
             elevation: 5,
           ),
           child: Text(confirmButtonText),
-          onPressed: () async {
-            Navigator.pop(context);
-            await onConfirm(tags ?? []);
-          },
-        ),
+            onPressed: () async {
+              // Save a stable context reference (e.g., the page context)
+              final parentContext = context;
+
+              await runWithLoading(parentContext, () async {
+                await onConfirm(tags ?? []);
+              });
+
+              // Safely pop the dialog after the async work
+              if (parentContext.mounted && Navigator.canPop(parentContext)) {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, "/HomeScreen", (_) => false);
+              }
+            }),
       ],
     );
   }

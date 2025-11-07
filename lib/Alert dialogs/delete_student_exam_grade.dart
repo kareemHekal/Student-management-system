@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/exams_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 
 Future<void> showDeleteStudentExamGradeDialog({
   required BuildContext context,
@@ -87,39 +88,45 @@ Future<void> showDeleteStudentExamGradeDialog({
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               ),
-              onPressed: () async {
-                final parentContext =
-                    Navigator.of(context, rootNavigator: true).context;
+            onPressed: () async {
+              final parentContext =
+                  Navigator.of(context, rootNavigator: true).context;
+
+              await runWithLoading(context, () async {
                 await FirebaseExams.deleteStudentExamGrade(
                   gradeName: gradeName,
                   studentId: studentId,
                   examId: examId,
                   miniExamId: miniExamId,
                 );
+              });
 
-                ;
-
+              if (context.mounted) {
                 ScaffoldMessenger.of(parentContext).showSnackBar(
                   SnackBar(
-                    content: Text(
+                    content: const Text(
                       "✅ تم حذف درجة الطالب بنجاح",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     backgroundColor: Colors.red,
                     behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 2),
-                    margin: EdgeInsets.only(bottom: 70, left: 10, right: 10),
+                    duration: const Duration(seconds: 2),
+                    margin:
+                        const EdgeInsets.only(bottom: 70, left: 10, right: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 );
+
                 Navigator.pushNamedAndRemoveUntil(
                   parentContext,
                   '/StudentsTab',
                   (route) => false,
                 );
-              }),
+              }
+            },
+          ),
         ],
       );
     },

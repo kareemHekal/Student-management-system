@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../loadingFile/loading_alert/run_with_loading.dart';
+
 class DeleteIncomeBillDialog extends StatelessWidget {
   final String title;
   final String content;
@@ -68,9 +70,14 @@ class DeleteIncomeBillDialog extends StatelessWidget {
           ),
           child: Text(confirmButtonText),
           onPressed: () async {
-            await onConfirm();
-            Navigator.pushNamedAndRemoveUntil(
-                context, "/HomeScreen", (route) => false);
+            runWithLoading(context, () async {
+              await onConfirm();
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                "/HomeScreen",
+                (route) => false,
+              );
+            });
           },
         ),
       ],

@@ -151,38 +151,64 @@ class FirebaseFunctions {
   }
 
   static Future<void> saveMonthAndStartNew(String monthName) async {
-    List<String> grades = await FirebaseFunctions.getGradesList();
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final grades = await FirebaseFunctions.getGradesList();
 
-    for (var grade in grades) {
-      // ❗ Don't type it as Studentmodel
-      CollectionReference collection = getSecondaryCollection(grade);
+      for (final grade in grades) {
+        final collection = getSecondaryCollection(grade); // Query<Studentmodel>
+        final snapshot = await collection.get();
 
-      QuerySnapshot snapshot = await collection.get();
+        if (snapshot.docs.isEmpty) {
+          print("⚠️ No students found for grade: $grade");
+          continue;
+        }
 
-      for (var doc in snapshot.docs) {
-        Studentmodel student = doc.data() as Studentmodel;
+        print("🟢 Processing ${snapshot.docs.length} students in $grade...");
 
-        AbsenceModel newAbsence = AbsenceModel(
-          monthName: monthName,
-          attendedDays: student.countingAttendedDays ?? [],
-          absentDays: student.countingAbsentDays ?? [],
-        );
+        const batchSize = 100;
+        final studentDocs = snapshot.docs;
 
-        List<Map<String, dynamic>> updatedAbsences =
-            student.absencesNumbers != null
-                ? student.absencesNumbers!.map((e) => e.toJson()).toList()
-                : [];
+        for (var i = 0; i < studentDocs.length; i += batchSize) {
+          final batch = firestore.batch();
+          final chunk = studentDocs.skip(i).take(batchSize);
 
-        updatedAbsences.add(newAbsence.toJson());
+          for (final doc in chunk) {
+            // Use typed model instead of casting
+            final student = doc.data();
 
-        await collection.doc(doc.id).update({
-          'absencesNumbers': updatedAbsences,
-          'countingAttendedDays': [],
-          'countingAbsentDays': [],
-        });
+            final newAbsence = AbsenceModel(
+              monthName: monthName,
+              attendedDays: student.countingAttendedDays ?? [],
+              absentDays: student.countingAbsentDays ?? [],
+            );
 
-        print('✅ Saved month "$monthName" for student: ${student.name}');
+            final updatedAbsences = [
+              if (student.absencesNumbers != null)
+                ...student.absencesNumbers!.map((e) => e.toJson()),
+              newAbsence.toJson(),
+            ];
+
+            batch.update(collection.doc(doc.id), {
+              'absencesNumbers': updatedAbsences,
+              'countingAttendedDays': [],
+              'countingAbsentDays': [],
+            });
+          }
+
+          await batch.commit();
+          print("✅ Committed batch ${i ~/ batchSize + 1} for grade $grade");
+
+          // Small delay to reduce Firestore load
+          await Future.delayed(const Duration(milliseconds: 300));
+        }
       }
+
+      print("🎉 Finished saving month '$monthName' for all grades.");
+    } catch (e, stack) {
+      print("❌ Error in saveMonthAndStartNew: $e");
+      print(stack);
+      rethrow;
     }
   }
 
@@ -190,58 +216,71 @@ class FirebaseFunctions {
       String gradeName) async {
     final firestore = FirebaseFirestore.instance;
 
-    final docRef = firestore
-        .collection('constants')
-        .doc('grades_subscriptions')
-        .collection('grades')
-        .doc(gradeName);
-
-    final doc = await docRef.get();
-
-    if (!doc.exists) {
-      print("⚠️ Grade $gradeName does not exist.");
-      return;
-    }
-
-    // 🔹 1. Clear all grade-level subscriptions
-    await docRef.update({'subscriptions': []});
-    print("✅ Grade-level subscriptions for '$gradeName' cleared.");
-
-    // 🔹 2. Get all students for that grade
-    final allStudents = await getAllStudentsByGrade_future(gradeName);
-
-    // 🔹 3. Clear their individual subscription + absence data
-    for (final student in allStudents) {
-      final studentRef = getSecondaryCollection(gradeName).doc(student.id);
-
-      await studentRef.update({
-        'studentPaidSubscriptions': [],
-        'studentExamsGrades': [],
-        'absencesNumbers': [], // ✅ clear absences list too
-        'countingAttendedDays': [], // ✅ clear absences list too
-        'countingAbsentDays': [], // ✅ clear absences list too
-        'notes': [], // ✅ clear absences list too
-      });
-    }
-
-    print(
-        "✅ All students in '$gradeName' had their subscriptions and absences reset.");
-
-    // 🔹 4. Delete all exams for this grade
     try {
-      final exams = await FirebaseExams.getExams(gradeName);
+      final docRef = firestore
+          .collection('constants')
+          .doc('grades_subscriptions')
+          .collection('grades')
+          .doc(gradeName);
 
-      if (exams.isEmpty) {
-        print("⚠️ No exams found for grade '$gradeName'.");
-      } else {
-        // Delete the entire exams document for this grade
-        final examsDocRef =
-            FirebaseFirestore.instance.collection('exams').doc(gradeName);
-        await examsDocRef.delete();
-        print("✅ All exams for grade '$gradeName' deleted successfully.");
+      final doc = await docRef.get();
+      if (!doc.exists) {
+        print("⚠️ Grade $gradeName does not exist.");
+        return;
       }
-    } catch (e) {
-      print("❌ Error deleting exams for grade '$gradeName': $e");
+
+      // 🔹 1. Clear all grade-level subscriptions
+      await docRef.update({'subscriptions': []});
+      print("✅ Grade-level subscriptions for '$gradeName' cleared.");
+
+      // 🔹 2. Get all students in that grade
+      final allStudents = await getAllStudentsByGrade_future(gradeName);
+
+      print("📦 Found ${allStudents.length} students in grade $gradeName.");
+
+      // 🔹 3. Prepare batch updates for students
+      const batchSize = 400; // <= limit to avoid Firestore overload
+      for (int i = 0; i < allStudents.length; i += batchSize) {
+        final batch = firestore.batch();
+
+        final chunk = allStudents.skip(i).take(batchSize);
+        for (final student in chunk) {
+          final studentRef = getSecondaryCollection(gradeName).doc(student.id);
+
+          batch.update(studentRef, {
+            'studentPaidSubscriptions': [],
+            'studentExamsGrades': [],
+            'absencesNumbers': [],
+            'countingAttendedDays': [],
+            'countingAbsentDays': [],
+            'notes': [],
+          });
+        }
+
+        await batch.commit();
+        print(
+            "✅ Updated ${chunk.length} students [${i + 1}-${i + chunk.length}]");
+        await Future.delayed(const Duration(milliseconds: 300)); // small delay
+      }
+
+      print(
+          "✅ All students in '$gradeName' had their subscriptions and absences reset.");
+
+      // 🔹 4. Delete all exams for this grade (safe delete)
+      final examsDocRef = firestore.collection('exams').doc(gradeName);
+
+      final examsDoc = await examsDocRef.get();
+      if (examsDoc.exists) {
+        await examsDocRef.delete();
+        print("✅ Exams for grade '$gradeName' deleted successfully.");
+      } else {
+        print("⚠️ No exams found for grade '$gradeName'.");
+      }
+
+      print("🎯 Completed reset for grade '$gradeName'.");
+    } catch (e, stack) {
+      print("❌ Error resetting grade '$gradeName': $e");
+      print(stack);
     }
   }
 
@@ -481,13 +520,13 @@ class FirebaseFunctions {
     try {
       final firestore = FirebaseFirestore.instance;
 
-      // 1️⃣ Update the grade name in constants/grades list
-      DocumentReference gradesDoc =
+      // 1️⃣ Update grade name in constants/grades list
+      final DocumentReference gradesDoc =
           firestore.collection('constants').doc('grades');
-      DocumentSnapshot snapshot = await gradesDoc.get();
+      final DocumentSnapshot gradesSnapshot = await gradesDoc.get();
 
-      if (snapshot.exists) {
-        List<dynamic> gradesList = List.from(snapshot['grades']);
+      if (gradesSnapshot.exists) {
+        List<dynamic> gradesList = List.from(gradesSnapshot['grades']);
         if (gradesList.contains(oldGrade)) {
           int index = gradesList.indexOf(oldGrade);
           gradesList[index] = newGrade;
@@ -498,18 +537,20 @@ class FirebaseFunctions {
         }
       }
 
-      // 2️⃣ Copy all students from old collection to new collection, update grade field
-      final oldCollection = getSecondaryCollection(oldGrade);
-      final newCollection = getSecondaryCollection(newGrade);
-
+      // 2️⃣ Copy all students to new collection, update grade field
+      final oldCollection =
+          getSecondaryCollection(oldGrade); // typed Collection<Studentmodel>
+      final newCollection =
+          getSecondaryCollection(newGrade); // typed Collection<Studentmodel>
       final oldStudentsSnapshot = await oldCollection.get();
+
       for (var doc in oldStudentsSnapshot.docs) {
         Studentmodel student = doc.data();
-        student.grade = newGrade; // Update grade field
-        await newCollection.doc(student.id).set(student);
+        student.grade = newGrade;
+        await newCollection.doc(student.id).set(student); // pass model directly
       }
 
-      // 3️⃣ Delete old grade collection after copying
+      // 3️⃣ Delete old grade collection
       for (var doc in oldStudentsSnapshot.docs) {
         await doc.reference.delete();
       }
@@ -523,34 +564,37 @@ class FirebaseFunctions {
         "Tuesday",
         "Wednesday",
         "Thursday",
-        "Friday",
+        "Friday"
       ];
 
       for (var day in allDays) {
-        final dayCollection = getDayCollection(day);
+        final dayCollection =
+            getDayCollection(day); // typed Collection<Magmo3amodel>
         final daySnapshot = await dayCollection.get();
+
         for (var doc in daySnapshot.docs) {
           Magmo3amodel magmo3a = doc.data();
           if (magmo3a.grade == oldGrade) {
             magmo3a.grade = newGrade;
-            await dayCollection.doc(magmo3a.id).set(magmo3a);
+            await dayCollection
+                .doc(magmo3a.id)
+                .set(magmo3a); // pass model directly
           }
         }
       }
-      print('✅ All magmo3a groups updated to new grade.');
+      print('✅ All magmo3a groups updated.');
 
-      // 5️⃣ Rename the grade subscription document and update gradeName inside
+      // 5️⃣ Rename grade subscription document
       final oldSubDocRef = firestore
           .collection('constants')
           .doc('grades_subscriptions')
           .collection('grades')
           .doc(oldGrade);
 
-      final oldSubDocSnapshot = await oldSubDocRef.get();
-
-      if (oldSubDocSnapshot.exists) {
+      final oldSubSnapshot = await oldSubDocRef.get();
+      if (oldSubSnapshot.exists) {
         final oldModel =
-            GradeSubscriptionsModel.fromJson(oldSubDocSnapshot.data()!);
+            GradeSubscriptionsModel.fromJson(oldSubSnapshot.data()!);
         oldModel.gradeName = newGrade;
 
         final newSubDocRef = firestore
@@ -559,20 +603,19 @@ class FirebaseFunctions {
             .collection('grades')
             .doc(newGrade);
 
-        await newSubDocRef.set(oldModel.toJson());
+        await newSubDocRef.set(oldModel.toJson()); // ✅ هذا صحيح
         await oldSubDocRef.delete();
-
-        print('✅ Grade subscription renamed successfully.');
+        print('✅ Grade subscription renamed.');
       } else {
         print('⚠️ No subscription document found for $oldGrade.');
       }
 
-      // 6️⃣ Rename exam document in 'exams' collection
+      // 6️⃣ Rename exam document
       final oldExamDocRef = firestore.collection('exams').doc(oldGrade);
-      final oldExamDocSnapshot = await oldExamDocRef.get();
+      final oldExamSnapshot = await oldExamDocRef.get();
 
-      if (oldExamDocSnapshot.exists) {
-        final oldExamData = oldExamDocSnapshot.data();
+      if (oldExamSnapshot.exists) {
+        final oldExamData = oldExamSnapshot.data();
         final newExamDocRef = firestore.collection('exams').doc(newGrade);
 
         if (oldExamData != null) {
@@ -582,14 +625,15 @@ class FirebaseFunctions {
         }
 
         await oldExamDocRef.delete();
-        print('✅ Exam document renamed successfully.');
+        print('✅ Exam document renamed.');
       } else {
         print('⚠️ No exam document found for $oldGrade.');
       }
 
       print('🎉 Grade renamed successfully from "$oldGrade" to "$newGrade".');
-    } catch (e) {
+    } catch (e, stack) {
       print('❌ Error renaming grade: $e');
+      print(stack);
     }
   }
 
@@ -1109,3 +1153,4 @@ class FirebaseFunctions {
     }
   }
 }
+

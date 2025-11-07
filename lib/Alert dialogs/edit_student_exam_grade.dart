@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/exams_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 import '../models/student_exam_grade.dart';
 
 Future<void> showEditStudentExamGradeDialog({
@@ -139,27 +140,28 @@ Future<void> showEditStudentExamGradeDialog({
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () async {
-                    final parentContext =
-                        Navigator.of(context, rootNavigator: true).context;
+                onPressed: () async {
+                  final parentContext =
+                      Navigator.of(context, rootNavigator: true).context;
 
-                    final gradeValue =
-                        double.tryParse(gradeController.text.trim()) ?? -1;
+                  final gradeValue =
+                      double.tryParse(gradeController.text.trim()) ?? -1;
 
-                    if (gradeValue < 0 || gradeValue > fullGrade) {
-                      setState(() {
-                        errorText = "يجب أن تكون الدرجة بين 0 و $fullGrade";
-                      });
-                      return;
-                    }
+                  if (gradeValue < 0 || gradeValue > fullGrade) {
+                    setState(() {
+                      errorText = "يجب أن تكون الدرجة بين 0 و $fullGrade";
+                    });
+                    return;
+                  }
 
-                    final updated = StudentExamGrade(
-                      studentGrade: gradeController.text.trim(),
-                      examId: examGrade.examId,
-                      miniExamId: examGrade.miniExamId,
-                      description: descController.text.trim(),
-                    );
+                  final updated = StudentExamGrade(
+                    studentGrade: gradeController.text.trim(),
+                    examId: examGrade.examId,
+                    miniExamId: examGrade.miniExamId,
+                    description: descController.text.trim(),
+                  );
 
+                  runWithLoading(context, () async {
                     await FirebaseExams.updateStudentExamGrade(
                       gradeName: gradeName,
                       studentId: studentId,
@@ -182,12 +184,15 @@ Future<void> showEditStudentExamGradeDialog({
                         ),
                       ),
                     );
+
                     Navigator.pushNamedAndRemoveUntil(
                       parentContext,
                       '/StudentsTab',
                       (route) => false,
                     );
-                  }),
+                  });
+                },
+              ),
             ],
           );
         },

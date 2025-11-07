@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/exams_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 import '../models/exam_model.dart';
 import '../models/mini_exam.dart';
 
@@ -27,7 +28,6 @@ Future<void> showAddEditExamDialog({
       miniExamNameController: TextEditingController(),
       fullGradeController: TextEditingController(),
     ));
-    // scroll to bottom after a frame
     Future.delayed(const Duration(milliseconds: 100), () {
       scrollController.animateTo(
         scrollController.position.maxScrollExtent,
@@ -186,35 +186,36 @@ Future<void> showAddEditExamDialog({
               style: ElevatedButton.styleFrom(backgroundColor: themeColor[700]),
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  final newExam = ExamModel(
-                    id: exam?.id,
-                    name: examNameController.text.trim(),
-                    miniExams: List.generate(miniExamFields.length, (i) {
-                      final oldMini =
-                          exam?.miniExams != null && i < exam!.miniExams!.length
-                              ? exam.miniExams![i]
-                              : null;
+                  await runWithLoading(context, () async {
+                    final newExam = ExamModel(
+                      id: exam?.id,
+                      name: examNameController.text.trim(),
+                      miniExams: List.generate(miniExamFields.length, (i) {
+                        final oldMini = exam?.miniExams != null &&
+                                i < exam!.miniExams!.length
+                            ? exam.miniExams![i]
+                            : null;
 
-                      return MiniExam(
-                        id: oldMini?.id ?? "",
-                        miniExamName: miniExamFields[i]
-                            .miniExamNameController
-                            .text
-                            .trim(),
-                        fullGrade: double.parse(
-                            miniExamFields[i].fullGradeController.text),
-                      );
-                    }),
-                  );
+                        return MiniExam(
+                          id: oldMini?.id ?? "",
+                          miniExamName: miniExamFields[i]
+                              .miniExamNameController
+                              .text
+                              .trim(),
+                          fullGrade: double.parse(
+                              miniExamFields[i].fullGradeController.text),
+                        );
+                      }),
+                    );
 
-                  // Firestore add or update
-                  if (isEdit) {
-                    await FirebaseExams.updateExam(gradeName, newExam);
-                  } else {
-                    await FirebaseExams.addExam(gradeName, newExam);
-                  }
+                    if (isEdit) {
+                      await FirebaseExams.updateExam(gradeName, newExam);
+                    } else {
+                      await FirebaseExams.addExam(gradeName, newExam);
+                    }
+                  });
 
-                  Navigator.pop(context);
+                  Navigator.pop(context); // إغلاق الـ dialog بعد الانتهاء
                 }
               },
               child: Text('حفظ', style: TextStyle(color: Colors.white)),

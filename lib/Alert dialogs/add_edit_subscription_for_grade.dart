@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../colors_app.dart'; // For your custom green theme
 import '../firebase/firebase_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 import '../models/subscription_fee.dart';
 import 'verifiy_password.dart';
 
@@ -120,39 +121,42 @@ Future<void> showAddOrEditSubscriptionDialog(
             ),
             child: Text(isEdit ? 'تعديل' : 'حفظ'),
             onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                try {
-                  if (isEdit) {
-                    await showVerifyPasswordDialog(
-                      context: context,
-                      onVerified: () async {
-                        await FirebaseFunctions.updateSubscriptionInGrade(
-                          gradeName,
-                          SubscriptionFee(
-                            id: subscriptionFee.id,
-                            subscriptionName: nameController.text.trim(),
-                            subscriptionAmount:
-                                double.tryParse(amountController.text.trim()) ??
-                                    0.0,
-                          ),
-                        );
+              if (!(formKey.currentState?.validate() ?? false)) return;
 
-                        // Show SnackBar only if update succeeds
+              await runWithLoading(context, () async {
+                if (isEdit) {
+                  await showVerifyPasswordDialog(
+                    context: context,
+                    onVerified: () async {
+                      await FirebaseFunctions.updateSubscriptionInGrade(
+                        gradeName,
+                        SubscriptionFee(
+                          id: subscriptionFee.id,
+                          subscriptionName: nameController.text.trim(),
+                          subscriptionAmount:
+                              double.tryParse(amountController.text.trim()) ??
+                                  0.0,
+                        ),
+                      );
+
+                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Text('تم تعديل الاشتراك بنجاح'),
                             backgroundColor: accentColor,
                           ),
                         );
-                      },
-                    );
-                  } else {
-                    await FirebaseFunctions.addSubscriptionToGrade(
-                      gradeName,
-                      nameController.text.trim(),
-                      double.tryParse(amountController.text.trim()) ?? 0.0,
-                    );
+                      }
+                    },
+                  );
+                } else {
+                  await FirebaseFunctions.addSubscriptionToGrade(
+                    gradeName,
+                    nameController.text.trim(),
+                    double.tryParse(amountController.text.trim()) ?? 0.0,
+                  );
 
+                  if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text('تم إضافة الاشتراك بنجاح'),
@@ -160,17 +164,12 @@ Future<void> showAddOrEditSubscriptionDialog(
                       ),
                     );
                   }
-
-                  Navigator.pop(context);
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('حدث خطأ: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
                 }
-              }
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              });
             },
           ),
         ],

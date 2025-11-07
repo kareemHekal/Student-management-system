@@ -122,11 +122,11 @@ class StudentWidget extends StatelessWidget {
                               style: TextStyle(color: app_colors.darkGrey),
                             ),
                             content: SelectRecipientDialogContent(
-                              sendMessageToFather: () =>
+                              sendMessageToFather: () async =>
                                   _sendMessageToParent('father'),
-                              sendMessageToMother: () =>
+                              sendMessageToMother: () async =>
                                   _sendMessageToParent('mother'),
-                              sendMessageToStudent: () =>
+                              sendMessageToStudent: () async =>
                                   _sendMessageToParent('student'),
                             ),
                             actions: [

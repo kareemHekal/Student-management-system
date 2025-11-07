@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../firebase/firebase_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 
 class StartNewMonthDialog extends StatefulWidget {
   @override
@@ -71,8 +73,27 @@ class _StartNewMonthDialogState extends State<StartNewMonthDialog> {
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
               final finishedMonthName = monthController.text.trim();
-              Navigator.pop(context);
-              await FirebaseFunctions.saveMonthAndStartNew(finishedMonthName);
+
+              // Show the loading and run the Firestore function
+              await runWithLoading(context, () async {
+                await FirebaseFunctions.saveMonthAndStartNew(finishedMonthName);
+              });
+
+              // Close the dialog after loading finishes
+              if (context.mounted && Navigator.canPop(context)) {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, "/HomeScreen", (_) => false);
+              }
+
+              // Optional: show a success message
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("تم حفظ الشهر '$finishedMonthName' بنجاح"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
             }
           },
         ),

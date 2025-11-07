@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/firebase_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 import 'verifiy_password.dart';
 
 Future<void> renameGrade({
@@ -51,9 +52,22 @@ Future<void> renameGrade({
             onPressed: () async {
               showVerifyPasswordDialog(
                 context: context,
-                onVerified: () {
-                  FirebaseFunctions.renameGrade(oldGrade, gradeController.text);
+                onVerified: () async {
+                  await runWithLoading(context, () async {
+                    await FirebaseFunctions.renameGrade(
+                      oldGrade,
+                      gradeController.text.trim(),
+                    );
+                  });
+
                   Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("تم تغيير اسم الصف بنجاح"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
                 },
               );
             },

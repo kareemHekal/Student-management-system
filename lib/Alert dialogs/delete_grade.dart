@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/firebase_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 import 'verifiy_password.dart';
 
 void DeleteGradeDialog(BuildContext context, String gradeToDelete) {
@@ -63,11 +64,16 @@ void DeleteGradeDialog(BuildContext context, String gradeToDelete) {
               showVerifyPasswordDialog(
                 context: context,
                 onVerified: () async {
-                  await FirebaseFunctions.deleteGradeFromList(gradeToDelete);
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("تم حذف الصف بنجاح")),
-                  );
+                  await runWithLoading(context, () async {
+                    await FirebaseFunctions.deleteGradeFromList(gradeToDelete);
+                  });
+
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("تم حذف الصف بنجاح")),
+                    );
+                  }
                 },
               );
             },

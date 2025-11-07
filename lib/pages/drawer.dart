@@ -6,13 +6,12 @@ import 'package:google_fonts/google_fonts.dart';
 import '../Alert dialogs/Delete diaolog.dart';
 import '../Alert dialogs/ResetAbscenceMonthDialog.dart';
 import '../Alert dialogs/Reset_Grade_student_subscriptions.dart';
+import '../Alert dialogs/add_out_come.dart';
 import '../Alert dialogs/change_password.dart';
 import '../Alert dialogs/verifiy_password.dart';
 import '../colors_app.dart';
 import '../constants.dart';
 import '../firebase/firebase_functions.dart';
-import '../models/Big invoice.dart';
-import '../models/payment.dart';
 import 'PaymentCheckPage.dart';
 import 'allgrades.dart';
 import 'invoices page.dart';
@@ -63,6 +62,41 @@ class _CustomDrawerState extends State<CustomDrawer> {
   Future<void> fetchGrades() async {
     fetchedGrades = await FirebaseFunctions.getGradesList();
     options.addAll(fetchedGrades ?? []);
+  }
+
+  static Future<void> _deleteCollectionInBatches(
+    FirebaseFirestore firestore,
+    String collectionName, {
+    String? parent,
+    int batchSize = 200,
+  }) async {
+    final collection = parent != null
+        ? firestore
+            .collection(parent)
+            .doc(collectionName)
+            .collection('students')
+        : firestore.collection(collectionName);
+
+    print("🧹 Starting deletion for $collectionName...");
+
+    while (true) {
+      final snapshot = await collection.limit(batchSize).get();
+      if (snapshot.docs.isEmpty) {
+        print("✅ Finished deleting $collectionName.");
+        break;
+      }
+
+      final batch = firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+
+      await batch.commit();
+      print("🗑️ Deleted ${snapshot.docs.length} docs from $collectionName");
+
+      // Small pause to avoid hitting Firestore rate limits
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
   }
 
   @override
@@ -143,103 +177,9 @@ class _CustomDrawerState extends State<CustomDrawer> {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text("إضافة مصروف جديد"),
-                            content: Form(
-                              key: _formKey,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextFormField(
-                                    controller: totalAmountController,
-                                    decoration: const InputDecoration(
-                                      labelText: "المبلغ الإجمالي",
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'الرجاء إدخال المبلغ';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  TextField(
-                                    controller: descriptionController,
-                                    decoration: const InputDecoration(
-                                      labelText: "الوصف",
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            actions: <Widget>[
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('إلغاء'),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  FirebaseFirestore firestore =
-                                      FirebaseFirestore.instance;
-                                  DocumentSnapshot docSnapshot = await firestore
-                                      .collection('big_invoices')
-                                      .doc(date)
-                                      .get();
-
-                                  if (_formKey.currentState?.validate() ??
-                                      false) {
-                                    totalAmount = double.tryParse(
-                                            totalAmountController.text) ??
-                                        0.0;
-                                    description = descriptionController.text;
-
-                                    Payment newPayment = Payment(
-                                      amount: totalAmount,
-                                      description: description,
-                                      dateTime: DateTime.now(),
-                                    );
-
-                                    if (docSnapshot.exists) {
-                                      Map<String, dynamic> data = docSnapshot
-                                          .data() as Map<String, dynamic>;
-
-                                      BigInvoice bigInvoice =
-                                          BigInvoice.fromJson(data);
-
-                                      bigInvoice.payments.add(newPayment);
-
-                                      await firestore
-                                          .collection('big_invoices')
-                                          .doc(date)
-                                          .update(bigInvoice.toJson());
-                                    } else {
-                                      BigInvoice bigInvoice = BigInvoice(
-                                        date: date ?? "",
-                                        day: Day ?? "",
-                                        invoices: [],
-                                        payments: [newPayment],
-                                      );
-
-                                      await firestore
-                                          .collection('big_invoices')
-                                          .doc(date)
-                                          .set(bigInvoice.toJson());
-                                    }
-
-                                    Navigator.pushNamedAndRemoveUntil(
-                                      context,
-                                      '/HomeScreen',
-                                      (route) => false,
-                                    );
-                                  } else {
-                                    return;
-                                  }
-                                },
-                                child: const Text('حفظ'),
-                              ),
-                            ],
+                          return AddExpenseDialog(
+                            date: date ?? "",
+                            day: Day ?? "",
                           );
                         },
                       );
@@ -460,29 +400,52 @@ class _CustomDrawerState extends State<CustomDrawer> {
                                             "سيتم حذف البيانات التي اخترتها. هل أنت متأكد؟",
                                         tags: tags,
                                         onConfirm: (tags) async {
-                                          for (var tag in tags) {
-                                            if (fetchedGrades!.contains(tag)) {
-                                              await FirebaseFunctions
-                                                  .deleteCollection(tag);
-                                            } else if (tag == 'bills') {
-                                              FirebaseFunctions
-                                                  .deleteBigInvoiceCollection();
-                                            } else if (tag == "Absence") {
-                                              List<String> allDaysOfWeek = [
-                                                "Monday",
-                                                "Tuesday",
-                                                "Wednesday",
-                                                "Thursday",
-                                                "Friday",
-                                                "Saturday",
-                                                "Sunday"
-                                              ];
-                                              for (var day in allDaysOfWeek) {
+                                          try {
+                                            final firestore =
+                                                FirebaseFirestore.instance;
+                                            final allDaysOfWeek = [
+                                              "Monday",
+                                              "Tuesday",
+                                              "Wednesday",
+                                              "Thursday",
+                                              "Friday",
+                                              "Saturday",
+                                              "Sunday"
+                                            ];
+
+                                            for (final tag in tags) {
+                                              print(
+                                                  "🟡 Deleting data for tag: $tag");
+
+                                              if (fetchedGrades!
+                                                  .contains(tag)) {
+                                                // 🔹 Delete grade collection safely
+                                                await _deleteCollectionInBatches(
+                                                    firestore, tag);
+                                              } else if (tag == 'bills') {
                                                 await FirebaseFunctions
-                                                    .deleteAbsencesSubcollection(
-                                                        day);
+                                                    .deleteBigInvoiceCollection();
+                                              } else if (tag == 'Absence') {
+                                                for (final day
+                                                    in allDaysOfWeek) {
+                                                  await _deleteCollectionInBatches(
+                                                      firestore, day,
+                                                      parent: 'Absence');
+                                                }
                                               }
+
+                                              // Small delay to reduce server load between tags
+                                              await Future.delayed(
+                                                  const Duration(
+                                                      milliseconds: 400));
                                             }
+
+                                            print(
+                                                "✅ All selected tags deleted successfully.");
+                                          } catch (e, stack) {
+                                            print(
+                                                "❌ Error while deleting tags: $e");
+                                            print(stack);
                                           }
                                         },
                                       );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/firebase_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 import 'verifiy_password.dart';
 
 class ResetGradeAndStudentSubscriptionsDialog extends StatelessWidget {
@@ -55,33 +56,44 @@ class ResetGradeAndStudentSubscriptionsDialog extends StatelessWidget {
             ),
           ),
           onPressed: () {
-            showVerifyPasswordDialog(
-              context: context,
-              onVerified: () async {
-                try {
-                  List<String> fetchedGrades =
-                      await FirebaseFunctions.getGradesList();
-                  for (final grade in fetchedGrades) {
-                    await FirebaseFunctions.resetGradeSubscriptionsAndAbsences(
-                        grade);
-                  }
+            // Save a stable parent context
+            final parentContext = context;
 
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('تم حذف جميع الاشتراكات بنجاح ✅'),
-                      backgroundColor: Colors.red[700],
-                    ),
-                  );
-                } catch (e) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('حدث خطأ أثناء حذف الاشتراكات: $e'),
-                      backgroundColor: Colors.red[900],
-                    ),
-                  );
-                }
+            showVerifyPasswordDialog(
+              context: parentContext,
+              onVerified: () async {
+                await runWithLoading(parentContext, () async {
+                  try {
+                    List<String> fetchedGrades =
+                        await FirebaseFunctions.getGradesList();
+
+                    for (final grade in fetchedGrades) {
+                      await FirebaseFunctions
+                          .resetGradeSubscriptionsAndAbsences(grade);
+                    }
+
+                    // Navigate and remove all previous routes (no need to pop the password dialog manually)
+                    Navigator.pushNamedAndRemoveUntil(
+                        parentContext, "/HomeScreen", (_) => false);
+
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: const Text('تم حذف جميع الاشتراكات بنجاح ✅'),
+                        backgroundColor: Colors.red[700],
+                      ),
+                    );
+                  } catch (e) {
+                    Navigator.of(parentContext, rootNavigator: true)
+                        .pop(); // closes loading
+
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: Text('حدث خطأ أثناء حذف الاشتراكات: $e'),
+                        backgroundColor: Colors.red[900],
+                      ),
+                    );
+                  }
+                });
               },
             );
           },

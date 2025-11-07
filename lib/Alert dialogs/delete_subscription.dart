@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/firebase_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 import 'verifiy_password.dart';
 
 class DeleteSubscriptionDialog extends StatelessWidget {
@@ -67,15 +68,22 @@ class DeleteSubscriptionDialog extends StatelessWidget {
             showVerifyPasswordDialog(
               context: context,
               onVerified: () async {
-                await FirebaseFunctions.deleteSubscriptionFromGrade(
-                    gradeName, id);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("تم حذف الاشتراك بنجاح"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                await runWithLoading(context, () async {
+                  await FirebaseFunctions.deleteSubscriptionFromGrade(
+                    gradeName,
+                    id,
+                  );
+                });
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("تم حذف الاشتراك بنجاح"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
               },
             );
           },

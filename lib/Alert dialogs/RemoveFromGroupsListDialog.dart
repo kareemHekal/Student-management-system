@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../loadingFile/loading_alert/run_with_loading.dart';
+
 class RemoveFromGroupsListDialog extends StatelessWidget {
   final String title;
   final String content;
@@ -67,8 +69,10 @@ class RemoveFromGroupsListDialog extends StatelessWidget {
           ),
           child: Text(confirmButtonText),
           onPressed: () async {
-            await onConfirm();
             Navigator.pop(context);
+            runWithLoading(context, () async {
+              await onConfirm();
+            });
           },
         ),
       ],

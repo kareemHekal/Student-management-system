@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../firebase/exams_functions.dart';
+import '../loadingFile/loading_alert/run_with_loading.dart';
 
 Future<void> showDeleteExamDialog({
   required BuildContext context,
@@ -33,9 +34,13 @@ Future<void> showDeleteExamDialog({
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: themeColor[700]),
             onPressed: () async {
-              // Call your delete function
-              await FirebaseExams.deleteExam(gradeName, examId);
-              Navigator.pop(context);
+              await runWithLoading(context, () async {
+                await FirebaseExams.deleteExam(gradeName, examId);
+              });
+
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
             },
             child: Text('حذف', style: TextStyle(color: Colors.white)),
           ),

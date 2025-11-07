@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../loadingFile/loading_alert/run_with_loading.dart';
+
 class EditPaidDialog extends StatefulWidget {
   final double paidAmount;
   final double fullPrice;
@@ -99,7 +101,7 @@ class _EditPaidDialogState extends State<EditPaidDialog> {
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700]),
-          onPressed: () {
+          onPressed: () async {
             final newAmount = double.tryParse(amountController.text) ?? 0;
             final allPaid = widget.paidAmount + newAmount;
             final description = descriptionController.text.trim();
@@ -109,15 +111,17 @@ class _EditPaidDialogState extends State<EditPaidDialog> {
                 _errorText = 'من فضلك أدخل مبلغاً صالحاً';
               } else if (allPaid > widget.fullPrice) {
                 _errorText =
-                    'المبلغ الجديد لا يمكن أن يتجاوز القبمه المتبقه من الاشتراك';
+                    'المبلغ الجديد لا يمكن أن يتجاوز القيمة المتبقية من الاشتراك';
               } else {
                 _errorText = null;
               }
             });
 
             if (_errorText == null) {
-              widget.onSave(newAmount, allPaid, description);
-              Navigator.pop(context);
+              runWithLoading(context, () async {
+                await widget.onSave(newAmount, allPaid, description);
+                Navigator.pop(context);
+              });
             }
           },
           child: const Text(
