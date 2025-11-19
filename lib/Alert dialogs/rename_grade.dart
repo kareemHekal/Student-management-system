@@ -50,13 +50,31 @@ Future<void> renameGrade({
                   borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () async {
+              String newGrade = gradeController.text.trim();
+
+              // 2️⃣ Fetch grades list
+              List<String> fetchedGrades =
+                  await FirebaseFunctions.getGradesList();
+
+              // 3️⃣ Check if new grade already exists
+              if (fetchedGrades.contains(newGrade)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("الصف موجود بالفعل!"),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return; // ⛔ Stop here
+              }
+
+              // 4️⃣ Continue rename
               showVerifyPasswordDialog(
                 context: context,
                 onVerified: () async {
                   await runWithLoading(context, () async {
                     await FirebaseFunctions.renameGrade(
                       oldGrade,
-                      gradeController.text.trim(),
+                      newGrade,
                     );
                   });
 
