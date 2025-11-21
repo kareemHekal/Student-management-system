@@ -59,38 +59,10 @@ class SmallStudentCard extends StatelessWidget {
                         backgroundColor: Colors.red[700],
                       ),
                       child: Text("حذف"),
-                      onPressed: () async {
-                        try {
-                          await FirebaseFunctions
-                              .deleteStudentFromHisCollection(
-                            studentModel.grade ?? "",
-                            studentModel.id,
-                          );
-
-                          // بعد النجاح
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("تم حذف الطالب بنجاح"),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          }
-                        } catch (e, stack) {
-                          // رسالة الخطأ
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text("حدث خطأ أثناء حذف الطالب: $e"),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-
-                          debugPrint("❌ Error deleting student: $e");
-                          debugPrint("📌 StackTrace: $stack");
-                        }
+                      onPressed: () {
+                        FirebaseFunctions.deleteStudentFromHisCollection(
+                            studentModel.grade ?? "", studentModel.id);
+                        Navigator.of(context).pop();
                       },
                     ),
                   ],

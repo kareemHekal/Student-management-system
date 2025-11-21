@@ -25,11 +25,9 @@ class FirebaseFunctions {
     await newDocRef.set(magmo3a);
   }
 
-  static Future<void> editMagmo3aInDay(
-    String oldDay,
-    String oldGrade,
-    Magmo3amodel updatedMagmo3a,
-  ) async {
+  static Future<void> editMagmo3aInDay(String oldDay,
+      String oldGrade,
+      Magmo3amodel updatedMagmo3a,) async {
     final newDay = updatedMagmo3a.days;
 
     // 🧩 1️⃣ Move document if the day changed
@@ -101,6 +99,27 @@ class FirebaseFunctions {
         .where("grade", isEqualTo: grade)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  /// Deletes all absence records in the "absences" subcollection under each `Magmo3a` document
+  static Future<void> deleteAbsencesSubcollection(String day) async {
+    try {
+      CollectionReference dayCollection =
+          FirebaseFirestore.instance.collection(day);
+      QuerySnapshot daySnapshot = await dayCollection.get();
+
+      for (var groupDoc in daySnapshot.docs) {
+        CollectionReference absencesSubcollectionRef =
+            groupDoc.reference.collection('absences');
+
+        QuerySnapshot absencesSnapshot = await absencesSubcollectionRef.get();
+        for (var absenceDoc in absencesSnapshot.docs) {
+          await absenceDoc.reference.delete();
+        }
+      }
+    } catch (e) {
+      print("Error deleting absences subcollection: $e");
+    }
   }
 
   /// Returns a reference to the specific day's collection
@@ -289,17 +308,10 @@ class FirebaseFunctions {
 
   static Future<List<Studentmodel>> getAllStudentsByGrade_future(
       String grade) async {
-    try {
-      CollectionReference<Studentmodel> collection =
-          getSecondaryCollection(grade);
-
-      QuerySnapshot<Studentmodel> snapshot = await collection.get();
-
-      return snapshot.docs.map((doc) => doc.data()).toList();
-    } catch (e, stack) {
-      // رجّع list فاضية بدل ما يحصل كراش
-      return [];
-    }
+    CollectionReference<Studentmodel> collection =
+        getSecondaryCollection(grade);
+    QuerySnapshot<Studentmodel> snapshot = await collection.get();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
   /// Retrieves students filtered by first day ID
@@ -328,15 +340,7 @@ class FirebaseFunctions {
         );
   }
 
-  /// Deletes all documents in a specific grade's collection
-  static Future<void> deleteCollection(String grade) async {
-    final collectionRef = FirebaseFirestore.instance.collection(grade);
-    final snapshot = await collectionRef.get();
 
-    for (var doc in snapshot.docs) {
-      await doc.reference.delete();
-    }
-  }
 
   static Future<void> addGradeToList(String newGrade) async {
     try {

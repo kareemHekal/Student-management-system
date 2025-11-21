@@ -149,59 +149,31 @@ class _PaymentWidgetState extends State<PaymentWidget> {
                 showVerifyPasswordDialog(
                   context: context,
                   onVerified: () async {
-                    try {
-                      String formattedDate = DateFormat('yyyy-MM-dd')
-                          .format(widget.payment.dateTime);
+                    String formattedDate = DateFormat('yyyy-MM-dd')
+                        .format(widget.payment.dateTime);
+                    double parsedAmount =
+                        double.tryParse(amountController.text) ??
+                            widget.payment.amount;
 
-                      double parsedAmount =
-                          double.tryParse(amountController.text) ??
-                              widget.payment.amount;
+                    Payment updatedPayment = Payment(
+                      amount: parsedAmount,
+                      description: descriptionController.text,
+                      dateTime: widget.payment.dateTime,
+                    );
 
-                      Payment updatedPayment = Payment(
-                        amount: parsedAmount,
-                        description: descriptionController.text,
-                        dateTime: widget.payment.dateTime,
-                      );
+                    await FirebaseFunctions.updatePaymentInBigInvoice(
+                      date: formattedDate,
+                      updatedPayment: updatedPayment,
+                      paymentIndex: widget.paymentIndex,
+                    );
 
-                      // Update Firebase
-                      await FirebaseFunctions.updatePaymentInBigInvoice(
-                        date: formattedDate,
-                        updatedPayment: updatedPayment,
-                        paymentIndex: widget.paymentIndex,
-                      );
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, "/HomeScreen", (route) => false);
 
-                      // Navigate after success
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        "/HomeScreen",
-                        (route) => false,
-                      );
-
-                      // Update UI
-                      setState(() {
-                        widget.payment.amount = updatedPayment.amount;
-                        widget.payment.description = updatedPayment.description;
-                      });
-
-                      // Success message
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("تم التعديل بنجاح"),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    } catch (e, stack) {
-                      // Error message
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("حدث خطأ أثناء التعديل: $e"),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-
-                      debugPrint("❌ Error updating payment: $e");
-                      debugPrint("📌 StackTrace: $stack");
-                    }
+                    setState(() {
+                      widget.payment.amount = updatedPayment.amount;
+                      widget.payment.description = updatedPayment.description;
+                    });
                   },
                 );
               },

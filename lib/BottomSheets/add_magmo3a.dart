@@ -91,46 +91,29 @@ class AddMagmo3a extends StatelessWidget {
                             backgroundColor: app_colors.darkGrey,
                           ),
                           onPressed: () async {
-                            try {
-                              if (existingMagmo3a == null) {
-                                await cubit.addMagmo3a();
-                              } else {
-                                final updatedMagmo3a = Magmo3amodel(
-                                  id: existingMagmo3a!.id,
-                                  days: cubit.chosenDay,
-                                  grade: cubit.selectedSecondary,
-                                  time: cubit.timeOfDay,
-                                );
+                            if (existingMagmo3a == null) {
+                              cubit.addMagmo3a();
+                            } else {
+                              final updatedMagmo3a = Magmo3amodel(
+                                id: existingMagmo3a!.id,
+                                days: cubit.chosenDay,
+                                grade: cubit.selectedSecondary,
+                                time: cubit.timeOfDay,
+                              );
 
-                                await FirebaseFunctions.editMagmo3aInDay(
-                                  oldDay ?? existingMagmo3a!.days!,
-                                  existingMagmo3a!.grade!,
-                                  updatedMagmo3a,
-                                );
-                              }
+                              await FirebaseFunctions.editMagmo3aInDay(
+                          oldDay ?? existingMagmo3a!.days!,
+                          existingMagmo3a!.grade!,
+                          updatedMagmo3a,
+                        );
 
-                              // Close the page
                               Navigator.pop(context);
-
-                              // Show success message
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('تم التعديل بنجاح'),
                                   backgroundColor: Colors.green,
                                 ),
                               );
-                            } catch (e, stack) {
-                              // Show error message
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('حدث خطأ: $e'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-
-                              // (Optional) print error for debugging
-                              debugPrint('❌ Error in edit/add Magmo3a: $e');
-                              debugPrint('📌 StackTrace: $stack');
                             }
                           },
                           child:
