@@ -263,41 +263,68 @@ class _InvoiceWidgetState extends State<InvoiceWidget> {
               child: const Text("إلغاء"),
             ),
             TextButton(
-              onPressed: () {
-                String formattedDate =
-                    DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime);
+              onPressed: () async {
+                try {
+                  String formattedDate =
+                      DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime);
 
-                double parsedAmount = double.tryParse(amountController.text) ??
-                    widget.invoice.amount;
+                  double parsedAmount =
+                      double.tryParse(amountController.text) ??
+                          widget.invoice.amount;
 
-                double differenceAmount = (widget.invoice.amount -
-                        (double.tryParse(amountController.text) ?? 0)) *
-                    -1;
-                ;
+                  double differenceAmount = (widget.invoice.amount -
+                          (double.tryParse(amountController.text) ?? 0)) *
+                      -1;
 
-                Invoice updatedInvoice = Invoice(
-                  studentId: widget.invoice.studentId,
-                  id: widget.invoice.id,
-                  amount: parsedAmount,
-                  description: descriptionController.text,
-                  dateTime: widget.invoice.dateTime,
-                  studentName: widget.invoice.studentName,
-                  studentPhoneNumber: widget.invoice.studentPhoneNumber,
-                  momPhoneNumber: widget.invoice.momPhoneNumber,
-                  subscriptionFeeID: widget.invoice.subscriptionFeeID,
-                  dadPhoneNumber: widget.invoice.dadPhoneNumber,
-                  grade: widget.invoice.grade,
-                );
+                  Invoice updatedInvoice = Invoice(
+                    studentId: widget.invoice.studentId,
+                    id: widget.invoice.id,
+                    amount: parsedAmount,
+                    description: descriptionController.text,
+                    dateTime: widget.invoice.dateTime,
+                    studentName: widget.invoice.studentName,
+                    studentPhoneNumber: widget.invoice.studentPhoneNumber,
+                    momPhoneNumber: widget.invoice.momPhoneNumber,
+                    subscriptionFeeID: widget.invoice.subscriptionFeeID,
+                    dadPhoneNumber: widget.invoice.dadPhoneNumber,
+                    grade: widget.invoice.grade,
+                  );
 
-                FirebaseFunctions.updateInvoiceInBigInvoices(
-                  differenceAmount: differenceAmount,
-                  updatedInvoice: updatedInvoice,
-                  date: formattedDate,
-                );
+                  // IMPORTANT: await the Firebase function
+                  await FirebaseFunctions.updateInvoiceInBigInvoices(
+                    differenceAmount: differenceAmount,
+                    updatedInvoice: updatedInvoice,
+                    date: formattedDate,
+                  );
 
-                Navigator.pushNamedAndRemoveUntil(
-                    context, "/HomeScreen", (route) => false);
-                setState(() {});
+                  // Navigate after success
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    "/HomeScreen",
+                    (route) => false,
+                  );
+
+                  setState(() {});
+
+                  // Success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("تم التعديل بنجاح"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                } catch (e, stack) {
+                  // Error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("حدث خطأ أثناء التعديل: $e"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+
+                  debugPrint("❌ Error updating invoice: $e");
+                  debugPrint("📌 StackTrace: $stack");
+                }
               },
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,

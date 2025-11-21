@@ -74,25 +74,42 @@ class _StartNewMonthDialogState extends State<StartNewMonthDialog> {
             if (_formKey.currentState!.validate()) {
               final finishedMonthName = monthController.text.trim();
 
-              // Show the loading and run the Firestore function
-              await runWithLoading(context, () async {
-                await FirebaseFunctions.saveMonthAndStartNew(finishedMonthName);
-              });
+              try {
+                // Show loading + run Firestore function safely
+                await runWithLoading(context, () async {
+                  await FirebaseFunctions.saveMonthAndStartNew(
+                      finishedMonthName);
+                });
 
-              // Close the dialog after loading finishes
-              if (context.mounted && Navigator.canPop(context)) {
-                Navigator.pushNamedAndRemoveUntil(
-                    context, "/HomeScreen", (_) => false);
-              }
+                // Navigate after success
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    "/HomeScreen",
+                    (_) => false,
+                  );
 
-              // Optional: show a success message
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("تم حفظ الشهر '$finishedMonthName' بنجاح"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                  // Success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("تم حفظ الشهر '$finishedMonthName' بنجاح"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e, stack) {
+                // Error message
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("حدث خطأ أثناء حفظ الشهر: $e"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+
+                debugPrint("❌ Error saving month: $e");
+                debugPrint("📌 StackTrace: $stack");
               }
             }
           },

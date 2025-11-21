@@ -5,7 +5,6 @@ import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Studentmodel.dart';
 import '../models/absence_model.dart';
-import '../models/exam_model.dart';
 import '../models/grade_subscriptions_model.dart';
 import '../models/payment.dart';
 import '../models/subscription_fee.dart';
@@ -102,27 +101,6 @@ class FirebaseFunctions {
         .where("grade", isEqualTo: grade)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
-  }
-
-  /// Deletes all absence records in the "absences" subcollection under each `Magmo3a` document
-  static Future<void> deleteAbsencesSubcollection(String day) async {
-    try {
-      CollectionReference dayCollection =
-          FirebaseFirestore.instance.collection(day);
-      QuerySnapshot daySnapshot = await dayCollection.get();
-
-      for (var groupDoc in daySnapshot.docs) {
-        CollectionReference absencesSubcollectionRef =
-            groupDoc.reference.collection('absences');
-
-        QuerySnapshot absencesSnapshot = await absencesSubcollectionRef.get();
-        for (var absenceDoc in absencesSnapshot.docs) {
-          await absenceDoc.reference.delete();
-        }
-      }
-    } catch (e) {
-      print("Error deleting absences subcollection: $e");
-    }
   }
 
   /// Returns a reference to the specific day's collection
@@ -311,10 +289,17 @@ class FirebaseFunctions {
 
   static Future<List<Studentmodel>> getAllStudentsByGrade_future(
       String grade) async {
-    CollectionReference<Studentmodel> collection =
-        getSecondaryCollection(grade);
-    QuerySnapshot<Studentmodel> snapshot = await collection.get();
-    return snapshot.docs.map((doc) => doc.data()).toList();
+    try {
+      CollectionReference<Studentmodel> collection =
+          getSecondaryCollection(grade);
+
+      QuerySnapshot<Studentmodel> snapshot = await collection.get();
+
+      return snapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e, stack) {
+      // رجّع list فاضية بدل ما يحصل كراش
+      return [];
+    }
   }
 
   /// Retrieves students filtered by first day ID
@@ -351,87 +336,6 @@ class FirebaseFunctions {
     for (var doc in snapshot.docs) {
       await doc.reference.delete();
     }
-  }
-
-  /// Add a new exam to a student's exams list
-  static Future<void> addExam({
-    required String gradeName,
-    required String studentId,
-    required ExamModel exam,
-  }) async {
-    final docRef =
-        FirebaseFirestore.instance.collection(gradeName).doc(studentId);
-
-    // 🔹 Generate Firestore auto ID if exam.id is null or empty
-    final newId = exam.id?.isNotEmpty == true
-        ? exam.id!
-        : FirebaseFirestore.instance
-            .collection('tmp')
-            .doc()
-            .id; // just to get an ID
-
-    final newExam = exam.copyWith(id: newId);
-
-    await docRef.update({
-      'studentExamsGrades': FieldValue.arrayUnion([newExam.toJson()]),
-    });
-  }
-
-  /// Update an existing exam by matching its ID
-  static Future<void> updateExam({
-    required String gradeName,
-    required String studentId,
-    required ExamModel updatedExam,
-  }) async {
-    final docRef =
-        FirebaseFirestore.instance.collection(gradeName).doc(studentId);
-    final snapshot = await docRef.get();
-
-    if (!snapshot.exists) {
-      throw Exception('Student not found');
-    }
-
-    final data = snapshot.data();
-    if (data == null || data['studentExamsGrades'] == null) return;
-
-    // Convert current exams list
-    final List<dynamic> exams = data['studentExamsGrades'];
-    final updatedExams = exams.map((e) {
-      final exam = ExamModel.fromJson(Map<String, dynamic>.from(e));
-      return exam.id == updatedExam.id ? updatedExam.toJson() : exam.toJson();
-    }).toList();
-
-    await docRef.update({'studentExamsGrades': updatedExams});
-  }
-
-  /// Delete an exam from the list by ID
-  static Future<void> deleteExam({
-    required String gradeName,
-    required String studentId,
-    required String examId,
-  }) async {
-    final docRef =
-        FirebaseFirestore.instance.collection(gradeName).doc(studentId);
-    final snapshot = await docRef.get();
-
-    if (!snapshot.exists) {
-      throw Exception('Student not found');
-    }
-
-    final data = snapshot.data();
-    if (data == null || data['studentExamsGrades'] == null) return;
-
-    // Filter out the exam to delete
-    final List<dynamic> exams = data['studentExamsGrades'];
-    final updatedExams = exams
-        .where((e) {
-          final exam = ExamModel.fromJson(Map<String, dynamic>.from(e));
-          return exam.id != examId;
-        })
-        .map((e) => e)
-        .toList();
-
-    await docRef.update({'studentExamsGrades': updatedExams});
   }
 
   static Future<void> addGradeToList(String newGrade) async {
