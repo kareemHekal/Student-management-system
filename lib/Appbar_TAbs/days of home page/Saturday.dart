@@ -12,11 +12,12 @@ class Saturday extends StatelessWidget {
       (
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 60),
-            child: Center(child: Image.asset("assets/images/logo.png")),
-          ),
-        SizedBox(height: 50)
+          Center(
+              child: Image.asset(
+                  width: 500,
+                  height: 500,
+                  "assets/images/studenizer_logo_2.png")),
+          SizedBox(height: 50)
       ],
     ),Magmo3as(day: "Saturday",)]);
   }

@@ -211,7 +211,7 @@ class Magmo3aWidget extends StatelessWidget {
                 magmo3aModel.days ?? "",
                 style: const TextStyle(
                   fontSize: 30,
-                  color: app_colors.green,
+                  color: app_colors.ligthGreen,
                 ),
               ),
             ),
