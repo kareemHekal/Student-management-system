@@ -5,11 +5,11 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../cards/StudentWidget.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loadingWidget.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Studentmodel.dart';
+import '../theme/colors_app.dart';
 
 class StudentInAgroup extends StatefulWidget {
   Magmo3amodel magmo3aModel;
@@ -60,7 +60,8 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
       appBar: AppBar(
         actions: [
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: app_colors.green),
+            icon: const Icon(Icons.picture_as_pdf,
+                color: AppColors.secondaryMain),
             onPressed: () async {
               await _generatePdf(context);
             },
@@ -69,9 +70,10 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
         centerTitle: true,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon:
+              const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset(
           "assets/images/logo.png",
           height: 100,
@@ -97,7 +99,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                       height: 130,
                       width: double.infinity,
                       decoration: const BoxDecoration(
-                        color: app_colors.darkGrey,
+                        color: AppColors.primaryMain,
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(25),
                           bottomRight: Radius.circular(25),
@@ -110,41 +112,43 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                                 vertical: 10, horizontal: 10),
                             child: TextFormField(
                               style:
-                                  const TextStyle(color: app_colors.darkGrey),
+                                  const TextStyle(color: AppColors.primaryMain),
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,
                                 hintText: 'ابحث',
-                                hintStyle:
-                                    const TextStyle(color: app_colors.darkGrey),
+                                hintStyle: const TextStyle(
+                                    color: AppColors.primaryMain),
                                 contentPadding: const EdgeInsets.symmetric(
                                     vertical: 15.0, horizontal: 20.0),
                                 enabledBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                      color: app_colors.green, width: 2.0),
+                                      color: AppColors.secondaryMain,
+                                      width: 2.0),
                                   borderRadius: BorderRadius.circular(20.0),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                      color: app_colors.green, width: 2.0),
+                                      color: AppColors.secondaryMain,
+                                      width: 2.0),
                                   borderRadius: BorderRadius.circular(20.0),
                                 ),
                                 suffixIcon: IconButton(
                                   icon: const Icon(Icons.clear,
-                                      color: app_colors.green),
+                                      color: AppColors.secondaryMain),
                                   onPressed: () {
                                     _searchController.clear();
                                   },
                                 ),
                               ),
-                              cursorColor: app_colors.darkGrey,
+                              cursorColor: AppColors.primaryMain,
                               controller: _searchController,
                             ),
                           ),
                           Text(
                             "عدد الطلاب في هذه المجموعة: ${allStudents.length}",
                             style: const TextStyle(
-                              color: app_colors.green,
+                              color: AppColors.secondaryMain,
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
@@ -163,10 +167,10 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                             ConnectionState.waiting) {
                           return const Center(
                             child: DiscreteCircle(
-                              color: app_colors.darkGrey,
+                              color: AppColors.primaryMain,
                               size: 30,
-                              secondCircleColor: app_colors.ligthGreen,
-                              thirdCircleColor: app_colors.green,
+                              secondCircleColor: AppColors.secondaryMain,
+                              thirdCircleColor: AppColors.secondaryMain,
                             ),
                           );
                         }
@@ -207,7 +211,7 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                                   .textTheme
                                   .bodyMedium
                                   ?.copyWith(
-                                      fontSize: 25, color: app_colors.black),
+                                      fontSize: 25, color: AppColors.black),
                             ),
                           );
                         }

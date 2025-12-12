@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
 
-import '../colors_app.dart';
 import '../firebase/exams_functions.dart';
 import '../models/Studentmodel.dart';
 import '../models/exam_model.dart';
+import '../theme/colors_app.dart';
 import 'pdf_genrators/exam_pdf_generator.dart';
 
 class ExamResultPage extends StatefulWidget {
@@ -93,9 +93,10 @@ class _ExamResultPageState extends State<ExamResultPage> {
         centerTitle: true,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon:
+              const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),
@@ -170,12 +171,12 @@ class _ExamResultPageState extends State<ExamResultPage> {
                             },
                             icon: const Icon(
                               Icons.picture_as_pdf,
-                              color: app_colors.white,
+                              color: AppColors.white,
                             ),
                             label: const Text(
                               "إنشاء ملف PDF",
                               style: TextStyle(
-                                color: app_colors.white,
+                                color: AppColors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),

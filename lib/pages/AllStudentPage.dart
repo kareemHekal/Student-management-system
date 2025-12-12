@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../studetnstreambuilder.dart';
+import '../theme/colors_app.dart';
 
 class AllStudentsTab extends StatefulWidget {
   const AllStudentsTab({super.key});
@@ -60,9 +60,10 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
                   Navigator.pushNamedAndRemoveUntil(
                       context, '/HomeScreen', (route) => false);
                 },
-                icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+                icon: const Icon(Icons.arrow_back_ios,
+                    color: AppColors.secondaryMain),
               ),
-              backgroundColor: app_colors.darkGrey,
+              backgroundColor: AppColors.primaryMain,
               title: Image.asset(
                 "assets/images/logo.png",
                 height: 100,
@@ -77,9 +78,9 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
                   ? Column(
                 children: [
                   Container(
-                    color: app_colors.darkGrey,
-                    child: TabBar(
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                                color: AppColors.primaryMain,
+                                child: TabBar(
+                                  labelPadding: const EdgeInsets.symmetric(horizontal: 10),
                       dividerColor: Colors.transparent,
                       onTap: (index) {
                         setState(() {
@@ -88,10 +89,10 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
                       },
                       isScrollable: true,
                       tabAlignment: TabAlignment.start,
-                      indicatorColor: app_colors.green,
-                      labelColor: app_colors.green,
-                      unselectedLabelColor: Colors.white,
-                      tabs: grades!.map((g) => Tab(text: g)).toList(),
+                                  indicatorColor: AppColors.secondaryMain,
+                                  labelColor: AppColors.secondaryMain,
+                                  unselectedLabelColor: Colors.white,
+                                  tabs: grades!.map((g) => Tab(text: g)).toList(),
                     ),
                   ),
                   Expanded(

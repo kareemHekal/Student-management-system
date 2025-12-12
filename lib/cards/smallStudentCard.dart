@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
 import '../pages/EditStudent.dart';
+import '../theme/colors_app.dart';
 
 class SmallStudentCard extends StatelessWidget {
   final Studentmodel studentModel;
@@ -84,7 +84,7 @@ class SmallStudentCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          color: app_colors.white,
+          color: AppColors.white,
           child: Container(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -122,14 +122,14 @@ class SmallStudentCard extends StatelessWidget {
         Theme(
           data: Theme.of(context).copyWith(
             textSelectionTheme: TextSelectionThemeData(
-              selectionColor: app_colors.darkGrey.withOpacity(0.5),
-              cursorColor: app_colors.darkGrey,
+              selectionColor: AppColors.primaryMain.withOpacity(0.5),
+              cursorColor: AppColors.primaryMain,
             ),
           ),
           child: SelectableText(
             value,
             style: const TextStyle(
-              color: app_colors.black,
+              color: AppColors.black,
               fontSize: 25,
             ),
             textDirection: TextDirection.rtl,

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../cards/In come widget.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Invoice.dart';
+import '../theme/colors_app.dart';
 
 class AllBillsForStudent extends StatefulWidget {
   final String studentId;
@@ -54,7 +54,7 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
             child: Text(
               invoices.length.toString(),
               style: const TextStyle(
-                color: app_colors.white,
+                color: AppColors.white,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -62,16 +62,17 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
         ],
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon:
+              const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),
       body: isLoading
           ? const Center(
-        child: CircularProgressIndicator(color: app_colors.green),
-      )
+              child: CircularProgressIndicator(color: AppColors.secondaryMain),
+            )
           : invoices.isEmpty
           ? const Center(
         child: Text(
@@ -79,9 +80,9 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
           style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: app_colors.darkGrey),
-        ),
-      )
+                        color: AppColors.primaryMain),
+                  ),
+                )
           : ListView.builder(
         itemCount: invoices.length,
         itemBuilder: (context, index) {

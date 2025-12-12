@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/AddMogmo3a/add_mogmo3a_cubit.dart';
 import '../bloc/AddMogmo3a/add_mogmo3a_state.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Magmo3aModel.dart';
+import '../theme/colors_app.dart';
 
 class AddMagmo3a extends StatelessWidget {
   final Magmo3amodel? existingMagmo3a;
@@ -54,9 +54,9 @@ class AddMagmo3a extends StatelessWidget {
         builder: (context, state) {
           final cubit = context.watch<Magmo3aCubit>();
           return Container(
-            decoration: const BoxDecoration(
-              color: app_colors.white,
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(25),
                 topRight: Radius.circular(25),
               ),
@@ -72,9 +72,9 @@ class AddMagmo3a extends StatelessWidget {
                     cubit.chosenDay,
                     (value) => cubit.selectDay(value),
                   ),
-                  const Divider(color: app_colors.darkGrey, thickness: 3),
+                  const Divider(color: AppColors.primaryMain, thickness: 3),
                   _buildTimePicker(context, cubit),
-                  const Divider(color: app_colors.darkGrey, thickness: 3),
+                  const Divider(color: AppColors.primaryMain, thickness: 3),
                   _buildDropdown(
                     "المرحلة الدراسية",
                     "اختر المرحلة الدراسية",
@@ -87,8 +87,8 @@ class AddMagmo3a extends StatelessWidget {
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            foregroundColor: app_colors.green,
-                            backgroundColor: app_colors.darkGrey,
+                            foregroundColor: AppColors.secondaryMain,
+                            backgroundColor: AppColors.primaryMain,
                           ),
                           onPressed: () async {
                             if (existingMagmo3a == null) {
@@ -136,21 +136,22 @@ class AddMagmo3a extends StatelessWidget {
         Text(label, style: const TextStyle(fontSize: 16)),
         const SizedBox(height: 10),
         DropdownButton<String>(
-          dropdownColor: app_colors.darkGrey,
+          dropdownColor: AppColors.primaryMain,
           value: selectedValue,
           isExpanded: true,
-          hint: Text(hint, style: const TextStyle(color: app_colors.darkGrey)),
+          hint:
+              Text(hint, style: const TextStyle(color: AppColors.primaryMain)),
           items: items.map((item) {
             return DropdownMenuItem(
               value: item,
-              child:
-                  Text(item, style: const TextStyle(color: app_colors.green)),
+              child: Text(item,
+                  style: const TextStyle(color: AppColors.secondaryMain)),
             );
           }).toList(),
           onChanged: (value) => onChanged(value!),
-          underline: Container(height: 2, color: app_colors.green),
+          underline: Container(height: 2, color: AppColors.secondaryMain),
           icon: const Icon(Icons.arrow_forward_ios_outlined,
-              color: app_colors.green),
+              color: AppColors.secondaryMain),
         ),
       ],
     );
@@ -175,9 +176,9 @@ class AddMagmo3a extends StatelessWidget {
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: app_colors.green,
+                  color: AppColors.secondaryMain,
                   borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: app_colors.darkGrey, width: 1.5),
+                  border: Border.all(color: AppColors.primaryMain, width: 1.5),
                 ),
                 padding: const EdgeInsets.all(8.0),
                 child: const Text("اختر الوقت"),

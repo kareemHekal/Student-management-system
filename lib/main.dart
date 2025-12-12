@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 
 import 'auth/noInternetConnection.dart';
 import 'bloc/observer.dart';
-import 'colors_app.dart';
 import 'firebase/firebase_options.dart';
 import 'home.dart';
 import 'pages/AllStudentPage.dart';
+import 'theme/colors_app.dart';
 
 void main() async {
   Bloc.observer = MyBlocObserver();
@@ -41,7 +41,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         textTheme: const TextTheme(
           bodyMedium: TextStyle(
-            fontSize: 20, color: app_colors.darkGrey,
+            fontSize: 20,
+            color: AppColors.primaryMain,
           ),
         ),
         iconTheme: const IconThemeData(color: Colors.white, size: 30),

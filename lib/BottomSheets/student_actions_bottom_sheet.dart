@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Invoice.dart';
 import '../models/Studentmodel.dart';
@@ -9,6 +8,7 @@ import '../models/subscription_fee.dart';
 import '../pages/all_bills_for_student.dart';
 import '../pages/all_student_exam_grades.dart';
 import '../pages/pdf_genrators/student_pdf_generator.dart';
+import '../theme/colors_app.dart';
 
 class StudentActionsBottomSheet {
   static void show({
@@ -120,10 +120,10 @@ class _ActionItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: app_colors.green.withOpacity(0.1),
+              color: AppColors.secondaryMain.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: app_colors.green, size: 32),
+            child: Icon(icon, color: AppColors.secondaryMain, size: 32),
           ),
           const SizedBox(height: 8),
           Text(

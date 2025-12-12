@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../Alert dialogs/add_edit_subscription_for_grade.dart';
 import '../Alert dialogs/delete_subscription.dart';
-import '../colors_app.dart';
 import '../models/subscription_fee.dart';
+import '../theme/colors_app.dart';
 
 class SubscriptionCard extends StatelessWidget {
   final SubscriptionFee subscriptionFee;
@@ -29,13 +29,13 @@ class SubscriptionCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
-            colors: [app_colors.ligthGreen, app_colors.ligthGreen],
+            colors: [AppColors.secondaryMain, AppColors.secondaryMain],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: app_colors.green.withOpacity(0.3),
+              color: AppColors.secondaryMain.withOpacity(0.3),
               blurRadius: 10,
               offset: const Offset(0, 6),
             ),
@@ -47,7 +47,8 @@ class SubscriptionCard extends StatelessWidget {
             children: [
               // Edit icon button
               IconButton(
-                icon: Icon(Icons.edit, color: app_colors.green, size: 28),
+                icon:
+                    Icon(Icons.edit, color: AppColors.secondaryMain, size: 28),
                 onPressed: () {
                   showAddOrEditSubscriptionDialog(context, gradeName,
                       subscriptionFee: subscriptionFee);
@@ -65,7 +66,7 @@ class SubscriptionCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: app_colors.green,
+                        color: AppColors.secondaryMain,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -73,7 +74,7 @@ class SubscriptionCard extends StatelessWidget {
                       '${subscriptionFee.subscriptionAmount.toStringAsFixed(2)} EGP',
                       style: TextStyle(
                         fontSize: 16,
-                        color: app_colors.darkGrey,
+                        color: AppColors.primaryMain,
                       ),
                     ),
                   ],

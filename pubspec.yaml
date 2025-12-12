@@ -53,7 +53,7 @@ dependencies:
   chips_choice: ^3.0.1
   bloc: ^9.0.0
   flutter_bloc: ^9.0.0
-  rename_app: ^1.6.5
+  flutter_advanced_drawer: ^1.5.0
 
 flutter_native_splash:
   color: "#D9EDBF"

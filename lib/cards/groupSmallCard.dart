@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../colors_app.dart';
+
 import '../models/Magmo3aModel.dart';
+import '../theme/colors_app.dart';
 
 class Groupsmallcard extends StatelessWidget {
   final Magmo3amodel? magmo3aModel;
@@ -17,7 +18,7 @@ class Groupsmallcard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
-          color: app_colors.ligthGreen,
+          color: AppColors.secondaryMain,
           child: Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
@@ -54,9 +55,9 @@ class Groupsmallcard extends StatelessWidget {
             padding: const EdgeInsets.all(5.0),
             child: Container(
               decoration: BoxDecoration(
-                color: app_colors.darkGrey,
+                color: AppColors.primaryMain,
                 border: Border.all(
-                  color: app_colors.green,
+                  color: AppColors.secondaryMain,
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(15),
@@ -66,7 +67,7 @@ class Groupsmallcard extends StatelessWidget {
                 magmo3aModel?.days ?? "",
                 style: const TextStyle(
                   fontSize: 22,
-                  color: app_colors.green,
+                  color: AppColors.secondaryMain,
                 ),
               ),
             ),
@@ -93,14 +94,14 @@ class Groupsmallcard extends StatelessWidget {
                       text: "الصف: ",
                       style: TextStyle(
                         fontSize: 17,
-                        color: app_colors.darkGrey,
+                        color: AppColors.primaryMain,
                       ),
                     ),
                     TextSpan(
                       text: magmo3aModel?.grade ?? '',
                       style: const TextStyle(
                         fontSize: 20,
-                        color: app_colors.green,
+                        color: AppColors.secondaryMain,
                       ),
                     ),
                   ],
@@ -115,7 +116,7 @@ class Groupsmallcard extends StatelessWidget {
                       text: "الوقت: ",
                       style: TextStyle(
                         fontSize: 17,
-                        color: app_colors.darkGrey,
+                        color: AppColors.primaryMain,
                       ),
                     ),
                     TextSpan(
@@ -124,7 +125,7 @@ class Groupsmallcard extends StatelessWidget {
                           : '',
                       style: const TextStyle(
                         fontSize: 20,
-                        color: app_colors.green,
+                        color: AppColors.secondaryMain,
                       ),
                     ),
                   ],

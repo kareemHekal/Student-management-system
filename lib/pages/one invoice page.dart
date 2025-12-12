@@ -4,10 +4,10 @@ import '../Alert dialogs/DeleteOutcomeBillDialog.dart';
 import '../Alert dialogs/verifiy_password.dart';
 import '../cards/In come widget.dart';
 import '../cards/outcome widget.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Big invoice.dart';
 import '../models/Invoice.dart';
+import '../theme/colors_app.dart';
 
 class OneInivoicePage extends StatefulWidget {
   final BigInvoice invoice;
@@ -36,7 +36,7 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
-          backgroundColor: app_colors.darkGrey,
+          backgroundColor: AppColors.primaryMain,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(30),
@@ -48,7 +48,8 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
             onPressed: () {
               Navigator.pop(context);
             },
-            icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+            icon: const Icon(Icons.arrow_back_ios,
+                color: AppColors.secondaryMain),
           ),
           title: Image.asset(
             "assets/images/logo.png",

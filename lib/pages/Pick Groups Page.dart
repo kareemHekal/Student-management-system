@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../cards/magmo3afor display widget.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loadingWidget.dart';
 import '../models/Magmo3aModel.dart';
+import '../theme/colors_app.dart';
 
 class ChoosedaysToAttend extends StatefulWidget {
   final String? level;
@@ -40,9 +40,10 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon:
+              const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset(
           "assets/images/logo.png",
           height: 100,
@@ -63,9 +64,9 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
             Tab(text: "Friday"),
 
           ],
-          indicatorColor: app_colors.green,
-          labelColor: app_colors.green,
-          unselectedLabelColor: app_colors.white,
+          indicatorColor: AppColors.secondaryMain,
+          labelColor: AppColors.secondaryMain,
+          unselectedLabelColor: AppColors.white,
         ),
       ),
       body: TabBarView(
@@ -101,8 +102,10 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
                 const SizedBox(height: 20),
                 Text(
                   "اختر المجموعة فقط",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: app_colors.darkGrey, fontSize: 30),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: AppColors.primaryMain, fontSize: 30),
                 ),
                 const SizedBox(height: 20),
                 StreamBuilder<List<Magmo3amodel>>(
@@ -111,10 +114,10 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
                         child: DiscreteCircle(
-                          color: app_colors.darkGrey,
+                          color: AppColors.primaryMain,
                           size: 30,
-                          secondCircleColor: app_colors.ligthGreen,
-                          thirdCircleColor: app_colors.green,
+                          secondCircleColor: AppColors.secondaryMain,
+                          thirdCircleColor: AppColors.secondaryMain,
                         ),
                       );
                     }
@@ -143,7 +146,7 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
-                              ?.copyWith(fontSize: 25, color: app_colors.black),
+                              ?.copyWith(fontSize: 25, color: AppColors.black),
                         ),
                       );
                     }

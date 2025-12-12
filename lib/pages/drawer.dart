@@ -1,466 +1,230 @@
-import 'package:chips_choice/chips_choice.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../Alert dialogs/Delete diaolog.dart';
+import '../theme/colors_app.dart';
+import '../theme/text_style.dart';
 import '../Alert dialogs/ResetAbscenceMonthDialog.dart';
 import '../Alert dialogs/Reset_Grade_student_subscriptions.dart';
 import '../Alert dialogs/add_out_come.dart';
 import '../Alert dialogs/change_password.dart';
 import '../Alert dialogs/verifiy_password.dart';
-import '../colors_app.dart';
 import '../constants.dart';
-import '../firebase/firebase_functions.dart';
 import 'PaymentCheckPage.dart';
 import 'allgrades.dart';
 import 'invoices page.dart';
 
 class CustomDrawer extends StatefulWidget {
+  const CustomDrawer({super.key});
+
   @override
   State<CustomDrawer> createState() => _CustomDrawerState();
 }
 
 class _CustomDrawerState extends State<CustomDrawer> {
+  late String date;
+  late String day;
+
   void getCurrentDate() {
     DateTime now = DateTime.now();
-    date = now.toIso8601String().substring(0, 10); // yyyy-mm-dd
-    Day = now.weekday == 1
-        ? 'Monday'
-        : now.weekday == 2
-            ? 'Tuesday'
-            : now.weekday == 3
-                ? 'Wednesday'
-                : now.weekday == 4
-                    ? 'Thursday'
-                    : now.weekday == 5
-                        ? 'Friday'
-                        : now.weekday == 6
-                            ? 'Saturday'
-                            : 'Sunday';
-  }
+    date = now.toIso8601String().substring(0, 10);
 
-  late double totalAmount;
-  late String description;
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  TextEditingController totalAmountController = TextEditingController();
-  TextEditingController descriptionController = TextEditingController();
-  late String? date;
-  late String? Day;
-  bool isDangresAreaOpen = false;
-  List<String> tags = [];
-  List<String>? fetchedGrades;
-  List<String> options = ['Absence', 'bills'];
+    final days = {
+      1: 'Monday',
+      2: 'Tuesday',
+      3: 'Wednesday',
+      4: 'Thursday',
+      5: 'Friday',
+      6: 'Saturday',
+      7: 'Sunday'
+    };
+    day = days[now.weekday] ?? 'Unknown Day';
+  }
 
   @override
   void initState() {
     super.initState();
     getCurrentDate();
-    fetchGrades();
-  }
-
-  Future<void> fetchGrades() async {
-    fetchedGrades = await FirebaseFunctions.getGradesList();
-    options.addAll(fetchedGrades ?? []);
-  }
-
-  static Future<void> _deleteCollectionInBatches(
-    FirebaseFirestore firestore,
-    String collectionName, {
-    String? parent,
-    int batchSize = 200,
-  }) async {
-    final collection = parent != null
-        ? firestore
-            .collection(parent)
-            .doc(collectionName)
-            .collection('students')
-        : firestore.collection(collectionName);
-
-    print("🧹 Starting deletion for $collectionName...");
-
-    while (true) {
-      final snapshot = await collection.limit(batchSize).get();
-      if (snapshot.docs.isEmpty) {
-        print("✅ Finished deleting $collectionName.");
-        break;
-      }
-
-      final batch = firestore.batch();
-      for (final doc in snapshot.docs) {
-        batch.delete(doc.reference);
-      }
-
-      await batch.commit();
-      print("🗑️ Deleted ${snapshot.docs.length} docs from $collectionName");
-
-      // Small pause to avoid hitting Firestore rate limits
-      await Future.delayed(const Duration(milliseconds: 300));
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
-      width: MediaQuery.of(context).size.width * 0.8,
-      child: Column(
+    return ScrollConfiguration(
+      behavior: const _DrawerScrollBehavior(),
+      child: ListView(
+        padding: EdgeInsets.zero,
         children: [
-          // الجزء الأول: الصورة والاسم
-          Container(
-            decoration: const BoxDecoration(
-              color: app_colors.darkGrey,
+          _buildHeader(context),
+          const Divider(color: AppColors.textOnDark, thickness: 0.5),
+          _sectionTitle("الرئيسية"),
+          _drawerTile(
+            icon: Icons.people_alt_outlined,
+            title: "كل الطلاب",
+            onTap: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/StudentsTab',
+              (route) => false,
             ),
-            width: double.infinity,
-            height: 220,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 10),
-                  Image.asset(
-                    "assets/images/logo.png",
-                    height: 120,
-                    width: 120,
-                  ),
-                  Text(
-                    Constants.teacherName,
-                    style: GoogleFonts.qwitcherGrypen(
-                        color: app_colors.ligthGreen, fontSize: 50),
-                  ),
-                ],
+          ),
+          _drawerTile(
+            icon: Icons.receipt_long_outlined,
+            title: "عرض جميع الفواتير",
+            onTap: () => Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const Invoicespage()),
+              (route) => false,
+            ),
+          ),
+          _drawerTile(
+            icon: Icons.add_chart_outlined,
+            title: "إضافة مصروف",
+            onTap: () => showDialog(
+              context: context,
+              builder: (_) => AddExpenseDialog(
+                date: date,
+                day: day,
               ),
             ),
           ),
-
-          // الجزء الثاني: الخيارات
-          Expanded(
-            child: Container(
-              color: app_colors.ligthGreen,
-              child: ListView(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamedAndRemoveUntil(
-                          context, '/StudentsTab', (route) => false);
-                    },
-                    child: ListTile(
-                      leading:
-                          Image.asset("assets/images/students.png", width: 40),
-                      title: const Text(
-                        "كل الطلاب",
-                        style: TextStyle(color: app_colors.green, fontSize: 18),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const Invoicespage()),
-                        (Route<dynamic> route) => false,
-                      );
-                    },
-                    child: ListTile(
-                      leading:
-                          Image.asset("assets/images/invoice.png", width: 40),
-                      title: const Text(
-                        "عرض جميع الفواتير",
-                        style: TextStyle(color: app_colors.green, fontSize: 15),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AddExpenseDialog(
-                            date: date ?? "",
-                            day: Day ?? "",
-                          );
-                        },
-                      );
-                    },
-                    child: ListTile(
-                      leading:
-                          Image.asset("assets/images/clipboard.png", width: 40),
-                      title: const Text(
-                        "إضافة مصروف",
-                        style: TextStyle(color: app_colors.green, fontSize: 18),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const Allgrades()),
-                        (Route<dynamic> route) => false,
-                      );
-                    },
-                    child: ListTile(
-                      leading: Image.asset("assets/images/edit-table.png",
-                          width: 40),
-                      title: const Text(
-                        "مراحل الدراسة",
-                        style: TextStyle(color: app_colors.green, fontSize: 15),
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const PaymentCheckPage()),
-                        (Route<dynamic> route) => false,
-                      );
-                    },
-                    child: ListTile(
-                      leading: Image.asset("assets/images/seo.png", width: 40),
-                      title: const Text(
-                        "مراجعة المدفوعات",
-                        style: TextStyle(color: app_colors.green, fontSize: 15),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () {
-                      showVerifyPasswordDialog(
-                        context: context,
-                        onVerified: () {
-                          showChangePasswordDialog(context);
-                        },
-                      );
-                    },
-                    child: ListTile(
-                      leading: const Icon(Icons.lock),
-                      title: const Text(
-                        "تغيير كلمة المرور",
-                        style: TextStyle(color: app_colors.green, fontSize: 15),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => StartNewMonthDialog(),
-                      );
-                    },
-                    child: ListTile(
-                      leading:
-                          Image.asset("assets/images/restart.png", width: 40),
-                      title: const Text(
-                        "تصفير الغياب",
-                        style: TextStyle(color: app_colors.green, fontSize: 18),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) =>
-                            ResetGradeAndStudentSubscriptionsDialog(),
-                      );
-                    },
-                    child: ListTile(
-                      leading: Image.asset(
-                        "assets/images/restart.png",
-                        width: 40,
-                        color: app_colors.green,
-                      ),
-                      title: const Text(
-                        "بدأ ترم جديد ",
-                        style: TextStyle(color: app_colors.green, fontSize: 18),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ),
+          _drawerTile(
+            icon: Icons.school_outlined,
+            title: "مراحل الدراسة",
+            onTap: () => Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const Allgrades()),
+              (route) => false,
             ),
           ),
-
-          // الجزء الثالث: منطقة الخطر
-          GestureDetector(
+          _drawerTile(
+            icon: Icons.check_circle_outline,
+            title: "مراجعة المدفوعات",
+            onTap: () => Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const PaymentCheckPage()),
+              (route) => false,
+            ),
+          ),
+          const Divider(color: AppColors.textOnDark, thickness: 0.5),
+          _sectionTitle("الإعدادات"),
+          _drawerTile(
+            icon: Icons.lock_outline,
+            title: "تغيير كلمة المرور",
             onTap: () {
-              isDangresAreaOpen = !isDangresAreaOpen;
-              setState(() {});
+              showVerifyPasswordDialog(
+                context: context,
+                onVerified: () => showChangePasswordDialog(context),
+              );
             },
-            child: Container(
-              decoration: const BoxDecoration(
-                color: app_colors.darkGrey,
-              ),
-              width: double.maxFinite,
-              height: 60,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Row(
-                  children: [
-                    Icon(
-                      isDangresAreaOpen == false
-                          ? Icons.arrow_forward_ios_rounded
-                          : Icons.keyboard_double_arrow_down_rounded,
-                      color: app_colors.green,
-                    ),
-                    const Spacer(),
-                    const Text(
-                      "منطقة الخطر",
-                      style: TextStyle(color: app_colors.green, fontSize: 20),
-                    )
-                  ],
-                ),
-              ),
+          ),
+          const Divider(color: AppColors.textOnDark, thickness: 0.5),
+          _sectionTitle("إجراءات إعادة الضبط", danger: true),
+          _drawerTile(
+            icon: Icons.restore_page,
+            title: "تصفير الغياب (بداية شهر)",
+            onTap: () => showDialog(
+              context: context,
+              builder: (_) => StartNewMonthDialog(),
             ),
           ),
-          Container(
-              color: app_colors.darkGrey,
-              child: isDangresAreaOpen == true
-                  ? Column(
-                      children: [
-                        const Divider(
-                          endIndent: 15,
-                          indent: 15,
-                          color: Colors.red,
-                          thickness: 2,
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Padding(
-                              padding: EdgeInsets.only(left: 8),
-                              child: Text("حذف كل البيانات",
-                                  style: TextStyle(
-                                      color: app_colors.green, fontSize: 20)),
-                            ),
-                            ChipsChoice<String>.multiple(
-                              value: tags,
-                              onChanged: (val) {
-                                setState(() {
-                                  tags = val;
-                                });
-                              },
-                              choiceItems: C2Choice.listFrom<String, String>(
-                                source: options,
-                                value: (i, v) => v, // ✅ remove the "-$i"
-                                label: (i, v) => v,
-                              ),
-                              choiceStyle: C2ChipStyle.outlined(
-                                borderWidth: 2,
-                                backgroundColor: app_colors.green,
-                                selectedStyle: const C2ChipStyle(
-                                  borderColor: Colors.redAccent,
-                                  foregroundColor: Colors.redAccent,
-                                  backgroundColor: Colors.white,
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xffFF0000),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.delete_sweep_rounded,
-                                        color: Colors.white, size: 30),
-                                    SizedBox(width: 15),
-                                    Text(
-                                      "حذف البيانات المختارة",
-                                      style: TextStyle(
-                                          color: app_colors.white,
-                                          fontSize: 15),
-                                    ),
-                                  ],
-                                ),
-                                onPressed: () {
-                                  print('Selected tags: $tags');
-
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return CustomConfirmDialog(
-                                        title: "هل أنت متأكد؟",
-                                        content:
-                                            "سيتم حذف البيانات التي اخترتها. هل أنت متأكد؟",
-                                        tags: tags,
-                                        onConfirm: (tags) async {
-                                          try {
-                                            final firestore =
-                                                FirebaseFirestore.instance;
-                                            final allDaysOfWeek = [
-                                              "Monday",
-                                              "Tuesday",
-                                              "Wednesday",
-                                              "Thursday",
-                                              "Friday",
-                                              "Saturday",
-                                              "Sunday"
-                                            ];
-
-                                            for (final tag in tags) {
-                                              print(
-                                                  "🟡 Deleting data for tag: $tag");
-
-                                              if (fetchedGrades!
-                                                  .contains(tag)) {
-                                                // 🔹 Delete grade collection safely
-                                                await _deleteCollectionInBatches(
-                                                    firestore, tag);
-                                              } else if (tag == 'bills') {
-                                                await FirebaseFunctions
-                                                    .deleteBigInvoiceCollection();
-                                              } else if (tag == 'Absence') {
-                                                for (final day
-                                                    in allDaysOfWeek) {
-                                                  await _deleteCollectionInBatches(
-                                                      firestore, day,
-                                                      parent: 'Absence');
-                                                }
-                                              }
-
-                                              // Small delay to reduce server load between tags
-                                              await Future.delayed(
-                                                  const Duration(
-                                                      milliseconds: 400));
-                                            }
-
-                                            print(
-                                                "✅ All selected tags deleted successfully.");
-                                          } catch (e, stack) {
-                                            print(
-                                                "❌ Error while deleting tags: $e");
-                                            print(stack);
-                                          }
-                                        },
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    )
-                  : null),
+          _drawerTile(
+            icon: Icons.restart_alt_outlined,
+            title: "بدء ترم جديد",
+            onTap: () => showDialog(
+              context: context,
+              builder: (_) => ResetGradeAndStudentSubscriptionsDialog(),
+            ),
+          ),
+          const SizedBox(height: 14),
         ],
       ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      color: Colors.transparent,
+      child: Column(
+        children: [
+          Image.asset(
+            "assets/images/logo.png",
+            height: 110,
+            width: 110,
+            fit: BoxFit.cover,
+          ),
+          Text(
+            Constants.teacherName,
+            style: GoogleFonts.caveat(
+              fontWeight: FontWeight.bold,
+              fontSize: 50,
+              color: AppColors.secondaryMain,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title, {bool danger = false}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Text(
+        title,
+        style: AppTextStyles.customText(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: danger
+              ? const Color(0xffd63a3a)
+              : AppColors.textOnDark.withOpacity(0.7),
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerTile({
+    IconData? icon,
+    Widget? iconWidget,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    final Color itemColor = AppColors.textOnDark;
+    final Color iconColor = AppColors.secondaryMain;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: iconWidget ??
+            (icon != null
+                ? Icon(icon, color: iconColor, size: 24)
+                : const SizedBox.shrink()),
+        title: Text(
+          title,
+          style: AppTextStyles.customText(
+            fontSize: 18,
+            color: itemColor,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios_rounded,
+          size: 16,
+          color: itemColor.withOpacity(0.6),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerScrollBehavior extends ScrollBehavior {
+  const _DrawerScrollBehavior();
+
+  @override
+  Widget buildOverscrollIndicator(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    return GlowingOverscrollIndicator(
+      axisDirection: details.direction,
+      color: AppColors.secondaryMain,
+      child: child,
     );
   }
 }

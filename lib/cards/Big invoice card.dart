@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../colors_app.dart';
 import '../models/Big invoice.dart';
 import '../pages/one invoice page.dart';
 import '../pages/pdf_genrators/pdfGnerator.dart';
+import '../theme/colors_app.dart';
 
 class BigInvoiceCard extends StatefulWidget {
   final BigInvoice invoice;
@@ -42,7 +42,7 @@ class _BigInvoiceCardState extends State<BigInvoiceCard> {
           );
         },
         child: Card(
-          color: app_colors.ligthGreen,
+          color: AppColors.secondaryMain,
           child: Stack(
             children: [
               Column(
@@ -56,7 +56,7 @@ class _BigInvoiceCardState extends State<BigInvoiceCard> {
                           style: const TextStyle(fontSize: 16)),
                       IconButton(
                         icon: const Icon(Icons.print,
-                            size: 24, color: app_colors.green),
+                            size: 24, color: AppColors.secondaryMain),
                         onPressed: () async {
                           await generateBigInvoicePDF(widget.invoice);
                         },
@@ -93,7 +93,7 @@ class _BigInvoiceCardState extends State<BigInvoiceCard> {
           "${amount.toStringAsFixed(2)} ج.م",
           style: const TextStyle(
             fontSize: 15,
-            color: app_colors.green,
+            color: AppColors.secondaryMain,
           ),
         ),
       ],

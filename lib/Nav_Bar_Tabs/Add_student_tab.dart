@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../add_student_widget.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
+import '../theme/colors_app.dart';
 
 class AddStudentTab extends StatefulWidget {
   const AddStudentTab({super.key});
@@ -51,7 +52,7 @@ class _AddStudentTabState extends State<AddStudentTab> {
         body: Column(
           children: [
             Container(
-              color: app_colors.darkGrey,
+              color: AppColors.primaryMain,
               child: TabBar(
                 labelPadding: const EdgeInsets.symmetric(horizontal: 10),
                 dividerColor: Colors.transparent,
@@ -62,8 +63,8 @@ class _AddStudentTabState extends State<AddStudentTab> {
                 },
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
-                indicatorColor: app_colors.green,
-                labelColor: app_colors.green,
+                indicatorColor: AppColors.secondaryMain,
+                labelColor: AppColors.secondaryMain,
                 unselectedLabelColor: Colors.white,
                 tabs: grades!.map((g) => Tab(text: g)).toList(),
               ),

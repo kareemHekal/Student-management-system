@@ -12,11 +12,11 @@ import '../bloc/Edit Student/edit_student_cubit.dart';
 import '../bloc/Edit Student/edit_student_state.dart';
 import '../cards/groupSmallCard.dart';
 import '../cards/student_subscriptions_card.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
 import '../models/grade_subscriptions_model.dart';
 import '../models/student_paid_subscription.dart';
+import '../theme/colors_app.dart';
 import 'Pick Groups Page.dart';
 import 'all_absent_numbers.dart';
 
@@ -53,7 +53,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                   icon: const Icon(
                     Icons.more_vert,
                     size: 30,
-                    color: app_colors.green,
+                    color: AppColors.secondaryMain,
                   ),
                   onPressed: () {
                     StudentActionsBottomSheet.show(
@@ -67,9 +67,10 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+                icon: const Icon(Icons.arrow_back_ios,
+                    color: AppColors.secondaryMain),
               ),
-              backgroundColor: app_colors.darkGrey,
+              backgroundColor: AppColors.primaryMain,
               title: Image.asset(
                 "assets/images/logo.png",
                 height: 100,
@@ -134,7 +135,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                               left: 20, right: 20, top: 17),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: app_colors.white.withOpacity(0.3),
+                              color: AppColors.white.withOpacity(0.3),
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(25),
                                 topRight: Radius.circular(25),
@@ -164,7 +165,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                                 '''تعديل بيانات الطالب''',
                                                 style: GoogleFonts.oswald(
                                                   fontSize: 30,
-                                                  color: app_colors.darkGrey,
+                                                  color: AppColors.primaryMain,
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
@@ -173,7 +174,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                           ],
                                         ),
                                         const Divider(
-                                          color: app_colors.green,
+                                          color: AppColors.secondaryMain,
                                           thickness: 4,
                                         ),
                                         SizedBox(
@@ -191,7 +192,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                           ),
                                         ),
                                         const Divider(
-                                          color: app_colors.green,
+                                          color: AppColors.secondaryMain,
                                           thickness: 4,
                                         ),
                                         const SizedBox(
@@ -199,7 +200,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                         ),
                                         TextFormFields(context),
                                         const Divider(
-                                          color: app_colors.green,
+                                          color: AppColors.secondaryMain,
                                           thickness: 4,
                                         ),
                                         const SizedBox(
@@ -213,7 +214,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                           height: 15,
                                         ),
                                         const Divider(
-                                          color: app_colors.green,
+                                          color: AppColors.secondaryMain,
                                           thickness: 4,
                                         ),
                                         const SizedBox(
@@ -224,7 +225,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                           height: 10,
                                         ),
                                         const Divider(
-                                          color: app_colors.green,
+                                          color: AppColors.secondaryMain,
                                           thickness: 4,
                                         ),
                                         const SizedBox(height: 20),
@@ -273,13 +274,13 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                               },
                                               icon: Icon(
                                                 Icons.calendar_month,
-                                                color: app_colors.green,
+                                                color: AppColors.secondaryMain,
                                               ),
                                             ),
                                           ],
                                         ),
                                         const Divider(
-                                          color: app_colors.green,
+                                          color: AppColors.secondaryMain,
                                           thickness: 4,
                                         ),
                                         const SizedBox(height: 20),
@@ -291,9 +292,9 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                                               child: ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
                                                   foregroundColor:
-                                                      app_colors.green,
+                                                      AppColors.secondaryMain,
                                                   backgroundColor:
-                                                      app_colors.darkGrey,
+                                                      AppColors.primaryMain,
                                                 ),
                                                 onPressed: () async {
                                                   await cubit.EditStudent(
@@ -327,37 +328,38 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       children: [
         Container(
             decoration: BoxDecoration(
-              border: Border.all(color: app_colors.darkGrey, width: 1),
+              border: Border.all(color: AppColors.primaryMain, width: 1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: DropdownButton<String>(
-              dropdownColor: app_colors.darkGrey,
+              dropdownColor: AppColors.primaryMain,
               value: cubit.selectedGender ?? "ذكر",
               isExpanded: true,
               items: const [
                 DropdownMenuItem(
                   value: "ذكر",
-                  child: Text("ذكر", style: TextStyle(color: app_colors.green)),
+                  child: Text("ذكر",
+                      style: TextStyle(color: AppColors.secondaryMain)),
                 ),
                 DropdownMenuItem(
                   value: "أنثى",
-                  child:
-                      Text("أنثى", style: TextStyle(color: app_colors.green)),
+                  child: Text("أنثى",
+                      style: TextStyle(color: AppColors.secondaryMain)),
                 ),
               ],
               onChanged: (value) {
                 cubit.changeValueOfGenderDropDown(value);
               },
               elevation: 8,
-              style: const TextStyle(color: app_colors.green),
+              style: const TextStyle(color: AppColors.secondaryMain),
               icon: const Icon(Icons.arrow_forward_ios_outlined,
-                  color: app_colors.green),
+                  color: AppColors.secondaryMain),
               iconSize: 24,
               hint: Padding(
                 padding: const EdgeInsets.only(left: 10),
                 child: Text(
                   cubit.selectedGender ?? "اختر الجنس",
-                  style: const TextStyle(color: app_colors.green),
+                  style: const TextStyle(color: AppColors.secondaryMain),
                 ),
               ),
             )),
@@ -370,13 +372,13 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                 spacing: 8,
                 children: [
                   Chip(
-                    backgroundColor: app_colors.darkGrey,
+                    backgroundColor: AppColors.primaryMain,
                     label: Text(cubit.selectedGender!,
-                        style: const TextStyle(color: app_colors.green)),
+                        style: const TextStyle(color: AppColors.secondaryMain)),
                     deleteIcon: const Icon(Icons.cancel,
-                        size: 20, color: app_colors.green),
+                        size: 20, color: AppColors.secondaryMain),
                     shape: const StadiumBorder(
-                        side: BorderSide(color: app_colors.green)),
+                        side: BorderSide(color: AppColors.secondaryMain)),
                     onDeleted: () {
                       cubit.setTheSelectedGenderByNull();
                     },
@@ -385,7 +387,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               )
             : const Center(
                 child: Text("اختر الجنس",
-                    style: TextStyle(color: app_colors.green)),
+                    style: TextStyle(color: AppColors.secondaryMain)),
               ),
       ],
     );
@@ -397,16 +399,19 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     InputDecoration getInputDecoration(String label) {
       return InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
+        labelStyle:
+            const TextStyle(fontSize: 25, color: AppColors.secondaryMain),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderSide:
+              const BorderSide(color: AppColors.primaryMain, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderSide:
+              const BorderSide(color: AppColors.primaryMain, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
       );
@@ -476,7 +481,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           children: [
             Text(
               (number ?? 0).toString(),
-              style: const TextStyle(fontSize: 16, color: app_colors.green),
+              style:
+                  const TextStyle(fontSize: 16, color: AppColors.secondaryMain),
             ),
             const SizedBox(width: 8),
           ],
@@ -494,7 +500,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                 ? Center(
                     child: Text(
                     "لم تقم باختيار أي مجموعة بعد",
-                    style: TextStyle(color: app_colors.green),
+                    style: TextStyle(color: AppColors.secondaryMain),
                   ))
                 : ListView.builder(
                     itemCount: cubit.hisGroups?.length,
@@ -526,9 +532,9 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
         const SizedBox(height: 10),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            side: const BorderSide(color: app_colors.green, width: 1),
-            foregroundColor: app_colors.green,
-            backgroundColor: app_colors.darkGrey,
+            side: const BorderSide(color: AppColors.secondaryMain, width: 1),
+            foregroundColor: AppColors.secondaryMain,
+            backgroundColor: AppColors.primaryMain,
           ),
           onPressed: () {
             Navigator.push(
@@ -562,16 +568,19 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       },
       decoration: InputDecoration(
         labelText: "إضافة ملاحظة",
-        labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
+        labelStyle:
+            const TextStyle(fontSize: 25, color: AppColors.secondaryMain),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderSide:
+              const BorderSide(color: AppColors.primaryMain, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderSide:
+              const BorderSide(color: AppColors.primaryMain, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
         hintText: 'اكتب ملاحظتك هنا...',
@@ -611,7 +620,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                 'الاشتراكات (${subscriptions.length})',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: app_colors.green,
+                  color: AppColors.secondaryMain,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),

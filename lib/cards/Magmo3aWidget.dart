@@ -1,13 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../BottomSheets/add_magmo3a.dart';
-import '../colors_app.dart';
-import '../firebase/firebase_functions.dart';
 import '../models/Magmo3aModel.dart';
-import '../models/Studentmodel.dart';
 import '../pages/all students in one group.dart';
+import '../theme/colors_app.dart';
+import '../theme/text_style.dart';
 
 class Magmo3aWidget extends StatelessWidget {
   final Magmo3amodel magmo3aModel;
@@ -16,312 +14,294 @@ class Magmo3aWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          builder: (_) => AddMagmo3a(
-            existingMagmo3a: magmo3aModel,
-            oldDay: magmo3aModel.days,
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(left: 6),
-        child: Slidable(
-          startActionPane: ActionPane(
-            motion: DrawerMotion(),
-            extentRatio: 0.5,
-            children: [
-              SlidableAction(
-                borderRadius: BorderRadius.circular(30),
-                onPressed: (context) {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        backgroundColor: Colors.red[50],
-                        title: Text(
-                          'حذف المجموعة',
-                          style: TextStyle(
-                            color: Colors.red[900],
-                            fontSize: 20,
-                          ),
-                        ),
-                        content: Text(
-                          'هل أنت متأكد أنك تريد حذف هذه المجموعة؟\n\n'
-                          'عند تنفيذ هذه العملية سيتم أيضًا حذف اسم هذه المجموعة من قائمة المجموعات الخاصة بالطلاب المنتمين إليها.',
-                          textAlign: TextAlign.right,
-                          textDirection: TextDirection.rtl,
-                          style: TextStyle(
-                            color: Colors.red[700],
-                            fontSize: 16,
-                            height: 1.4,
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.red[900],
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 10),
-                              textStyle:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            child: Text(
-                              'إلغاء',
-                              style: TextStyle(
-                                  color: Colors.red[900], fontSize: 16),
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.red[600],
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 5,
-                            ),
-                            child: const Text(
-                              'تأكيد الحذف',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16),
-                            ),
-                            onPressed: () async {
-                              try {
-                                await FirebaseFunctions.deleteMagmo3aFromDay(
-                                    magmo3aModel.days ?? "", magmo3aModel.id);
-                                Navigator.pop(context);
-
-                                Stream<QuerySnapshot<Studentmodel>>
-                                    studentsStream =
-                                    FirebaseFunctions.getStudentsByGroupId(
-                                        magmo3aModel.grade ?? "",
-                                        magmo3aModel.id);
-                                studentsStream.listen((snapshot) async {
-                                  for (var doc in snapshot.docs) {
-                                    var student = doc.data();
-                                    student.hisGroups?.removeWhere(
-                                        (group) => group.id == magmo3aModel.id);
-                                    student.hisGroupsId
-                                        ?.remove(magmo3aModel.id);
-
-                                    await FirebaseFunctions
-                                        .updateStudentInCollection(
-                                      student.grade ?? "",
-                                      student.id,
-                                      student,
-                                    );
-                                  }
-                                });
-                              } catch (e) {
-                                print("Error deleting group: $e");
-                              }
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                backgroundColor: const Color(0xFFFE4A49),
-                foregroundColor: Colors.white,
-                icon: Icons.delete,
-                label: 'حذف',
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Card(
-              elevation: 10,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              color: app_colors.ligthGreen,
-              child: Container(
-                height: 150,
-                padding: const EdgeInsets.all(10),
-                child: Row(
-                  children: [
-                    _buildVerticalLine(),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          _buildDaysList(),
-                          const SizedBox(height: 10),
-                          _buildGradeAndTimeAndType(),
-                        ],
-                      ),
-                    ),
-                    _buildDetailsButton(context),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVerticalLine() {
     return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: app_colors.green,
-          borderRadius: BorderRadius.circular(25),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 12),
+      child: Slidable(
+        startActionPane: ActionPane(
+          motion: const BehindMotion(),
+          extentRatio: 0.4,
+          children: [
+            CustomSlidableAction(
+              onPressed: (_) => _showDeleteDialog(context),
+              backgroundColor: AppColors.statusAbsent,
+              foregroundColor: Colors.white,
+              borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  bottomLeft: Radius.circular(20)),
+              child: const Icon(Icons.delete_rounded, size: 28),
+            ),
+          ],
         ),
-        width: 5,
-        height: 200,
-      ),
-    );
-  }
-
-  Widget _buildDaysList() {
-    return SizedBox(
-      height: 70,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: app_colors.darkGrey,
-                border: Border.all(
-                  color: app_colors.green,
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                magmo3aModel.days ?? "",
-                style: const TextStyle(
-                  fontSize: 30,
-                  color: app_colors.ligthGreen,
-                ),
-              ),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGradeAndTimeAndType() {
-    return Container(
-      height: 40,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              RichText(
-                text: TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: "الصف: ",
-                      style: TextStyle(
-                        fontSize: 17,
-                        color: app_colors.darkGrey,
-                      ),
-                    ),
-                    TextSpan(
-                      text: magmo3aModel.grade ?? '',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        color: app_colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              RichText(
-                text: TextSpan(
-                  children: [
-                    const TextSpan(
-                      text: "الوقت: ",
-                      style: TextStyle(
-                        fontSize: 17,
-                        color: app_colors.darkGrey,
-                      ),
-                    ),
-                    TextSpan(
-                      text: magmo3aModel.time != null
-                          ? _formatTime(magmo3aModel.time!)
-                          : '',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        color: app_colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatTime(TimeOfDay time) {
-    final hour = time.hour;
-    final minute = time.minute;
-    final isPm = hour >= 12;
-    final formattedHour = hour > 12 ? hour - 12 : hour;
-    final formattedMinute = minute.toString().padLeft(2, '0');
-    return "$formattedHour:$formattedMinute ${isPm ? 'م' : 'ص'}";
-  }
-
-  Widget _buildDetailsButton(context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StudentInAgroup(
-                  magmo3aModel: magmo3aModel,
-                ),
-              ),
-            );
-          },
-          icon: Container(
+        child: GestureDetector(
+          onTap: () => _openEditSheet(context),
+          child: Container(
             decoration: BoxDecoration(
-              color: app_colors.darkGrey,
-              border: Border.all(
-                color: app_colors.green,
-                width: 1,
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primaryMain,
+                  AppColors.secondaryMain,
+                ],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
               ),
-              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryMain.withOpacity(0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                  spreadRadius: -4,
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.arrow_forward_ios,
-              color: app_colors.green,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: -30,
+                  left: -30,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.secondaryMain.withOpacity(0.08),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -20,
+                  right: 60,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.secondaryMain.withOpacity(0.3),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                  child: Row(
+                    children: [
+                      _buildDayBadge(),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildInfoSection()),
+                      IconButton(
+                        icon: Icon(Icons.arrow_forward_ios,
+                            size: 20, color: AppColors.secondaryMain),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  StudentInAgroup(magmo3aModel: magmo3aModel),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end, // المحتوى لليمين
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildInfoRow(
+          icon: Icons.school, // أيقونة الصف (قبعة)
+          label: "الصف",
+          value: magmo3aModel.grade ?? "",
+        ),
+        const SizedBox(height: 10),
+        _buildInfoRow(
+          icon: Icons.access_time, // أيقونة الوقت (ساعة)
+          label: "الوقت",
+          value:
+              magmo3aModel.time != null ? _formatTime(magmo3aModel.time!) : "",
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end, // من اليمين للشمال
+      children: [
+        Icon(icon, size: 18, color: AppColors.secondaryMain), // الأيقونة أول
+        const SizedBox(width: 6),
+        RichText(
+          textDirection: TextDirection.rtl,
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: "$label: ",
+                style: AppTextStyles.customText(
+                  fontSize: 16,
+                  color: AppColors.secondaryMain, // لون الـ label
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextSpan(
+                text: value,
+                style: AppTextStyles.customText(
+                  fontSize: 16,
+                  color: AppColors.textOnDark, // لون الـ value
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDayBadge() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.secondaryMain,
+            AppColors.secondaryMain.withOpacity(0.85)
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(18.0),
+          child: Text(
+            translateDayToArabic(magmo3aModel.days ?? ""),
+            textAlign: TextAlign.center,
+            style: AppTextStyles.customText(
+              fontSize: 22,
+              color: AppColors.primaryDark,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String translateDayToArabic(String day) {
+    switch (day.toLowerCase()) {
+      case "saturday":
+        return "السبت";
+      case "sunday":
+        return "الأحد";
+      case "monday":
+        return "الاثنين";
+      case "tuesday":
+        return "الثلاثاء";
+      case "wednesday":
+        return "الأربعاء";
+      case "thursday":
+        return "الخميس";
+      case "friday":
+        return "الجمعة";
+      default:
+        return day; // لو مش موجود يتركها كما هي
+    }
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour =
+        time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+    final minute = time.minute.toString().padLeft(2, '0');
+    return "$hour:$minute ${time.hour >= 12 ? "م" : "ص"}";
+  }
+
+  void _showDeleteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.statusAbsent.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.warning_rounded,
+                  color: AppColors.statusAbsent, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              "حذف المجموعة",
+              style: AppTextStyles.customText(
+                fontSize: 18,
+                color: AppColors.statusAbsent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          "متأكد إنك عايز تحذف المجموعة؟\nهيتم شيل اسمها من الطلاب كمان.",
+          style: AppTextStyles.customText(
+              fontSize: 15, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "إلغاء",
+              style: AppTextStyles.customText(
+                  fontSize: 15, color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.statusAbsent,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              // هنا ممكن تضيف المنطق لحذف المجموعة
+            },
+            child: Text(
+              "تأكيد الحذف",
+              style: AppTextStyles.customText(
+                  fontSize: 15, color: AppColors.textOnDark),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openEditSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (_) => AddMagmo3a(
+        existingMagmo3a: magmo3aModel,
+        oldDay: magmo3aModel.days,
+      ),
     );
   }
 }

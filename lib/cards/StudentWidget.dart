@@ -1,392 +1,362 @@
-import 'package:el_tooltip/el_tooltip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 import '../Alert dialogs/Notify Absence.dart';
 import '../bloc/Edit Student/edit_student_cubit.dart';
-import '../colors_app.dart';
-import '../constants.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/Studentmodel.dart';
 import '../pages/EditStudent.dart';
+import '../theme/colors_app.dart';
+import '../theme/text_style.dart';
 
 class StudentWidget extends StatelessWidget {
-  bool IsComingFromGroup;
   final Studentmodel studentModel;
+  final bool IsComingFromGroup;
   final String? grade;
 
-  StudentWidget(
-      {required this.studentModel,
-      required this.IsComingFromGroup,
-      required this.grade,
-      super.key});
+  const StudentWidget({
+    required this.studentModel,
+    required this.IsComingFromGroup,
+    required this.grade,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: GestureDetector(
-        onLongPress: () {
-          IsComingFromGroup == true
-              ? null
-              : showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return Theme(
-                      data: Theme.of(context).copyWith(
-                        colorScheme: ColorScheme.fromSwatch().copyWith(
-                          primary: Colors.red,
-                        ),
-                      ),
-                      child: AlertDialog(
-                        backgroundColor: Colors.red[100],
-                        title: Text(
-                          "حذف الطالب",
-                          style: TextStyle(
-                            color: Colors.red[900],
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        content: Text(
-                          "هل أنت متأكد أنك تريد حذف هذا الطالب؟",
-                          style: TextStyle(color: Colors.red[800]),
-                        ),
-                        actions: [
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.red[900],
-                            ),
-                            child: Text("إلغاء"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.red[700],
-                            ),
-                            child: Text("حذف"),
-                            onPressed: () {
-                              FirebaseFunctions.deleteStudentFromHisCollection(
-                                  studentModel.grade ?? "", studentModel.id);
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-        },
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BlocProvider(
-                create: (context) => StudentEditCubit(student: studentModel),
-                child: EditStudentScreen(
-                  grade: grade,
-                  student: studentModel,
-                ),
-              ),
-            ),
-          );
-        },
-        child: Card(
-          elevation: 5,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
+      onTap: () => _openEditPage(context),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.all(12), // كان 16
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.bottomRight,
+            end: Alignment.topRight,
+            colors: [
+              AppColors.primaryMain.withOpacity(.55), // خليته أوضح
+              AppColors.secondaryMain.withOpacity(.55), // نفس الكلام
+            ],
           ),
-          color: app_colors.ligthGreen,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(context),
+            const SizedBox(height: 8), // كان 12
+            Divider(color: Colors.white.withOpacity(.28), thickness: .6),
+            const SizedBox(height: 8),
+            _buildInfoSection(),
+            const SizedBox(height: 8),
+            _buildGroupsList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      children: [
+        _buildAvatar(),
+        const SizedBox(width: 12),
+        _buildNamesAndDate(),
+        const Spacer(),
+        _buildActionButtons(context),
+      ],
+    );
+  }
+
+  Widget _buildAvatar() {
+    return CircleAvatar(
+      backgroundColor: AppColors.white.withOpacity(.25),
+      radius: 28,
+      child: Icon(
+        Icons.person,
+        size: 34,
+        color: AppColors.primaryMain,
+      ),
+    );
+  }
+
+  Widget _buildNamesAndDate() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          studentModel.name ?? "",
+          style: AppTextStyles.customText(
+            fontSize: 18,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Text(
+          "صف الطالب:  ${studentModel.grade}",
+          style: AppTextStyles.customText(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.normal,
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    return Row(
+      spacing: 10,
+      children: [
+        _iconButton(Icons.message_outlined, () => _sendDialog(context)),
+        _iconButton(Icons.sticky_note_2, () => _showNoteDialog(context)),
+        if (!IsComingFromGroup)
+          _iconButton(Icons.delete_forever_outlined, () {
+            _deleteDialog(context);
+          }),
+      ],
+    );
+  }
+
+  Widget _buildInfoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _info("الاسم", studentModel.name ?? "N/A"),
+        _info("رقم الطالب", studentModel.phoneNumber ?? "N/A", isPhone: true),
+        _info("رقم الأم", studentModel.motherPhone ?? "N/A", isPhone: true),
+        _info("رقم الأب", studentModel.fatherPhone ?? "N/A", isPhone: true),
+        _info("المرحلة", studentModel.grade ?? "N/A"),
+      ],
+    );
+  }
+
+  Widget _info(String label, String value, {bool isPhone = false}) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4), // كان 6
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Text("${studentModel.dateofadd}"),
-                    Spacer(),
-                    _buildIconButton(
-                      imagePath: "assets/images/whatsapp.png",
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: app_colors.ligthGreen,
-                            title: const Text(
-                              'تحب تبعت الرسالة لمين؟',
-                              style: TextStyle(color: app_colors.darkGrey),
-                            ),
-                            content: SelectRecipientDialogContent(
-                              sendMessageToFather: () async =>
-                                  _sendMessageToParent('father'),
-                              sendMessageToMother: () async =>
-                                  _sendMessageToParent('mother'),
-                              sendMessageToStudent: () async =>
-                                  _sendMessageToParent('student'),
-                            ),
-                            actions: [
-                              Material(
-                                color: Colors.transparent,
-                                elevation: 10,
-                                shadowColor: Colors.black.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(10),
-                                child: TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: app_colors.green,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12, horizontal: 16),
-                                  ),
-                                  child: const Text('إلغاء'),
-                                ),
-                              )
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 20),
-                    ElTooltip(
-                      position: ElTooltipPosition.leftCenter,
-                      content:
-                          Text("${studentModel.note ?? "لا توجد ملاحظات"}"),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: Image.asset(
-                          "assets/images/comment.gif",
-                          width: 50,
-                          height: 50,
-                        ),
+                Text(
+                  "$label:",
+                  style: AppTextStyles.customText(
+                    fontSize: 15, // أصغر سنة
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: GestureDetector(
+                    onLongPress:
+                        isPhone ? () => launchUrlString("tel:$value") : null,
+                    child: Text(
+                      value,
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.customText(
+                        fontSize: 16,
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 10),
-                _buildInfoRow(
-                    context, false, "الاسم:", studentModel.name ?? 'N/A'),
-                _buildInfoRow(context, true, "رقم الطالب:",
-                    studentModel.phoneNumber ?? 'N/A'),
-                _buildInfoRow(context, true, "رقم الأم:",
-                    studentModel.motherPhone ?? 'N/A'),
-                _buildInfoRow(context, true, "رقم الأب:",
-                    studentModel.fatherPhone ?? 'N/A'),
-                _buildInfoRow(
-                    context, false, "المرحلة:", studentModel.grade ?? 'N/A'),
-                const SizedBox(height: 10),
-                _buildStudentDaysList(),
               ],
             ),
+          ),
+          Divider(
+            color: Colors.white.withOpacity(.20), // أخفّ و أنعم
+            thickness: .5,
+          ),
+        ],
+      );
+
+  Widget _iconButton(IconData icon, VoidCallback onPressed) => GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primaryMain.withOpacity(.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.primaryMain, size: 22),
+        ),
+      );
+
+  Widget _buildGroupsList() {
+    final days = studentModel.hisGroups ?? [];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: days.map((g) {
+        final time = (g.time != null)
+            ? "${g.time!.hour}:${g.time!.minute.toString().padLeft(2, '0')}"
+            : "—";
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.secondaryMain.withOpacity(.3),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.secondaryMain),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                g.days ?? "",
+                style: AppTextStyles.customText(
+                  fontSize: 14,
+                  color: AppColors.primaryMain,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                time,
+                style: AppTextStyles.customText(
+                  fontSize: 12,
+                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  void _showNoteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.white,
+        title: Text(
+          "ملاحظات",
+          style: AppTextStyles.customText(
+            fontSize: 16,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          studentModel.note ?? "لا توجد ملاحظات",
+          style: AppTextStyles.customText(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.normal,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(
-      BuildContext context, bool isnumber, String label, String value) {
-    void _launchPhoneNumber(String phoneNumber) async {
-      final String phoneUrl = 'tel:$phoneNumber';
-      if (await canLaunchUrlString(phoneUrl)) {
-        await launchUrlString(phoneUrl);
-      } else {
-        print('Could not launch $phoneNumber');
-      }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: app_colors.darkGrey,
-              fontSize: 18,
-            ),
+  void _deleteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(
+          "حذف الطالب",
+          style: AppTextStyles.customText(
+            fontSize: 16,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
           ),
-          const SizedBox(width: 20),
-          Flexible(
-            child: Theme(
-              data: Theme.of(context).copyWith(
-                textSelectionTheme: TextSelectionThemeData(
-                  selectionColor: app_colors.darkGrey.withOpacity(0.5),
-                  cursorColor: app_colors.darkGrey,
-                ),
-              ),
-              child: GestureDetector(
-                onLongPress: isnumber ? () => _launchPhoneNumber(value) : null,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Text(
-                    value,
-                    style: const TextStyle(
-                      color: app_colors.green,
-                      fontSize: 25,
-                    ),
-                  ),
-                ),
+        ),
+        content: Text(
+          "هل انت متأكد من حذف الطالب؟",
+          style: AppTextStyles.customText(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.normal,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "إلغاء",
+              style: AppTextStyles.customText(
+                fontSize: 14,
+                color: AppColors.primaryMain,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
+          TextButton(
+            onPressed: () {
+              FirebaseFunctions.deleteStudentFromHisCollection(
+                studentModel.grade ?? "",
+                studentModel.id,
+              );
+              Navigator.pop(context);
+            },
+            child: Text(
+              "حذف",
+              style: AppTextStyles.customText(
+                fontSize: 14,
+                color: AppColors.statusAbsent,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          )
         ],
       ),
     );
   }
 
-  void _sendMessageToParent(String parentRole) {
-    String genderSpecificMessage;
-
-    if (parentRole == 'father') {
-      genderSpecificMessage = """
-عزيزي والد ${studentModel.name} 
-
-أطيب التحيات،  
-${Constants.teacherName}
-      """;
-    } else if (parentRole == 'mother') {
-      genderSpecificMessage = """
-عزيزتي والدة ${studentModel.name}  
-
-أطيب التحيات،  
-${Constants.teacherName}
-""";
-    } else {
-      genderSpecificMessage = """
-عزيزي ${studentModel.name}،
-
-أطيب التحيات،  
-${Constants.teacherName}
-      """;
-    }
-
-    if (parentRole == 'father') {
-      _sendWhatsAppMessage(studentModel.fatherPhone!, genderSpecificMessage);
-    } else if (parentRole == 'mother') {
-      _sendWhatsAppMessage(studentModel.motherPhone!, genderSpecificMessage);
-    } else {
-      _sendWhatsAppMessage(studentModel.phoneNumber!, genderSpecificMessage);
-    }
-  }
-
-  Future<void> _sendWhatsAppMessage(String rawPhone, String message) async {
-    final cleanedPhone = rawPhone.replaceAll('+', '').replaceAll(' ', '');
-    final String formattedPhone = cleanedPhone.startsWith('0')
-        ? '20${cleanedPhone.substring(1)}'
-        : cleanedPhone;
-    final String encodedMessage = Uri.encodeComponent(message);
-
-    final String url = 'https://wa.me/$formattedPhone?text=$encodedMessage';
-
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } else {
-      print("WhatsApp is not installed or cannot be opened.");
-    }
-  }
-
-  Widget _buildStudentDaysList() {
-    List<Map<String, dynamic>> daysWithTimes =
-        studentModel.hisGroups?.map((group) {
-              return {
-                'day': group.days,
-                'time': group.time != null
-                    ? {'hour': group.time?.hour, 'minute': group.time?.minute}
-                    : null,
-              };
-            }).toList() ??
-            [];
-
-    daysWithTimes.removeWhere((entry) => entry['day'] == null);
-
-    return Row(
-      children: [
-        const Text(
-          "أيام الطالب:",
-          style: TextStyle(
-            color: app_colors.darkGrey,
-            fontSize: 18,
-          ),
+  void _openEditPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => StudentEditCubit(student: studentModel),
+          child: EditStudentScreen(grade: grade, student: studentModel),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: daysWithTimes.map((entry) {
-                String day = entry['day'] ?? '';
-                TimeOfDay? time = entry['time'] != null
-                    ? TimeOfDay(
-                        hour: entry['time']['hour'],
-                        minute: entry['time']['minute'])
-                    : null;
-
-                String timeString =
-                    time != null ? _formatTime12Hour(time) : 'لا يوجد وقت';
-
-                return Row(
-                  children: [
-                    Chip(
-                      label: Column(
-                        children: [
-                          Text(
-                            day,
-                            style: const TextStyle(
-                              color: app_colors.green,
-                            ),
-                          ),
-                          Text(
-                            timeString,
-                            style: const TextStyle(
-                              color: app_colors.green,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                      backgroundColor: app_colors.darkGrey,
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildIconButton({
-    required String imagePath,
-    required VoidCallback onPressed,
-  }) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: onPressed,
-          child: Image.asset(
-            imagePath,
-            width: 30,
-            height: 30,
+  void _sendDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(
+          "إرسال رسالة",
+          style: AppTextStyles.customText(
+            fontSize: 16,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
           ),
         ),
-      ],
+        content: SelectRecipientDialogContent(
+          sendMessageToFather: () async => _sendWA(
+              studentModel.fatherPhone ?? "",
+              "عزيزي والد ${studentModel.name}"),
+          sendMessageToMother: () async => _sendWA(
+              studentModel.motherPhone ?? "",
+              "عزيزتي والدة ${studentModel.name}"),
+          sendMessageToStudent: () async => _sendWA(
+              studentModel.phoneNumber ?? "", "عزيزي ${studentModel.name}"),
+        ),
+      ),
     );
   }
 
-  String _formatTime12Hour(TimeOfDay time) {
-    final int hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
-    final String period = time.period == DayPeriod.am ? 'صباحًا' : 'مساءً';
-    final String minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute $period';
+  void _sendWA(String phone, String msg) {
+    final cleaned = phone.replaceAll('+', '').replaceAll(' ', '');
+    final formatted =
+        cleaned.startsWith('0') ? '20${cleaned.substring(1)}' : cleaned;
+    final encoded = Uri.encodeComponent(msg);
+    launchUrlString("https://wa.me/$formatted?text=$encoded");
   }
 }

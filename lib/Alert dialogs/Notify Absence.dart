@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../colors_app.dart';
 import '../loadingFile/loading_alert/run_with_loading.dart'; // make sure this is where runWithLoading is
+import '../theme/colors_app.dart';
 
 class SelectRecipientDialogContent extends StatelessWidget {
   final Future<void> Function() sendMessageToFather;
@@ -22,7 +22,7 @@ class SelectRecipientDialogContent extends StatelessWidget {
       children: [
         ListTile(
           title: Text('ولي الأمر (الأب)',
-              style: TextStyle(color: app_colors.green)),
+              style: TextStyle(color: AppColors.secondaryMain)),
           onTap: () async {
             Navigator.of(context).pop();
             runWithLoading(context, () async {
@@ -32,7 +32,7 @@ class SelectRecipientDialogContent extends StatelessWidget {
         ),
         ListTile(
           title: Text('ولي الأمر (الأم)',
-              style: TextStyle(color: app_colors.green)),
+              style: TextStyle(color: AppColors.secondaryMain)),
           onTap: () async {
             Navigator.of(context).pop();
             runWithLoading(context, () async {
@@ -41,7 +41,8 @@ class SelectRecipientDialogContent extends StatelessWidget {
           },
         ),
         ListTile(
-          title: Text('الطالب', style: TextStyle(color: app_colors.green)),
+          title:
+              Text('الطالب', style: TextStyle(color: AppColors.secondaryMain)),
           onTap: () async {
             Navigator.of(context).pop();
             runWithLoading(context, () async {

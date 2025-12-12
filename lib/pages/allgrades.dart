@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../Alert dialogs/delete_grade.dart';
 import '../Alert dialogs/rename_grade.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/grade_subscriptions_model.dart';
+import '../theme/colors_app.dart';
 import 'exams_for_grade.dart';
 import 'subscriptions_for_grade.dart';
 
@@ -25,7 +25,8 @@ class _AllgradesState extends State<Allgrades> {
             onPressed: () {
               showAddGradeDialog(context);
             },
-            icon: const Icon(Icons.add, size: 40, color: app_colors.green),
+            icon:
+                const Icon(Icons.add, size: 40, color: AppColors.secondaryMain),
           )
         ],
         centerTitle: true,
@@ -34,9 +35,10 @@ class _AllgradesState extends State<Allgrades> {
             Navigator.pushNamedAndRemoveUntil(
                 context, '/HomeScreen', (route) => false);
           },
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon:
+              const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset(
           "assets/images/logo.png",
           height: 100,
@@ -76,7 +78,7 @@ class _AllgradesState extends State<Allgrades> {
                           child: ListTile(
                             contentPadding: const EdgeInsets.all(16),
                             leading: const Icon(Icons.school,
-                                color: app_colors.green),
+                                color: AppColors.secondaryMain),
                             title: Text(
                             secondaries[index],
                               maxLines: 2,
@@ -92,7 +94,7 @@ class _AllgradesState extends State<Allgrades> {
                             children: [
                               IconButton(
                                   icon: const Icon(Icons.edit,
-                                      color: app_colors.green),
+                                      color: AppColors.secondaryMain),
                                   onPressed: () {
                                     renameGrade(
                                         context: context,
@@ -101,7 +103,7 @@ class _AllgradesState extends State<Allgrades> {
                               ),
                               IconButton(
                                   icon: const Icon(Icons.assignment,
-                                      color: app_colors.green),
+                                      color: AppColors.secondaryMain),
                                   onPressed: () {
                                   Navigator.push(
                                     context,
@@ -115,7 +117,7 @@ class _AllgradesState extends State<Allgrades> {
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.monetization_on,
-                                      color: app_colors.green),
+                                      color: AppColors.secondaryMain),
                                   onPressed: () {
                                   Navigator.push(
                                     context,

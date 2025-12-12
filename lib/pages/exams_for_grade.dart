@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:student_management_system/Alert%20dialogs/add_edit_exam.dart';
 
 import '../cards/exam_card.dart'; // Import your ExamCard
-import '../colors_app.dart';
 import '../firebase/exams_functions.dart';
 import '../models/exam_model.dart';
+import '../theme/colors_app.dart';
 
 class ExamsForGrade extends StatelessWidget {
   final String gradeName;
@@ -20,15 +20,16 @@ class ExamsForGrade extends StatelessWidget {
             onPressed: () {
               showAddEditExamDialog(gradeName: gradeName, context: context);
             },
-            icon: const Icon(Icons.add, size: 40, color: app_colors.green),
+            icon:
+                const Icon(Icons.add, size: 40, color: AppColors.secondaryMain),
           )
         ],
         centerTitle: true,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),
@@ -43,7 +44,7 @@ class ExamsForGrade extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: app_colors.green,
+                color: AppColors.secondaryMain,
               ),
             ),
           ),

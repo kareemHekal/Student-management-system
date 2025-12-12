@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../colors_app.dart';
 import '../models/absence_model.dart';
+import '../theme/colors_app.dart';
 
 class AbsenceCard extends StatelessWidget {
   final AbsenceModel absence;
@@ -20,13 +20,13 @@ class AbsenceCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
-          colors: [app_colors.ligthGreen, app_colors.ligthGreen],
+          colors: [AppColors.secondaryMain, AppColors.secondaryMain],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: app_colors.green.withOpacity(0.4),
+            color: AppColors.secondaryMain.withOpacity(0.4),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -45,15 +45,17 @@ class AbsenceCard extends StatelessWidget {
                   height: 60,
                   child: CircularProgressIndicator(
                     value: attendanceRatio,
-                    backgroundColor: app_colors.green.withOpacity(0.3),
-                    valueColor: AlwaysStoppedAnimation<Color>(app_colors.green),
+                    backgroundColor: AppColors.secondaryMain.withOpacity(0.3),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.secondaryMain),
                     strokeWidth: 6,
                   ),
                 ),
                 Text(
                   '${(attendanceRatio * 100).toInt()}%',
                   style: TextStyle(
-                      fontWeight: FontWeight.bold, color: app_colors.darkGrey),
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryMain),
                 ),
               ],
             ),
@@ -69,21 +71,21 @@ class AbsenceCard extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: app_colors.green),
+                        color: AppColors.secondaryMain),
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Text(
                         'أيام الحضور: $attended',
-                        style:
-                            TextStyle(fontSize: 14, color: app_colors.darkGrey),
+                        style: TextStyle(
+                            fontSize: 14, color: AppColors.primaryMain),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'أيام الغياب: $absent',
-                        style:
-                            TextStyle(fontSize: 14, color: app_colors.darkGrey),
+                        style: TextStyle(
+                            fontSize: 14, color: AppColors.primaryMain),
                       ),
                     ],
                   ),
@@ -95,7 +97,7 @@ class AbsenceCard extends StatelessWidget {
             Icon(
               Icons.calendar_month,
               size: 36,
-              color: app_colors.green,
+              color: AppColors.secondaryMain,
             ),
           ],
         ),

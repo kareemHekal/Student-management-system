@@ -4,12 +4,12 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../home.dart';
 import '../models/Studentmodel.dart';
 import '../models/student_paid_subscription.dart';
 import '../models/subscription_fee.dart';
+import '../theme/colors_app.dart';
 
 class PaymentCheckPage extends StatefulWidget {
   const PaymentCheckPage({super.key});
@@ -212,9 +212,10 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
               (route) => false,
             );
           },
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon:
+              const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset(
           "assets/images/logo.png",
           height: 100,
@@ -258,7 +259,7 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
               child: ElevatedButton(
                 onPressed: checkPayments,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: app_colors.green,
+                  backgroundColor: AppColors.secondaryMain,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -341,7 +342,7 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: app_colors.darkGrey, width: 2),
+            border: Border.all(color: AppColors.primaryMain, width: 2),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -353,12 +354,12 @@ class _PaymentCheckPageState extends State<PaymentCheckPage> {
                 return DropdownMenuItem(
                   value: item,
                   child: Text(item,
-                      style: const TextStyle(color: app_colors.darkGrey)),
+                      style: const TextStyle(color: AppColors.primaryMain)),
                 );
               }).toList(),
               onChanged: (value) => onChanged(value!),
-              icon:
-                  const Icon(Icons.arrow_drop_down, color: app_colors.darkGrey),
+              icon: const Icon(Icons.arrow_drop_down,
+                  color: AppColors.primaryMain),
             ),
           ),
         ),

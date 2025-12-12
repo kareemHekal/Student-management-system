@@ -3,8 +3,8 @@ import 'package:printing/printing.dart';
 import 'package:student_management_system/models/day_record.dart';
 
 import '../cards/absence_card.dart';
-import '../colors_app.dart';
 import '../models/absence_model.dart';
+import '../theme/colors_app.dart';
 import 'pdf_genrators/absent_generator.dart';
 
 class AbsencesListPage extends StatelessWidget {
@@ -50,14 +50,14 @@ class AbsencesListPage extends StatelessWidget {
               },
               icon: Icon(
                 Icons.print,
-                color: app_colors.white,
+                color: AppColors.white,
               ))
         ],
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),

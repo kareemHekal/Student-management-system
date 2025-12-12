@@ -2,9 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../cards/Big invoice card.dart';
-import '../colors_app.dart';
 import '../home.dart';
 import '../models/Big invoice.dart';
+import '../theme/colors_app.dart';
 
 class Invoicespage extends StatefulWidget {
   const Invoicespage({super.key});
@@ -58,9 +58,10 @@ class _InvoicespageState extends State<Invoicespage> {
               (route) => false,
             );
           },
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon:
+              const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset(
           "assets/images/logo.png",
           height: 100,

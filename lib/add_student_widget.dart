@@ -9,11 +9,11 @@ import 'bloc/AddStudent/add_student_cubit.dart';
 import 'bloc/AddStudent/add_student_state.dart';
 import 'cards/groupSmallCard.dart';
 import 'cards/student_subscriptions_card.dart';
-import 'colors_app.dart';
 import 'firebase/firebase_functions.dart';
 import 'models/grade_subscriptions_model.dart';
 import 'models/student_paid_subscription.dart';
 import 'pages/Pick Groups Page.dart';
+import 'theme/colors_app.dart';
 
 class AddStudentScreen extends StatefulWidget {
   String? level;
@@ -81,7 +81,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
               padding: const EdgeInsets.only(left: 10, right: 10, top: 17),
               child: Container(
                 decoration: BoxDecoration(
-                  color: app_colors.white.withOpacity(0.3),
+                  color: AppColors.white.withOpacity(0.3),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(25),
                     topRight: Radius.circular(25),
@@ -108,7 +108,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                                   "أضف طلابك",
                                   style: GoogleFonts.oswald(
                                     fontSize: 30,
-                                    color: app_colors.darkGrey,
+                                    color: AppColors.primaryMain,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -117,7 +117,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                             ],
                           ),
                           const Divider(
-                            color: app_colors.green,
+                            color: AppColors.secondaryMain,
                             thickness: 4,
                           ),
                           SizedBox(
@@ -134,17 +134,17 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                             ),
                           ),
                           const Divider(
-                            color: app_colors.green,
+                            color: AppColors.secondaryMain,
                             thickness: 4,
                           ),
                           TextFormFields(context),
                           const Divider(
-                            color: app_colors.green,
+                            color: AppColors.secondaryMain,
                             thickness: 4,
                           ),
                           MaleOrFemalePart(context),
                           const Divider(
-                            color: app_colors.green,
+                            color: AppColors.secondaryMain,
                             thickness: 4,
                           ),
                           paymentsPart(context),
@@ -152,7 +152,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                             height: 10,
                           ),
                           const Divider(
-                            color: app_colors.green,
+                            color: AppColors.secondaryMain,
                             thickness: 4,
                           ),
                           const SizedBox(
@@ -167,8 +167,8 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                               Expanded(
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    foregroundColor: app_colors.green,
-                                    backgroundColor: app_colors.darkGrey,
+                                    foregroundColor: AppColors.secondaryMain,
+                                    backgroundColor: AppColors.primaryMain,
                                   ),
                                   onPressed: () async {
                                     await cubit.addStudent(
@@ -204,7 +204,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
               ? const Center(
                   child: Text(
                     "لم تختَر أي مجموعة بعد",
-                    style: TextStyle(color: app_colors.green),
+                    style: TextStyle(color: AppColors.secondaryMain),
                   ),
                 )
               : ListView.builder(
@@ -238,9 +238,9 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         const SizedBox(height: 10),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            side: const BorderSide(color: app_colors.green, width: 1),
-            foregroundColor: app_colors.green,
-            backgroundColor: app_colors.darkGrey,
+            side: const BorderSide(color: AppColors.secondaryMain, width: 1),
+            foregroundColor: AppColors.secondaryMain,
+            backgroundColor: AppColors.primaryMain,
           ),
           onPressed: () {
             Navigator.push(
@@ -271,11 +271,11 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         margin: const EdgeInsets.symmetric(vertical: 8.0),
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         decoration: BoxDecoration(
-          border: Border.all(color: app_colors.darkGrey, width: 1),
+          border: Border.all(color: AppColors.primaryMain, width: 1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: DropdownButton<bool>(
-          dropdownColor: app_colors.darkGrey,
+          dropdownColor: AppColors.primaryMain,
           value: selectedValue,
           isExpanded: true,
           items: const [
@@ -311,7 +311,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
       padding: const EdgeInsets.all(8),
       child: Container(
         decoration: BoxDecoration(
-          color: app_colors.green,
+          color: AppColors.secondaryMain,
           borderRadius: BorderRadius.circular(25),
         ),
         width: 5,
@@ -326,16 +326,19 @@ class _AddStudentTabState extends State<AddStudentScreen> {
     InputDecoration getInputDecoration(String label) {
       return InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
+        labelStyle:
+            const TextStyle(fontSize: 25, color: AppColors.secondaryMain),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderSide:
+              const BorderSide(color: AppColors.primaryMain, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderSide:
+              const BorderSide(color: AppColors.primaryMain, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
       );
@@ -395,36 +398,38 @@ class _AddStudentTabState extends State<AddStudentScreen> {
       children: [
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: app_colors.darkGrey, width: 1),
+            border: Border.all(color: AppColors.primaryMain, width: 1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: DropdownButton<String>(
-            dropdownColor: app_colors.darkGrey,
+            dropdownColor: AppColors.primaryMain,
             value: cubit.selectedGender ?? "ذكر",
             isExpanded: true,
             items: const [
               DropdownMenuItem(
                 value: "ذكر",
-                child: Text("ذكر", style: TextStyle(color: app_colors.green)),
+                child: Text("ذكر",
+                    style: TextStyle(color: AppColors.secondaryMain)),
               ),
               DropdownMenuItem(
                 value: "أنثى",
-                child: Text("أنثى", style: TextStyle(color: app_colors.green)),
+                child: Text("أنثى",
+                    style: TextStyle(color: AppColors.secondaryMain)),
               ),
             ],
             onChanged: (value) {
               cubit.changeValueOfGenderDropDown(value);
             },
             elevation: 8,
-            style: const TextStyle(color: app_colors.green),
+            style: const TextStyle(color: AppColors.secondaryMain),
             icon: const Icon(Icons.arrow_forward_ios_outlined,
-                color: app_colors.green),
+                color: AppColors.secondaryMain),
             iconSize: 24,
             hint: Padding(
               padding: const EdgeInsets.only(left: 10),
               child: Text(
                 cubit.selectedGender ?? "اختر الجنس",
-                style: const TextStyle(color: app_colors.green),
+                style: const TextStyle(color: AppColors.secondaryMain),
               ),
             ),
           ),
@@ -436,13 +441,13 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                 spacing: 8,
                 children: [
                   Chip(
-                    backgroundColor: app_colors.darkGrey,
+                    backgroundColor: AppColors.primaryMain,
                     label: Text(cubit.selectedGender!,
-                        style: const TextStyle(color: app_colors.green)),
+                        style: const TextStyle(color: AppColors.secondaryMain)),
                     deleteIcon: const Icon(Icons.cancel,
-                        size: 20, color: app_colors.green),
+                        size: 20, color: AppColors.secondaryMain),
                     shape: const StadiumBorder(
-                        side: BorderSide(color: app_colors.green)),
+                        side: BorderSide(color: AppColors.secondaryMain)),
                     onDeleted: () {
                       cubit.setTheSelectedGenderByNull();
                     },
@@ -451,7 +456,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
               )
             : const Center(
                 child: Text("اختر الجنس",
-                    style: TextStyle(color: app_colors.green)),
+                    style: TextStyle(color: AppColors.secondaryMain)),
               ),
       ],
     );
@@ -489,7 +494,7 @@ class _AddStudentTabState extends State<AddStudentScreen> {
                 'الاشتراكات (${subscriptions.length})',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: app_colors.green,
+                  color: AppColors.secondaryMain,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -547,16 +552,19 @@ class _AddStudentTabState extends State<AddStudentScreen> {
       },
       decoration: InputDecoration(
         labelText: "أضف ملاحظة",
-        labelStyle: const TextStyle(fontSize: 25, color: app_colors.green),
+        labelStyle:
+            const TextStyle(fontSize: 25, color: AppColors.secondaryMain),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderSide:
+              const BorderSide(color: AppColors.primaryMain, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: app_colors.darkGrey, width: 2.0),
+          borderSide:
+              const BorderSide(color: AppColors.primaryMain, width: 2.0),
           borderRadius: BorderRadius.circular(20.0),
         ),
         hintText: 'اكتب ملاحظتك هنا...',

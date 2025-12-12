@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../colors_app.dart'; // For your custom green theme
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loading_alert/run_with_loading.dart';
 import '../models/subscription_fee.dart';
+import '../theme/colors_app.dart'; // For your custom green theme
 import 'verifiy_password.dart';
 
 Future<void> showAddOrEditSubscriptionDialog(
@@ -21,9 +21,12 @@ Future<void> showAddOrEditSubscriptionDialog(
   final formKey = GlobalKey<FormState>();
 
   // 🎨 Define color scheme
-  final Color mainColor = isEdit ? Colors.blue.shade50 : app_colors.ligthGreen;
-  final Color textColor = isEdit ? Colors.blue.shade900 : app_colors.green;
-  final Color accentColor = isEdit ? Colors.blue.shade400 : app_colors.green;
+  final Color mainColor =
+      isEdit ? Colors.blue.shade50 : AppColors.secondaryMain;
+  final Color textColor =
+      isEdit ? Colors.blue.shade900 : AppColors.secondaryMain;
+  final Color accentColor =
+      isEdit ? Colors.blue.shade400 : AppColors.secondaryMain;
 
   await showDialog(
     context: context,

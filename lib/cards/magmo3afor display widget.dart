@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../colors_app.dart';
 import '../models/Magmo3aModel.dart';
+import '../theme/colors_app.dart';
 
 class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
   final Magmo3amodel? magmo3aModel;
@@ -17,7 +17,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),
-        color: app_colors.ligthGreen,
+        color: AppColors.secondaryMain,
         child: Container(
           height: 150,
           padding: const EdgeInsets.all(10),
@@ -46,7 +46,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
       padding: const EdgeInsets.only(left: 8),
       child: Container(
         decoration: BoxDecoration(
-          color: app_colors.green,
+          color: AppColors.secondaryMain,
           borderRadius: BorderRadius.circular(25),
         ),
         width: 5,
@@ -65,9 +65,9 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
             padding: const EdgeInsets.all(5.0),
             child: Container(
               decoration: BoxDecoration(
-                color: app_colors.darkGrey,
+                color: AppColors.primaryMain,
                 border: Border.all(
-                  color: app_colors.green,
+                  color: AppColors.secondaryMain,
                   width: 2,
                 ),
                 borderRadius: BorderRadius.circular(15),
@@ -77,7 +77,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
                 magmo3aModel?.days ?? "",
                 style: const TextStyle(
                   fontSize: 30,
-                  color: app_colors.green,
+                  color: AppColors.secondaryMain,
                 ),
               ),
             ),
@@ -103,14 +103,14 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
                       text: "الصف: ",
                       style: TextStyle(
                         fontSize: 17,
-                        color: app_colors.darkGrey,
+                        color: AppColors.primaryMain,
                       ),
                     ),
                     TextSpan(
                       text: magmo3aModel?.grade ?? '',
                       style: const TextStyle(
                         fontSize: 20,
-                        color: app_colors.green,
+                        color: AppColors.secondaryMain,
                       ),
                     ),
                   ],
@@ -124,7 +124,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
                       text: "الوقت: ",
                       style: TextStyle(
                         fontSize: 17,
-                        color: app_colors.darkGrey,
+                        color: AppColors.primaryMain,
                       ),
                     ),
                     TextSpan(
@@ -133,7 +133,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
                           : '',
                       style: const TextStyle(
                         fontSize: 20,
-                        color: app_colors.green,
+                        color: AppColors.secondaryMain,
                       ),
                     ),
                   ],

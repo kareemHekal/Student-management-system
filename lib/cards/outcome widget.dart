@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../Alert dialogs/verifiy_password.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/payment.dart';
+import '../theme/colors_app.dart';
 
 class PaymentWidget extends StatefulWidget {
   final Payment payment;
@@ -26,14 +26,14 @@ class _PaymentWidgetState extends State<PaymentWidget> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        color: app_colors.ligthGreen,
+        color: AppColors.secondaryMain,
         child: Container(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(context),
-              const Divider(color: app_colors.darkGrey, thickness: 1),
+              const Divider(color: AppColors.primaryMain, thickness: 1),
               const SizedBox(height: 8),
               _buildInfoRow(context, "المبلغ:",
                   "\$${widget.payment.amount.toStringAsFixed(2)}"),
@@ -62,7 +62,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
         const Text(
           "تفاصيل المصروف",
           style: TextStyle(
-            color: app_colors.darkGrey,
+            color: AppColors.primaryMain,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -70,7 +70,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
         IconButton(
           icon: const Icon(
             Icons.edit,
-            color: app_colors.green,
+            color: AppColors.secondaryMain,
             size: 30,
           ),
           onPressed: () {
@@ -90,7 +90,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
           Text(
             label,
             style: const TextStyle(
-              color: app_colors.darkGrey,
+              color: AppColors.primaryMain,
               fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
@@ -101,7 +101,7 @@ class _PaymentWidgetState extends State<PaymentWidget> {
               child: Text(
                 value,
                 style: const TextStyle(
-                  color: app_colors.darkGrey,
+                  color: AppColors.primaryMain,
                   fontSize: 16,
                 ),
               ),

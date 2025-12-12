@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../Alert dialogs/delete_student_exam_grade.dart';
 import '../Alert dialogs/edit_student_exam_grade.dart';
-import '../colors_app.dart';
 import '../firebase/exams_functions.dart';
 import '../models/exam_model.dart';
 import '../models/mini_exam.dart';
 import '../models/student_exam_grade.dart';
+import '../theme/colors_app.dart';
 
 class StudentExamCard extends StatefulWidget {
   final String gradeName;
@@ -192,9 +192,10 @@ class _StudentExamCardState extends State<StudentExamCard> {
                       height: 50,
                       child: CircularProgressIndicator(
                         value: ratio,
-                        backgroundColor: app_colors.green.withOpacity(0.3),
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(app_colors.green),
+                        backgroundColor:
+                            AppColors.secondaryMain.withOpacity(0.3),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.secondaryMain),
                         strokeWidth: 8, // ⬅️ thicker ring
                       ),
                     ),
@@ -203,7 +204,7 @@ class _StudentExamCardState extends State<StudentExamCard> {
                       style: TextStyle(
                         fontSize: 16, // ⬅️ larger text
                         fontWeight: FontWeight.bold,
-                        color: app_colors.darkGrey,
+                        color: AppColors.primaryMain,
                       ),
                     ),
                   ],

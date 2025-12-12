@@ -6,10 +6,10 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../cards/StudentWidget.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import 'cards/smallStudentCard.dart';
 import 'models/Studentmodel.dart';
+import 'theme/colors_app.dart';
 
 class StudentStreamBuilder extends StatefulWidget {
   final String grade;
@@ -24,7 +24,6 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
   final _searchController = TextEditingController();
   List<Studentmodel> _filteredStudents = [];
   int numberofstudents = 0;
-  bool islarge = true;
 
   @override
   void initState() {
@@ -68,7 +67,7 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                       height: 140,
                       width: double.infinity,
                       decoration: const BoxDecoration(
-                        color: app_colors.darkGrey,
+                        color: AppColors.primaryMain,
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(25),
                           bottomRight: Radius.circular(25),
@@ -100,25 +99,6 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                LiteRollingSwitch(
-                                  width: 110,
-                                  value: true,
-                                  textOn: 'كبير',
-                                  textOff: 'صغير',
-                                  colorOn: app_colors.ligthGreen,
-                                  colorOff: app_colors.green,
-                                  iconOn: Icons.done,
-                                  iconOff: Icons.remove_circle_outline,
-                                  textSize: 16.0,
-                                  onSwipe: () {},
-                                  onChanged: (value) {
-                                    setState(() {
-                                      islarge = value;
-                                    });
-                                  },
-                                  onTap: () {},
-                                  onDoubleTap: () {},
-                                ),
                               ],
                             ),
                           ),
@@ -126,34 +106,37 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                             padding: const EdgeInsets.symmetric(
                                 vertical: 10, horizontal: 10),
                             child: TextFormField(
-                              style: const TextStyle(color: app_colors.darkGrey),
+                              style:
+                                  const TextStyle(color: AppColors.primaryMain),
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Colors.white,
                                 hintText: 'ابحث عن الطالب',
-                                hintStyle:
-                                    const TextStyle(color: app_colors.darkGrey),
+                                hintStyle: const TextStyle(
+                                    color: AppColors.primaryMain),
                                 contentPadding: const EdgeInsets.symmetric(
                                     vertical: 15.0, horizontal: 20.0),
                                 enabledBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                      color: app_colors.green, width: 2.0),
+                                      color: AppColors.secondaryMain,
+                                      width: 2.0),
                                   borderRadius: BorderRadius.circular(20.0),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderSide: const BorderSide(
-                                      color: app_colors.green, width: 2.0),
+                                      color: AppColors.secondaryMain,
+                                      width: 2.0),
                                   borderRadius: BorderRadius.circular(20.0),
                                 ),
                                 suffixIcon: IconButton(
                                   icon: const Icon(Icons.clear,
-                                      color: app_colors.green),
+                                      color: AppColors.secondaryMain),
                                   onPressed: () {
                                     _searchController.clear();
                                   },
                                 ),
                               ),
-                              cursorColor: app_colors.darkGrey,
+                              cursorColor: AppColors.primaryMain,
                               controller: _searchController,
                             ),
                           ),
@@ -213,16 +196,11 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                             itemCount: _filteredStudents.length,
                             itemBuilder: (context, index) {
                               final student = _filteredStudents[index];
-                              return islarge
-                                  ? StudentWidget(
-                                      studentModel: student,
-                                      grade: widget.grade,
-                                      IsComingFromGroup: false,
-                                    )
-                                  : SmallStudentCard(
-                                      studentModel: student,
-                                      grade: widget.grade,
-                                    );
+                              return StudentWidget(
+                                studentModel: student,
+                                grade: widget.grade,
+                                IsComingFromGroup: false,
+                              );
                             },
                           );
                         },
