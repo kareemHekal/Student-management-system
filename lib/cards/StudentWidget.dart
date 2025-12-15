@@ -68,8 +68,7 @@ class StudentWidget extends StatelessWidget {
       children: [
         _buildAvatar(),
         const SizedBox(width: 12),
-        _buildNamesAndDate(),
-        const Spacer(),
+        Expanded(child: _buildNamesAndDate()),
         _buildActionButtons(context),
       ],
     );
@@ -92,6 +91,8 @@ class StudentWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
           studentModel.name ?? "",
           style: AppTextStyles.customText(
             fontSize: 18,
@@ -131,8 +132,10 @@ class StudentWidget extends StatelessWidget {
       children: [
         _info("الاسم", studentModel.name ?? "N/A"),
         _info("رقم الطالب", studentModel.phoneNumber ?? "N/A", isPhone: true),
-        _info("رقم الأم", studentModel.motherPhone ?? "N/A", isPhone: true),
-        _info("رقم الأب", studentModel.fatherPhone ?? "N/A", isPhone: true),
+        _info("رقم ولي الأمر", studentModel.fatherPhone ?? "N/A",
+            isPhone: true),
+        _info("رقم ولي الأمر 2", studentModel.motherPhone ?? "N/A",
+            isPhone: true),
         _info("المرحلة", studentModel.grade ?? "N/A"),
       ],
     );
@@ -172,7 +175,7 @@ class StudentWidget extends StatelessWidget {
             ),
           ),
           Divider(
-            color: Colors.white.withOpacity(.20), // أخفّ و أنعم
+            color: Colors.white.withOpacity(.20),
             thickness: .5,
           ),
         ],

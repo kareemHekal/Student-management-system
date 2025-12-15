@@ -128,7 +128,7 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                   child: ListView.builder(
                     itemCount: filteredIncomeInvoices.length,
                     itemBuilder: (context, filteredIndex) {
-                      return InvoiceWidget(
+                      return InComeWidget(
                         invoice: filteredIncomeInvoices[filteredIndex],
                       );
                     },
@@ -152,64 +152,64 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                     itemCount: widget.invoice.payments.length,
                     itemBuilder: (context, index) {
                       return GestureDetector(
-                        onLongPress: () async {
-                          final parentContext =
-                              context; // context of the surrounding widget
-
-                          showDialog(
-                            context: parentContext,
-                            builder: (BuildContext dialogContext) {
-                              return DeleteOutcomeBillDialog(
-                                title: 'حذف فاتورة المصروفات',
-                                content:
-                                    'هل أنت متأكد أنك تريد حذف هذه الفاتورة؟',
-                                onConfirm: () async {
-                                  // Close the confirmation dialog first
-                                  Navigator.of(dialogContext).pop();
-
-                                  // Show password verification
-                                  await showVerifyPasswordDialog(
-                                    context: parentContext,
-                                    onVerified: () async {
-                                      try {
-                                        widget.invoice.payments.remove(
-                                            widget.invoice.payments[index]);
-                                        await FirebaseFunctions
-                                            .updateBigInvoice(
-                                          widget.invoice.date,
-                                          widget.invoice,
-                                        );
-
-                                        // Update UI
-                                        if (mounted) setState(() {});
-
-                                        // Show SnackBar
-                                        ScaffoldMessenger.of(parentContext)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content:
-                                                Text('تم حذف الفاتورة بنجاح'),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(parentContext)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                                'حدث خطأ أثناء حذف الفاتورة: $e'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  );
-                                },
-                              );
-                            },
-                          );
-                        },
                         child: PaymentWidget(
+                          onDeletePressed: () async {
+                            final parentContext =
+                                context; // context of the surrounding widget
+
+                            showDialog(
+                              context: parentContext,
+                              builder: (BuildContext dialogContext) {
+                                return DeleteOutcomeBillDialog(
+                                  title: 'حذف فاتورة المصروفات',
+                                  content:
+                                      'هل أنت متأكد أنك تريد حذف هذه الفاتورة؟',
+                                  onConfirm: () async {
+                                    // Close the confirmation dialog first
+                                    Navigator.of(dialogContext).pop();
+
+                                    // Show password verification
+                                    await showVerifyPasswordDialog(
+                                      context: parentContext,
+                                      onVerified: () async {
+                                        try {
+                                          widget.invoice.payments.remove(
+                                              widget.invoice.payments[index]);
+                                          await FirebaseFunctions
+                                              .updateBigInvoice(
+                                            widget.invoice.date,
+                                            widget.invoice,
+                                          );
+
+                                          // Update UI
+                                          if (mounted) setState(() {});
+
+                                          // Show SnackBar
+                                          ScaffoldMessenger.of(parentContext)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content:
+                                                  Text('تم حذف الفاتورة بنجاح'),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(parentContext)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                  'حدث خطأ أثناء حذف الفاتورة: $e'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          },
                           paymentIndex: index,
                           payment: widget.invoice.payments[index],
                         ),

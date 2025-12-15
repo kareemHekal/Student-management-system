@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../Alert dialogs/delete_grade.dart';
 import '../Alert dialogs/rename_grade.dart';
+import '../cards/grade_card.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/grade_subscriptions_model.dart';
 import '../theme/colors_app.dart';
@@ -64,75 +65,38 @@ class _AllgradesState extends State<Allgrades> {
               : ListView.builder(
                   itemCount: secondaries.length,
                   itemBuilder: (context, index) {
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 20),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      elevation: 5,
-                      child: GestureDetector(
-                        onLongPress: () {
-                          DeleteGradeDialog(context, secondaries[index]);
-                        },
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            leading: const Icon(Icons.school,
-                                color: AppColors.secondaryMain),
-                            title: Text(
-                            secondaries[index],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              softWrap: true,
-                              style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                    return GradeActionCard(
+                      onDelete: () {
+                        DeleteGradeDialog(context, secondaries[index]);
+                      },
+                      gradeName: secondaries[index],
+                      onRename: () {
+                        // Original rename logic
+                        renameGrade(
+                            context: context, oldGrade: secondaries[index]);
+                      },
+                      onNavigateToExams: () {
+                        // Original navigate to exams logic
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ExamsForGrade(
+                              gradeName: secondaries[index],
                             ),
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                  icon: const Icon(Icons.edit,
-                                      color: AppColors.secondaryMain),
-                                  onPressed: () {
-                                    renameGrade(
-                                        context: context,
-                                        oldGrade: secondaries[index]);
-                                  },
-                              ),
-                              IconButton(
-                                  icon: const Icon(Icons.assignment,
-                                      color: AppColors.secondaryMain),
-                                  onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ExamsForGrade(
-                                        gradeName: secondaries[index],
-                                      ),
-                                    ),
-                                  );
-                                },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.monetization_on,
-                                      color: AppColors.secondaryMain),
-                                  onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            SubscriptionsForGrade(
-                                          gradeName: secondaries[index],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
+                        );
+                      },
+                      onNavigateToSubscriptions: () {
+                        // Original navigate to subscriptions logic
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SubscriptionsForGrade(
+                              gradeName: secondaries[index],
+                            ),
                           ),
-                          )),
+                        );
+                      },
                     );
                   },
                 );

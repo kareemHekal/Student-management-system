@@ -69,45 +69,47 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
                 height: 100,
                 width: 90,
               ),
-              toolbarHeight: 120,
+              toolbarHeight: 80,
             ),
             body: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : Center(
-              child: thereIsGrades
-                  ? Column(
-                children: [
-                  Container(
+                    child: thereIsGrades
+                        ? Column(
+                            children: [
+                              Container(
                                 color: AppColors.primaryMain,
                                 child: TabBar(
-                                  labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-                      dividerColor: Colors.transparent,
-                      onTap: (index) {
-                        setState(() {
-                          grade = grades![index];
-                        });
-                      },
-                      isScrollable: true,
-                      tabAlignment: TabAlignment.start,
+                                  labelPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  dividerColor: Colors.transparent,
+                                  onTap: (index) {
+                                    setState(() {
+                                      grade = grades![index];
+                                    });
+                                  },
+                                  isScrollable: true,
+                                  tabAlignment: TabAlignment.start,
                                   indicatorColor: AppColors.secondaryMain,
                                   labelColor: AppColors.secondaryMain,
                                   unselectedLabelColor: Colors.white,
-                                  tabs: grades!.map((g) => Tab(text: g)).toList(),
-                    ),
+                                  tabs:
+                                      grades!.map((g) => Tab(text: g)).toList(),
+                                ),
+                              ),
+                              Expanded(
+                                child: StudentStreamBuilder(grade: grade ?? ""),
+                              ),
+                            ],
+                          )
+                        : const Text(
+                            "لا توجد مراحل دراسية، يجب إضافة مرحلة أولاً.",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
-                  Expanded(
-                    child: StudentStreamBuilder(grade: grade ?? ""),
-                  ),
-                ],
-              )
-                  : const Text(
-                "لا توجد مراحل دراسية، يجب إضافة مرحلة أولاً.",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
           ),
         ),
       ],

@@ -47,21 +47,35 @@ class _StudentExamCardState extends State<StudentExamCard> {
       } catch (_) {}
     }
 
-    setState(() {
-      exam = examResult;
-      miniExam = foundMini;
-      isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        exam = examResult;
+        miniExam = foundMini;
+        isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (exam == null || miniExam == null) {
-      return const Center(child: Text("❌ Exam not found"));
+      return Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Center(
+          child: Text(
+            "❌ Exam not found",
+            style:
+                TextStyle(color: Colors.red[800], fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
     }
 
     double studentScore = 0;
@@ -74,159 +88,278 @@ class _StudentExamCardState extends State<StudentExamCard> {
 
     double ratio = totalScore > 0 ? (studentScore / totalScore) : 0;
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 6,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.green[50],
-      shadowColor: Colors.green[200],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// Title Row with Edit/Delete
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        exam!.name,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.green[900],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        miniExam!.miniExamName,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.green[800],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'تعديل الدرجة أو الملاحظة',
-                  onPressed: () async {
-                    await showEditStudentExamGradeDialog(
-                      context: context,
-                      gradeName: widget.gradeName,
-                      studentId: widget.studentId,
-                      examGrade: widget.examGrade,
-                      examName: exam!.name,
-                      miniExamName: miniExam!.miniExamName,
-                      fullGrade: miniExam!.fullGrade,
-                    );
-                  },
-                  icon: Icon(Icons.edit, color: Colors.blue[700]),
-                ),
-                IconButton(
-                  tooltip: 'حذف هذا الامتحان من سجل الطالب',
-                  onPressed: () {
-                    showDeleteStudentExamGradeDialog(
-                      context: context,
-                      gradeName: widget.gradeName,
-                      studentId: widget.studentId,
-                      examId: exam?.id ?? "",
-                      miniExamId: miniExam!.id,
-                      examName: exam!.name,
-                      miniExamName: miniExam!.miniExamName,
-                    );
-                  },
-                  icon: Icon(Icons.delete, color: Colors.red[700]),
-                ),
+    // --- New Theme Implementation ---
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            // VIBRANT GRADIENT THEME
+            gradient: const LinearGradient(
+              colors: [
+                AppColors.primaryMain,
+                AppColors.secondaryMain,
               ],
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
             ),
-
-            const SizedBox(height: 12),
-
-            /// Grade Info Row
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.green[100],
-                borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryMain.withOpacity(0.35),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+                spreadRadius: -4,
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'درجة الطالب: ${widget.examGrade.studentGrade}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.green[800],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    'الدرجة الكاملة: ${miniExam!.fullGrade.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.green[900],
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+            ],
+          ),
+          child: Stack(
+            children: [
+              // ===== Decorative Circles =====
+              Positioned(
+                bottom: -10,
+                left: -20,
+                child: Center(
+                  child: _CardHelpers.buildCircle(120, 0.1),
+                ),
               ),
-            ),
+              Positioned(
+                top: -10,
+                right: -10,
+                child: _CardHelpers.buildCircle(80, 0.15),
+              ),
 
-            const SizedBox(height: 20),
-
-            /// 🟢 Progress Indicator (Much Bigger)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
+              // ===== Card Content =====
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      width: 50, // ⬅️ bigger circle
-                      height: 50,
-                      child: CircularProgressIndicator(
-                        value: ratio,
-                        backgroundColor:
-                            AppColors.secondaryMain.withOpacity(0.3),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.secondaryMain),
-                        strokeWidth: 8, // ⬅️ thicker ring
+                    /// Title Row with Edit/Delete
+                    _buildHeader(context, ratio),
+
+                    const Divider(color: AppColors.white, thickness: 0.5),
+                    const SizedBox(height: 8),
+
+                    /// Grade Info Row (Themed)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.white.withOpacity(0.15),
+                        // Light background for contrast
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'درجة الطالب: ${widget.examGrade.studentGrade}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppColors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            'الدرجة الكاملة: ${miniExam!.fullGrade.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppColors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      '${(ratio * 100).toInt()}%',
-                      style: TextStyle(
-                        fontSize: 16, // ⬅️ larger text
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryMain,
-                      ),
-                    ),
+
+                    const SizedBox(height: 16),
+
+                    /// Progress Indicator and Notes
+                    _buildProgressAndNotes(ratio),
                   ],
                 ),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: Text(
-                    widget.examGrade.description.isEmpty
-                        ? 'لا يوجد ملاحظات'
-                        : widget.examGrade.description,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.black87,
-                      height: 1.3,
-                    ),
-                  ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Helper method for header with action buttons
+  Widget _buildHeader(BuildContext context, double ratio) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                exam!.name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.white,
                 ),
-              ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                miniExam!.miniExamName,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.white.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Edit Button
+            _CardHelpers.buildActionCircle(
+              icon: Icons.edit,
+              tooltip: 'تعديل الدرجة أو الملاحظة',
+              circleColor: AppColors.white.withOpacity(0.15),
+              iconColor: AppColors.white,
+              onPressed: () async {
+                await showEditStudentExamGradeDialog(
+                  context: context,
+                  gradeName: widget.gradeName,
+                  studentId: widget.studentId,
+                  examGrade: widget.examGrade,
+                  examName: exam!.name,
+                  miniExamName: miniExam!.miniExamName,
+                  fullGrade: miniExam!.fullGrade,
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+            // Delete Button
+            _CardHelpers.buildActionCircle(
+              icon: Icons.delete_forever,
+              tooltip: 'حذف هذا الامتحان من سجل الطالب',
+              circleColor: AppColors.statusAbsent,
+              // Red circle for delete
+              iconColor: AppColors.white,
+              onPressed: () {
+                showDeleteStudentExamGradeDialog(
+                  context: context,
+                  gradeName: widget.gradeName,
+                  studentId: widget.studentId,
+                  examId: exam?.id ?? "",
+                  miniExamId: miniExam!.id,
+                  examName: exam!.name,
+                  miniExamName: miniExam!.miniExamName,
+                );
+              },
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  // Helper method for progress indicator and notes
+  Widget _buildProgressAndNotes(double ratio) {
+    // Determine color based on ratio
+    Color progressColor;
+    if (ratio >= 0.8) {
+      progressColor = AppColors.secondaryMain; // High score
+    } else if (ratio >= 0.5) {
+      progressColor = AppColors.statusLate; // Moderate score (Amber/Yellow)
+    } else {
+      progressColor = AppColors.statusAbsent; // Low score (Red)
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: CircularProgressIndicator(
+                value: ratio,
+                backgroundColor: AppColors.white.withOpacity(0.3),
+                valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                // Dynamic color
+                strokeWidth: 8,
+              ),
+            ),
+            Text(
+              '${(ratio * 100).toInt()}%',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.white, // White text on dark progress
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: Text(
+            widget.examGrade.description.isEmpty
+                ? 'لا يوجد ملاحظات'
+                : widget.examGrade.description,
+            style: TextStyle(
+              fontSize: 16,
+              fontStyle: FontStyle.italic,
+              color: AppColors.white.withOpacity(0.9), // Soft white for notes
+              height: 1.3,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Assuming these helpers are accessible for consistency
+class _CardHelpers {
+  static Widget buildCircle(double size, double opacity) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: AppColors.white.withOpacity(opacity),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
+  static Widget buildActionCircle({
+    required IconData icon,
+    required Color circleColor,
+    required Color iconColor,
+    required VoidCallback onPressed,
+    String? tooltip,
+  }) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: circleColor,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        tooltip: tooltip,
+        icon: Icon(
+          icon,
+          color: iconColor,
+          size: 20,
+        ),
+        onPressed: onPressed,
       ),
     );
   }

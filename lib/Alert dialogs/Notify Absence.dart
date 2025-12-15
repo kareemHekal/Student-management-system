@@ -21,7 +21,7 @@ class SelectRecipientDialogContent extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
-          title: Text('ولي الأمر (الأب)',
+          title: Text('ولي الأمر ',
               style: TextStyle(color: AppColors.secondaryMain)),
           onTap: () async {
             Navigator.of(context).pop();
@@ -31,7 +31,7 @@ class SelectRecipientDialogContent extends StatelessWidget {
           },
         ),
         ListTile(
-          title: Text('ولي الأمر (الأم)',
+          title: Text('ولي الأمر 2',
               style: TextStyle(color: AppColors.secondaryMain)),
           onTap: () async {
             Navigator.of(context).pop();

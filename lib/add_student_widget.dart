@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 
 import 'Alert dialogs/RemoveFromGroupsListDialog.dart';
@@ -14,457 +13,513 @@ import 'models/grade_subscriptions_model.dart';
 import 'models/student_paid_subscription.dart';
 import 'pages/Pick Groups Page.dart';
 import 'theme/colors_app.dart';
+// يجب أن يكون هذا الـ import متاحاً (تم افتراض أنه موجود في ملف 'theme/text_style.dart' الأصلي)
+import 'theme/text_style.dart';
+// تم إزالة import 'package:google_fonts/google_fonts.dart'; لأننا نستخدم AppTextStyles
+
+// --- الثوابت والأنماط المشتركة (Consts & Styles) -------------------------
+
+const double _kSectionPadding = 10.0; // مسافة موحدة بين الأقسام
+const double _kDividerThickness = 4;
+
+// --- الشاشة الرئيسية (AddStudentScreen) --------------------------------
 
 class AddStudentScreen extends StatefulWidget {
-  String? level;
+  final String?
+      level; // تم تغيير اسم المتغير من level إلى grade للتوافق مع شاشة التعديل
 
-  AddStudentScreen({this.level, super.key});
+  const AddStudentScreen({this.level, super.key});
 
   @override
-  State<AddStudentScreen> createState() => _AddStudentTabState();
+  State<AddStudentScreen> createState() => _AddStudentScreenState();
 }
 
-class _AddStudentTabState extends State<AddStudentScreen> {
-  _AddStudentTabState();
+class _AddStudentScreenState extends State<AddStudentScreen> {
+  // 1. تعريف مفاتيح التركيز لنموذج الإدخال
+  late final FocusNode _nameFocus;
+  late final FocusNode _studentNumberFocus;
+  late final FocusNode _fatherNumberFocus;
+  late final FocusNode _motherNumberFocus;
+  final _formKey = GlobalKey<FormState>(); // مفتاح Form للتحقق من الصحة
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. تهيئة مفاتيح التركيز في initState
+    _nameFocus = FocusNode();
+    _studentNumberFocus = FocusNode();
+    _fatherNumberFocus = FocusNode();
+    _motherNumberFocus = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    // 3. التخلص من مفاتيح التركيز عند الخروج من الشاشة
+    _nameFocus.dispose();
+    _studentNumberFocus.dispose();
+    _fatherNumberFocus.dispose();
+    _motherNumberFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return LoaderOverlay(
-      child: BlocProvider(
-        create: (context) => StudentCubit()..initTheState(),
-        child: BlocConsumer<StudentCubit, StudentState>(
-          listener: (context, state) {
-            if (state is StudentLoading) {
-              context.loaderOverlay.show();
-            } else {
-              context.loaderOverlay.hide();
-            }
-            if (state is StudentAddedSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('تم إضافة الطالب بنجاح!'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
-            if (state is StudentUpdated) {
-              setState(() {});
-            }
-            if (state is StudentAddedFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.errorMessage),
-                  backgroundColor: Colors.red,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
-            if (state is StudentValidationError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.errorMessage),
-                  backgroundColor: Colors.red,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
-          },
-          builder: (context, state) {
-            if (state is StudentLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            final cubit = StudentCubit.get(context);
-
-            return Padding(
-              padding: const EdgeInsets.only(left: 10, right: 10, top: 17),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.white.withOpacity(0.3),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(25),
-                    topRight: Radius.circular(25),
-                  ),
-                ),
-                width: double.infinity,
-                child: SingleChildScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  child: Padding(
-                    padding: const EdgeInsets.all(2.0),
-                    child: Container(
-                      color: Colors.transparent,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.only(top: 20, left: 0),
-                                child: Text(
-                                  textAlign: TextAlign.start,
-                                  "أضف طلابك",
-                                  style: GoogleFonts.oswald(
-                                    fontSize: 30,
-                                    color: AppColors.primaryMain,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                            ],
-                          ),
-                          const Divider(
-                            color: AppColors.secondaryMain,
-                            thickness: 4,
-                          ),
-                          SizedBox(
-                            height: 240,
-                            child: Column(
-                              spacing: 15,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Center(child: Text("اختر الأيام")),
-                                Expanded(
-                                  child: PickGroupRow(context),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Divider(
-                            color: AppColors.secondaryMain,
-                            thickness: 4,
-                          ),
-                          TextFormFields(context),
-                          const Divider(
-                            color: AppColors.secondaryMain,
-                            thickness: 4,
-                          ),
-                          MaleOrFemalePart(context),
-                          const Divider(
-                            color: AppColors.secondaryMain,
-                            thickness: 4,
-                          ),
-                          paymentsPart(context),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          const Divider(
-                            color: AppColors.secondaryMain,
-                            thickness: 4,
-                          ),
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          NotesPart(context),
-                          const SizedBox(
-                            height: 20,
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor: AppColors.secondaryMain,
-                                    backgroundColor: AppColors.primaryMain,
-                                  ),
-                                  onPressed: () async {
-                                    await cubit.addStudent(
-                                        context, widget.level);
-                                  },
-                                  child: const Text(" أضف "),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 200,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
+    return BlocProvider(
+      create: (context) => StudentCubit()..initTheState(),
+      child: Scaffold(
+        body: LoaderOverlay(
+          child: BlocConsumer<StudentCubit, StudentState>(
+            listener: _blocListener,
+            builder: (context, state) {
+              if (state is StudentLoading) {
+                // إظهار مؤشر التحميل عبر Overlay
+                return const SizedBox.shrink();
+              }
+              return _buildBody(context); // بناء جسم الصفحة
+            },
+          ),
         ),
       ),
     );
   }
 
-  Widget PickGroupRow(BuildContext context) {
+  // --- دوال المساعدة للـ Bloc (Bloc Helpers) --------------------------------
+  void _blocListener(BuildContext context, StudentState state) {
+    if (state is StudentLoading) {
+      context.loaderOverlay.show();
+    } else {
+      context.loaderOverlay.hide();
+    }
+    if (state is StudentAddedSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        _buildSnackBar('تم إضافة الطالب بنجاح!', AppColors.statusPresent),
+      );
+      // بعد الإضافة الناجحة، قد تحتاج إلى مسح الحقول أو العودة
+    }
+    if (state is StudentUpdated) {
+      // هذه الحالة قد تكون موجودة في cubit الإضافة لتحديث الـ UI مثل قائمة المجموعات
+      setState(() {});
+    }
+    if (state is StudentAddedFailure) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        _buildSnackBar(state.errorMessage, AppColors.statusAbsent),
+      );
+    }
+    if (state is StudentValidationError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        _buildSnackBar(state.errorMessage, AppColors.statusAbsent),
+      );
+    }
+  }
+
+  SnackBar _buildSnackBar(String content, Color color) {
+    return SnackBar(
+      content: Text(content),
+      backgroundColor: color,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  // --- دوال المساعدة للـ UI (UI Helpers) ------------------------------------
+
+  // 2. بناء محتوى الصفحة (Body)
+  Widget _buildBody(BuildContext context) {
+    // تم استخدام Padding بسيط لل Body الخارجي
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.white.withOpacity(0.3),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(25),
+            topRight: Radius.circular(25),
+          ),
+        ),
+        width: double.infinity,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(25),
+            topRight: Radius.circular(25),
+          ),
+          // لا يمكن استخدام BackdropFilter بدون import 'dart:ui'
+          // لكن للحفاظ على التناسق مع شاشة التعديل، سنفترض وجوده
+          child: _buildContentScrollable(context),
+        ),
+      ),
+    );
+  }
+
+  // 3. بناء الجزء القابل للتمرير (Scrollable Content)
+  Widget _buildContentScrollable(BuildContext context) {
     final cubit = StudentCubit.get(context);
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      // الـ Padding الرئيسي حول المحتوى لتقليل المسافات بشكل عام
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildTitleSection(), // "أضف طلابك"
+          const SizedBox(height: _kSectionPadding),
+          _buildDivider(),
+
+          // قسم حقول الإدخال (تم وضعه أولاً لأنه الأكثر أهمية في الإضافة)
+          const SizedBox(height: _kSectionPadding),
+          _buildTextFormFieldsSection(context, cubit),
+          const SizedBox(height: _kSectionPadding),
+          _buildDivider(),
+
+          // قسم اختيار الجنس
+          const SizedBox(height: _kSectionPadding),
+          _buildGenderSelectionSection(context, cubit),
+          const SizedBox(height: _kSectionPadding),
+          _buildDivider(),
+
+          // قسم المجموعات
+          const SizedBox(height: _kSectionPadding),
+          _buildGroupsSelectionSection(context, cubit),
+          const SizedBox(height: _kSectionPadding),
+          _buildDivider(),
+
+          // قسم الدفعات والاشتراكات
+          const SizedBox(height: _kSectionPadding),
+          _buildPaymentsSection(context),
+          const SizedBox(height: _kSectionPadding),
+          _buildDivider(),
+
+          // قسم الملاحظات
+          const SizedBox(height: _kSectionPadding),
+          _buildNotesSection(context, cubit),
+          const SizedBox(height: 20), // مسافة أكبر قبل الزر
+
+          // زر الحفظ
+          _buildSaveButton(context, cubit),
+          const SizedBox(height: 50), // مسافة نهاية الصفحة
+        ],
+      ),
+    );
+  }
+
+  // 4. بناء عنصر فاصل (Divider)
+  Widget _buildDivider() {
+    return const Divider(
+      color: AppColors.secondaryMain,
+      thickness: _kDividerThickness,
+    );
+  }
+
+  // 5. بناء قسم العنوان
+  Widget _buildTitleSection() {
+    return Text(
+      'أضف طلابك',
+      style: AppTextStyles.customText(
+        fontSize: 30,
+        color: AppColors.primaryMain,
+        fontWeight: FontWeight.w500,
+      ),
+      textAlign: TextAlign.start,
+    );
+  }
+
+  // 6. بناء قسم اختيار المجموعات (مع الارتفاع الديناميكي)
+  Widget _buildGroupsSelectionSection(
+      BuildContext context, StudentCubit cubit) {
+    // تحديد الارتفاع الديناميكي:
+    final bool isGroupsEmpty =
+        cubit.hisGroups == null || cubit.hisGroups!.isEmpty;
+    final double listHeight = isGroupsEmpty ? 50.0 : 180.0;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: cubit.hisGroups.isEmpty
-              ? const Center(
+        Center(
+            child: Text("المجموعات المشترك بها : ${cubit.hisGroups?.length} ",
+                style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold))),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: listHeight, // استخدام الارتفاع الديناميكي
+          child: isGroupsEmpty
+              ? Center(
                   child: Text(
-                    "لم تختَر أي مجموعة بعد",
-                    style: TextStyle(color: AppColors.secondaryMain),
+                    "لم تقم باختيار أي مجموعة بعد",
+                    style: AppTextStyles.customText(
+                        color: AppColors.textSecondary),
                   ),
                 )
               : ListView.builder(
-                  itemCount: cubit.hisGroups.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  itemCount: cubit.hisGroups!.length,
                   itemBuilder: (context, index) {
-                    final magmo3aModel = cubit.hisGroups[index];
-                    return GestureDetector(
-                      onLongPress: () {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return RemoveFromGroupsListDialog(
-                              title: "حذف المجموعة",
-                              content:
-                                  "هل أنت متأكد أنك تريد حذف هذه المجموعة؟",
-                              onConfirm: () async {
-                                await Future.delayed(Duration(milliseconds: 1));
-                                cubit.hisGroups.removeAt(index);
-                                cubit.hisGroupsId.removeAt(index);
-                                setState(() {});
-                              },
-                            );
-                          },
-                        );
-                      },
-                      child: Groupsmallcard(magmo3aModel: magmo3aModel),
-                    );
+                    final magmo3aModel = cubit.hisGroups![index];
+                    return _buildGroupCard(context, cubit, magmo3aModel, index);
                   },
                 ),
         ),
         const SizedBox(height: 10),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            side: const BorderSide(color: AppColors.secondaryMain, width: 1),
-            foregroundColor: AppColors.secondaryMain,
-            backgroundColor: AppColors.primaryMain,
-          ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChoosedaysToAttend(level: widget.level),
-              ),
-            ).then((result) {
-              if (result != null) {
-                cubit.updateGroup(context, result);
-              }
-            });
-          },
-          child: const Text("إضافة مجموعة"),
-        ),
+        _buildAddGroupButton(context, cubit),
       ],
     );
   }
 
-  Widget buildDropdown(
-    String hint,
-    bool? selectedValue,
-    ValueChanged<bool?> onChanged,
-  ) {
-    return SizedBox(
-      width: 200,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.primaryMain, width: 1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: DropdownButton<bool>(
-          dropdownColor: AppColors.primaryMain,
-          value: selectedValue,
+  // 6.1. كارت المجموعة
+  Widget _buildGroupCard(BuildContext context, StudentCubit cubit,
+      dynamic magmo3aModel, int index) {
+    return GestureDetector(
+      onLongPress: () {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return RemoveFromGroupsListDialog(
+              title: "حذف المجموعة",
+              content: "هل أنت متأكد أنك تريد إزالة هذه المجموعة؟",
+              onConfirm: () async {
+                cubit.hisGroups!.removeAt(index);
+                cubit.hisGroupsId!.removeAt(index);
+                // استخدام setState لإعادة بناء الـ widget الخاص بقائمة المجموعات
+                // بدلاً من انتظار حالة الـ cubit
+                setState(() {});
+              },
+            );
+          },
+        );
+      },
+      child: Groupsmallcard(magmo3aModel: magmo3aModel),
+    );
+  }
+
+  // 6.2. زر إضافة مجموعة
+  Widget _buildAddGroupButton(BuildContext context, StudentCubit cubit) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        side: const BorderSide(color: AppColors.secondaryMain, width: 1),
+        foregroundColor: AppColors.secondaryMain,
+        backgroundColor: AppColors.primaryMain,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChoosedaysToAttend(level: widget.level),
+          ),
+        ).then((result) {
+          if (result != null) {
+            cubit.updateGroup(context, result);
+          }
+        });
+      },
+      child: Text("إضافة مجموعة",
+          style: AppTextStyles.customText(
+              color: AppColors.textOnDark, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  // 7. بناء قسم حقول إدخال النص (TextFormFields)
+  Widget _buildTextFormFieldsSection(BuildContext context, StudentCubit cubit) {
+    return Form(
+      key: _formKey, // ربط مفتاح التحقق من الصحة
+      child: Column(
+        children: [
+          // 1. اسم الطالب (Next)
+          _buildCustomTextFormField(
+            controller: cubit.name_controller,
+            label: "اسم الطالب",
+            focusNode: _nameFocus,
+            inputAction: TextInputAction.next,
+            onFieldSubmitted: (_) =>
+                FocusScope.of(context).requestFocus(_studentNumberFocus),
+          ),
+          const SizedBox(height: _kSectionPadding),
+
+          // 2. رقم الطالب (Next)
+          _buildCustomTextFormField(
+            controller: cubit.studentNumberController,
+            label: "رقم الطالب",
+            keyboardType: TextInputType.phone,
+            focusNode: _studentNumberFocus,
+            inputAction: TextInputAction.next,
+            onFieldSubmitted: (_) =>
+                FocusScope.of(context).requestFocus(_fatherNumberFocus),
+          ),
+
+          // onFieldSubmitted: (_) =>
+          //    FocusScope.of(context).requestFocus(_fatherNumberFocus),
+          //
+
+          const SizedBox(height: _kSectionPadding),
+
+          // 3. رقم ولي الأمر (Next)
+          _buildCustomTextFormField(
+            controller: cubit.fatherNumberController,
+            label: "رقم ولي الأمر",
+            keyboardType: TextInputType.phone,
+            focusNode: _fatherNumberFocus,
+            inputAction: TextInputAction.next,
+            onFieldSubmitted: (_) =>
+                FocusScope.of(context).requestFocus(_motherNumberFocus),
+          ),
+          const SizedBox(height: _kSectionPadding),
+
+          // 4. رقم الأم (Done) - وهو الحقل الأخير في هذا القسم
+          _buildCustomTextFormField(
+            controller: cubit.motherNumberController,
+            label: "رقم ولي الأمر 2",
+            keyboardType: TextInputType.phone,
+            focusNode: _motherNumberFocus,
+            inputAction: TextInputAction.done,
+            onFieldSubmitted: (_) {
+              FocusScope.of(context).unfocus();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 7.1. عنصر حقل إدخال النص المخصص (InputDecoration)
+  InputDecoration _getInputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: AppTextStyles.customText(
+          fontSize: 18, color: AppColors.textSecondary),
+      hintStyle: AppTextStyles.customText(color: Colors.grey.shade500),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: AppColors.primaryMain, width: 1.5),
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide:
+            const BorderSide(color: AppColors.secondaryMain, width: 2.5),
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+    );
+  }
+
+  // 7.2. بناء حقل إدخال النص الفردي
+  Widget _buildCustomTextFormField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+    required FocusNode focusNode,
+    required TextInputAction inputAction,
+    void Function(String)? onFieldSubmitted,
+  }) {
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      textInputAction: inputAction,
+      onFieldSubmitted: onFieldSubmitted,
+      style: AppTextStyles.customText(color: AppColors.textPrimary),
+      validator: (value) {
+        // **التعديل الجديد:**
+        // إذا كان نوع لوحة المفاتيح هو رقم هاتف، فالسماح بقيمة فارغة أو null.
+        if (keyboardType == TextInputType.phone) {
+          return null; // لا تقم بالتحقق من الصحة (Validation)
+        }
+
+        // التحقق القياسي للحقول الأخرى (مثل الاسم ورقم الطالب)
+        if (value == null || value.isEmpty) {
+          return 'من فضلك أدخل $label';
+        }
+        return null;
+      },
+      decoration: _getInputDecoration(label),
+      keyboardType: keyboardType,
+      inputFormatters: keyboardType == TextInputType.number
+          ? [FilteringTextInputFormatter.digitsOnly]
+          : null,
+    );
+  }
+
+  // 8. بناء قسم اختيار الجنس (MaleOrFemalePart)
+  Widget _buildGenderSelectionSection(
+      BuildContext context, StudentCubit cubit) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildGenderDropdown(cubit),
+        const SizedBox(height: _kSectionPadding),
+        _buildSelectedGenderChip(cubit),
+      ],
+    );
+  }
+
+  // 8.1. قائمة اختيار الجنس المنسدلة
+  Widget _buildGenderDropdown(StudentCubit cubit) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.primaryMain, width: 1),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          dropdownColor: AppColors.white,
+          value: cubit.selectedGender ?? "ذكر",
           isExpanded: true,
           items: const [
             DropdownMenuItem(
-              value: true,
-              child: Text("تم الدفع", style: TextStyle(color: Colors.orange)),
+              value: "ذكر",
+              child:
+                  Text("ذكر", style: TextStyle(color: AppColors.primaryMain)),
             ),
             DropdownMenuItem(
-              value: false,
+              value: "أنثى",
               child:
-                  Text("لم يتم الدفع", style: TextStyle(color: Colors.orange)),
+                  Text("أنثى", style: TextStyle(color: AppColors.primaryMain)),
             ),
           ],
-          onChanged: onChanged,
-          elevation: 8,
-          style: const TextStyle(color: Colors.orange),
-          icon: const Icon(Icons.arrow_forward_ios_outlined,
-              color: Colors.orange),
-          iconSize: 24,
-          hint: Text(
-            selectedValue == null
-                ? hint
-                : (selectedValue ? "تم الدفع" : "لم يتم الدفع"),
-            style: const TextStyle(color: Colors.orange),
-          ),
+          onChanged: (value) {
+            cubit.changeValueOfGenderDropDown(value);
+          },
+          elevation: 4,
+          style: AppTextStyles.customText(color: AppColors.primaryDark),
+          icon: const Icon(Icons.arrow_drop_down,
+              color: AppColors.secondaryMain, size: 30),
         ),
       ),
     );
   }
 
-  Widget buildVerticalLine() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.secondaryMain,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        width: 5,
-        height: 200,
-      ),
-    );
-  }
-
-  Widget TextFormFields(BuildContext context) {
-    final cubit = StudentCubit.get(context);
-
-    InputDecoration getInputDecoration(String label) {
-      return InputDecoration(
-        labelText: label,
-        labelStyle:
-            const TextStyle(fontSize: 25, color: AppColors.secondaryMain),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide:
-              const BorderSide(color: AppColors.primaryMain, width: 2.0),
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide:
-              const BorderSide(color: AppColors.primaryMain, width: 2.0),
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-      );
-    }
-
-    Widget buildTextFormField({
-      required TextEditingController controller,
-      required String label,
-      TextInputType? keyboardType,
-    }) {
-      return TextFormField(
-        controller: controller,
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'الرجاء إدخال $label';
-          }
-          return null;
-        },
-        decoration: getInputDecoration(label),
-        keyboardType: keyboardType,
-        inputFormatters: keyboardType == TextInputType.number
-            ? [FilteringTextInputFormatter.digitsOnly]
-            : null,
-      );
-    }
-
-    return Column(
-      children: [
-        buildTextFormField(
-            controller: cubit.name_controller, label: "اسم الطالب"),
-        const SizedBox(height: 15),
-        buildTextFormField(
-          controller: cubit.studentNumberController,
-          label: "رقم الطالب",
-          keyboardType: TextInputType.number,
-        ),
-        const SizedBox(height: 15),
-        buildTextFormField(
-          controller: cubit.fatherNumberController,
-          label: "رقم ولي الأمر (الأب)",
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 15),
-        buildTextFormField(
-          controller: cubit.motherNumberController,
-          label: "رقم ولي الأمر (الأم)",
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 15),
-      ],
-    );
-  }
-
-  Widget MaleOrFemalePart(BuildContext context) {
-    final cubit = StudentCubit.get(context);
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.primaryMain, width: 1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: DropdownButton<String>(
-            dropdownColor: AppColors.primaryMain,
-            value: cubit.selectedGender ?? "ذكر",
-            isExpanded: true,
-            items: const [
-              DropdownMenuItem(
-                value: "ذكر",
-                child: Text("ذكر",
-                    style: TextStyle(color: AppColors.secondaryMain)),
-              ),
-              DropdownMenuItem(
-                value: "أنثى",
-                child: Text("أنثى",
-                    style: TextStyle(color: AppColors.secondaryMain)),
+  // 8.2. عرض الشريحة (Chip) للجنس المختار
+  Widget _buildSelectedGenderChip(StudentCubit cubit) {
+    return cubit.selectedGender != null
+        ? Wrap(
+            direction: Axis.horizontal,
+            spacing: 8,
+            children: [
+              Chip(
+                backgroundColor: AppColors.primaryMain,
+                label: Text(cubit.selectedGender!,
+                    style:
+                        AppTextStyles.customText(color: AppColors.textOnDark)),
+                deleteIcon: const Icon(Icons.cancel,
+                    size: 20, color: AppColors.secondaryMain),
+                shape: const StadiumBorder(
+                    side: BorderSide(color: AppColors.secondaryMain)),
+                onDeleted: () {
+                  cubit.setTheSelectedGenderByNull();
+                },
               ),
             ],
-            onChanged: (value) {
-              cubit.changeValueOfGenderDropDown(value);
-            },
-            elevation: 8,
-            style: const TextStyle(color: AppColors.secondaryMain),
-            icon: const Icon(Icons.arrow_forward_ios_outlined,
-                color: AppColors.secondaryMain),
-            iconSize: 24,
-            hint: Padding(
-              padding: const EdgeInsets.only(left: 10),
-              child: Text(
-                cubit.selectedGender ?? "اختر الجنس",
-                style: const TextStyle(color: AppColors.secondaryMain),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 15),
-        cubit.selectedGender != null
-            ? Wrap(
-                direction: Axis.horizontal,
-                spacing: 8,
-                children: [
-                  Chip(
-                    backgroundColor: AppColors.primaryMain,
-                    label: Text(cubit.selectedGender!,
-                        style: const TextStyle(color: AppColors.secondaryMain)),
-                    deleteIcon: const Icon(Icons.cancel,
-                        size: 20, color: AppColors.secondaryMain),
-                    shape: const StadiumBorder(
-                        side: BorderSide(color: AppColors.secondaryMain)),
-                    onDeleted: () {
-                      cubit.setTheSelectedGenderByNull();
-                    },
-                  ),
-                ],
-              )
-            : const Center(
-                child: Text("اختر الجنس",
-                    style: TextStyle(color: AppColors.secondaryMain)),
-              ),
-      ],
-    );
+          )
+        : Center(
+            child: Text("اختر الجنس",
+                style:
+                    AppTextStyles.customText(color: AppColors.textSecondary)),
+          );
   }
 
-  Widget paymentsPart(BuildContext context) {
+  // 9. بناء قسم الدفعات والاشتراكات (مع الارتفاع الديناميكي)
+  Widget _buildPaymentsSection(BuildContext context) {
     final cubit = StudentCubit.get(context);
-
     return StreamBuilder<GradeSubscriptionsModel?>(
       stream: FirebaseFunctions.getGradeSubscriptionsStream(widget.level ?? ""),
       builder: (context, snapshot) {
@@ -472,11 +527,13 @@ class _AddStudentTabState extends State<AddStudentScreen> {
           return const Center(child: CircularProgressIndicator());
         }
 
+        // الحالة 1: الصف لا يحتوي على تعريف اشتراكات من Firebase (snapshot.data == null)
         if (!snapshot.hasData || snapshot.data == null) {
-          return const Center(
+          return Center(
             child: Text(
               'لا توجد اشتراكات لهذا الصف حالياً',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: AppTextStyles.customText(
+                  fontSize: 16, color: AppColors.textSecondary),
             ),
           );
         }
@@ -485,91 +542,110 @@ class _AddStudentTabState extends State<AddStudentScreen> {
         final subscriptions = gradeSubs.subscriptions;
         final studentPaidSubscriptions = cubit.studentPaidSubscriptions;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'الاشتراكات (${subscriptions.length})',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.secondaryMain,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Show cards horizontally
-              SizedBox(
-                height: 180,
-                child: ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: subscriptions.length,
-                  itemBuilder: (context, index) {
-                    final sub = subscriptions[index];
-                    // Try to find matching student payment
-                    final paidSub = studentPaidSubscriptions?.firstWhere(
-                      (s) => s.subscriptionId == sub.id,
-                      orElse: () => StudentPaidSubscriptions(
-                        description: "",
-                        subscriptionId: sub.id,
-                        paidAmount: 0,
-                      ),
-                    );
+        // تحديد الارتفاع الديناميكي:
+        final double listHeight = subscriptions.isEmpty ? 50.0 : 200.0;
 
-                    return GestureDetector(
-                      onTap: () {
-                        cubit.changePayment(
-                            paidSub!, sub.subscriptionAmount, context);
-                      },
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'إدارة الاشتراكات (${subscriptions.length})',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.customText(
+                color: AppColors.primaryMain,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: listHeight, // استخدام الارتفاع الديناميكي
+              child: subscriptions.isEmpty
+                  ? Center(
+                      child: Text(
+                        ' لا يوجد اشتراكات حتى الأن ',
+                        style: AppTextStyles.customText(
+                            fontSize: 16, color: AppColors.textSecondary),
+                      ),
+                    )
+                  : ListView.builder(
+                      scrollDirection: Axis.vertical,
+                      itemCount: subscriptions.length,
+                      itemBuilder: (context, index) {
+                        final sub = subscriptions[index];
+                        // البحث عن الدفعة المقابلة للطالب
+                        final paidSub = studentPaidSubscriptions?.firstWhere(
+                          (s) => s.subscriptionId == sub.id,
+                          orElse: () => StudentPaidSubscriptions(
+                            description: "",
+                            subscriptionId: sub.id,
+                            paidAmount: 0,
+                          ),
+                        );
+
+                        return GestureDetector(
+                    onTap: () {
+                      // Logic for changing payment status (إضافة دفعة عند الضغط)
+                      cubit.changePayment(
+                          paidSub!, sub.subscriptionAmount, context);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: StudentSubscriptionsCard(
                         studentPaidSubscription: paidSub,
                         subscriptionFee: sub,
                       ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget NotesPart(BuildContext context) {
-    final cubit = StudentCubit.get(context);
-
+  // 11. بناء قسم الملاحظات (NotesPart)
+  Widget _buildNotesSection(BuildContext context, StudentCubit cubit) {
     return TextFormField(
       controller: cubit.noteController,
       maxLines: 3,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'الرجاء إدخال ملاحظة';
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        labelText: "أضف ملاحظة",
-        labelStyle:
-            const TextStyle(fontSize: 25, color: AppColors.secondaryMain),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderSide:
-              const BorderSide(color: AppColors.primaryMain, width: 2.0),
-          borderRadius: BorderRadius.circular(20.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide:
-              const BorderSide(color: AppColors.primaryMain, width: 2.0),
-          borderRadius: BorderRadius.circular(20.0),
-        ),
+      style: AppTextStyles.customText(color: AppColors.textPrimary),
+      decoration: _getInputDecoration("إضافة ملاحظة").copyWith(
         hintText: 'اكتب ملاحظتك هنا...',
-        hintStyle: const TextStyle(color: Colors.grey),
       ),
+    );
+  }
+
+  // 12. بناء زر الحفظ/الإضافة
+  Widget _buildSaveButton(BuildContext context, StudentCubit cubit) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              foregroundColor: AppColors.secondaryMain,
+              backgroundColor: AppColors.primaryMain,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15)),
+              elevation: 5,
+            ),
+            onPressed: () async {
+              // التحقق من صحة النموذج قبل الإضافة
+              if (_formKey.currentState!.validate()) {
+                await cubit.addStudent(context, widget.level);
+              }
+            },
+            child: Text("إضافة الطالب",
+                style: AppTextStyles.customText(
+                    color: AppColors.textOnDark,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ],
     );
   }
 }

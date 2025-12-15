@@ -86,7 +86,7 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
           : ListView.builder(
         itemCount: invoices.length,
         itemBuilder: (context, index) {
-                    return InvoiceWidget(invoice: invoices[index]);
+                    return InComeWidget(invoice: invoices[index]);
                   },
       ),
     );
