@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:student_management_system/models/big_invoice.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
+import 'package:student_management_system/models/daily_invoice.dart';
 import 'package:student_management_system/pages/invoices/daily_invoices_page.dart';
 import 'package:student_management_system/pages/pdf_genrators/big_invoice_pdf.dart';
 import 'package:student_management_system/theme/colors_app.dart';
@@ -7,7 +8,7 @@ import 'package:student_management_system/theme/text_style.dart';
 
 class MonthlyInvoiceCard extends StatelessWidget {
   final String monthKey;
-  final List<BigInvoice> dailyInvoices;
+  final List<DailyInvoice> dailyInvoices;
 
   const MonthlyInvoiceCard({
     required this.monthKey,
@@ -174,10 +175,11 @@ class MonthlyInvoiceCard extends StatelessWidget {
                                 color: AppColors.white,
                               ),
                               onPressed: () {
-                                InvoicePdfGenerator.createMonthlyInvoicePDF(
-                                    dailyInvoices,
-                                    _formatMonthAr(monthKey),
-                                    context);
+                                runWithLoading(context, () async {
+                                  await InvoicePdfGenerator
+                                      .createMonthlyInvoicePDF(dailyInvoices,
+                                          _formatMonthAr(monthKey), context);
+                                });
                               },
                             ),
                           ),

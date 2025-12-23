@@ -1,13 +1,13 @@
 import 'Invoice.dart';
 import 'payment.dart';
 
-class BigInvoice {
+class DailyInvoice {
   final String date; // Change from DateTime to String
   final String day;
   final List<Invoice> invoices;/// الدواخل
   final List<Payment> payments; // الخوارج
 
-  BigInvoice({
+  DailyInvoice({
     required this.date,
     required this.day,
     required this.invoices,
@@ -15,8 +15,8 @@ class BigInvoice {
   });
 
   // From JSON
-  factory BigInvoice.fromJson(Map<String, dynamic> json) {
-    return BigInvoice(
+  factory DailyInvoice.fromJson(Map<String, dynamic> json) {
+    return DailyInvoice(
       date: json['date'] ?? "",
       day: json['day'] ?? "",
       invoices: (json['invoices'] as List? ?? [])

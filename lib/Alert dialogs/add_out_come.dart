@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../loadingFile/loading_alert/run_with_loading.dart';
-import '../models/big_invoice.dart';
+import '../models/daily_invoice.dart';
 import '../models/payment.dart';
 
 class AddExpenseDialog extends StatefulWidget {
@@ -93,11 +93,11 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
 
               if (docSnapshot.exists) {
                 final data = docSnapshot.data() as Map<String, dynamic>;
-                final bigInvoice = BigInvoice.fromJson(data);
+                final bigInvoice = DailyInvoice.fromJson(data);
                 bigInvoice.payments.add(newPayment);
                 await docRef.update(bigInvoice.toJson());
               } else {
-                final bigInvoice = BigInvoice(
+                final bigInvoice = DailyInvoice(
                   date: widget.date,
                   day: widget.day,
                   invoices: [],

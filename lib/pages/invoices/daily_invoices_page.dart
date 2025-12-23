@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:student_management_system/cards/invoices/daily_invoice_card.dart';
 import 'package:student_management_system/theme/text_style.dart';
 
-import '../../models/big_invoice.dart';
+import '../../models/daily_invoice.dart';
 import '../../theme/colors_app.dart';
 
 class dailyInvoicesPage extends StatelessWidget {
   final String monthTitle;
-  final List<BigInvoice> invoices;
+  final List<DailyInvoice> invoices;
 
   const dailyInvoicesPage(
       {required this.monthTitle, required this.invoices, super.key});

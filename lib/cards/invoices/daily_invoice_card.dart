@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 
-import '../../models/big_invoice.dart';
+import '../../models/daily_invoice.dart';
 import '../../pages/invoices/one invoice page.dart';
 import '../../pages/pdf_genrators/big_invoice_pdf.dart';
 import '../../theme/colors_app.dart';
 import '../../theme/text_style.dart';
 
 class DailyInvoiceCard extends StatefulWidget {
-  final BigInvoice invoice;
+  final DailyInvoice invoice;
 
   const DailyInvoiceCard({required this.invoice, super.key});
 
@@ -221,7 +222,9 @@ class _DailyInvoiceCardState extends State<DailyInvoiceCard> {
     );
   }
 
-  Future<void> generateBigInvoicePDF(BigInvoice invoice) async {
-    await InvoicePdfGenerator.createDailyInvoicePDF(invoice, context);
+  Future<void> generateBigInvoicePDF(DailyInvoice invoice) async {
+    runWithLoading(context, () async {
+      await InvoicePdfGenerator.createDailyInvoicePDF(invoice, context);
+    });
   }
 }

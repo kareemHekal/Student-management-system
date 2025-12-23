@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:student_management_system/cards/invoices/monthly_invoice_card.dart';
 import 'package:student_management_system/home.dart';
-import 'package:student_management_system/models/big_invoice.dart';
+import 'package:student_management_system/models/daily_invoice.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/text_style.dart';
 
@@ -14,7 +14,7 @@ class MonthlyReportsPage extends StatefulWidget {
 }
 
 class _MonthlyReportsPageState extends State<MonthlyReportsPage> {
-  Map<String, List<BigInvoice>> groupedInvoices = {};
+  Map<String, List<DailyInvoice>> groupedInvoices = {};
   bool isLoading = true;
 
   @override
@@ -28,11 +28,11 @@ class _MonthlyReportsPageState extends State<MonthlyReportsPage> {
       final snapshot =
           await FirebaseFirestore.instance.collection('big_invoices').get();
 
-      Map<String, List<BigInvoice>> tempGroups = {};
+      Map<String, List<DailyInvoice>> tempGroups = {};
 
       for (var doc in snapshot.docs) {
         // تحويل البيانات من Firebase إلى Model
-        BigInvoice invoice = BigInvoice.fromJson(doc.data());
+        DailyInvoice invoice = DailyInvoice.fromJson(doc.data());
 
         // تغيير الـ split ليكون بناءً على '-' بدلاً من '_'
         List<String> parts = invoice.date.split('-');

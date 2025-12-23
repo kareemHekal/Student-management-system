@@ -6,11 +6,11 @@ import '../../cards/invoices/In come widget.dart';
 import '../../cards/invoices/outcome widget.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../models/Invoice.dart';
-import '../../models/big_invoice.dart';
+import '../../models/daily_invoice.dart';
 import '../../theme/colors_app.dart';
 
 class OneInivoicePage extends StatefulWidget {
-  final BigInvoice invoice;
+  final DailyInvoice invoice;
 
   OneInivoicePage({required this.invoice, super.key});
 

@@ -4,7 +4,7 @@ import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Studentmodel.dart';
 import '../models/absence_model.dart';
-import '../models/big_invoice.dart';
+import '../models/daily_invoice.dart';
 import '../models/grade_subscriptions_model.dart';
 import '../models/payment.dart';
 import '../models/subscription_fee.dart';
@@ -596,7 +596,7 @@ class FirebaseFunctions {
     return firestore.collection('big_invoices').snapshots();
   }
 
-  static Future<void> addBigInvoice(BigInvoice bigInvoice) async {
+  static Future<void> addBigInvoice(DailyInvoice bigInvoice) async {
     // Reference to the Firestore collection
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference invoicesCollection =
@@ -606,8 +606,8 @@ class FirebaseFunctions {
     await invoicesCollection.doc(bigInvoice.date).set(bigInvoice.toJson());
   }
 
-  static Future<void> updateBigInvoice(
-      String date, BigInvoice bigInvoice) async {
+  static Future<void> updateBigInvoice(String date,
+      DailyInvoice bigInvoice) async {
     // Reference to the Firestore collection
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference invoicesCollection =
@@ -643,7 +643,7 @@ class FirebaseFunctions {
 
     // Convert the document to a BigInvoice object
     Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-    BigInvoice bigInvoice = BigInvoice.fromJson(data);
+    DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
     // Update the specific payment in the list
     if (paymentIndex < 0 || paymentIndex >= bigInvoice.payments.length) {
@@ -724,13 +724,13 @@ class FirebaseFunctions {
 
     if (docSnapshot.exists) {
       Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-      BigInvoice bigInvoice = BigInvoice.fromJson(data);
+      DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
       bigInvoice.invoices.add(newInvoice);
 
       await docRef.update(bigInvoice.toJson());
     } else {
-      BigInvoice bigInvoice = BigInvoice(
+      DailyInvoice bigInvoice = DailyInvoice(
         date: date,
         day: day,
         invoices: [newInvoice],
@@ -756,7 +756,7 @@ class FirebaseFunctions {
     }
 
     Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-    BigInvoice bigInvoice = BigInvoice.fromJson(data);
+    DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
     // Find invoice index by id
     int index = bigInvoice.invoices
@@ -811,7 +811,7 @@ class FirebaseFunctions {
     }
 
     Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-    BigInvoice bigInvoice = BigInvoice.fromJson(data);
+    DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
     // Find invoice index in big invoice
     int index = bigInvoice.invoices.indexWhere((inv) => inv.id == invoice.id);
@@ -861,7 +861,7 @@ class FirebaseFunctions {
 
     for (var doc in snapshot.docs) {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-      BigInvoice bigInvoice = BigInvoice.fromJson(data);
+      DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
       // Filter invoices for this student number
       var matchingInvoices = bigInvoice.invoices
