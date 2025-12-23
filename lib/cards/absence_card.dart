@@ -19,7 +19,6 @@ class AbsenceCard extends StatelessWidget {
 
     // --- New UI Structure ---
     return Directionality(
-      // Assuming this is used in an RTL context based on the example and Arabic text
       textDirection: TextDirection.rtl,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -27,7 +26,6 @@ class AbsenceCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             gradient: LinearGradient(
-              // Using a subtle gradient from the primary and secondary colors
               colors: [
                 AppColors.primaryMain,
                 AppColors.secondaryMain,
@@ -64,7 +62,7 @@ class AbsenceCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
                   children: [
-                    // Attendance Ratio Badge (Left side in RTL)
+                    // Attendance Ratio Badge
                     _buildAttendanceBadge(attendanceRatio),
                     const SizedBox(width: 16),
                     // Month Name and Details
@@ -72,12 +70,11 @@ class AbsenceCard extends StatelessWidget {
                       child: _buildInfoSection(
                           attended, absent, absence.monthName),
                     ),
-                    // Calendar Icon (Visual separator/indicator)
+                    // Calendar Icon
                     Icon(
                       Icons.calendar_month,
                       size: 36,
-                      color: AppColors.white.withOpacity(
-                          0.8), // Changed to white/light for the dark background
+                      color: AppColors.white.withOpacity(0.8),
                     ),
                   ],
                 ),
@@ -89,7 +86,6 @@ class AbsenceCard extends StatelessWidget {
     );
   }
 
-  // Helper method for the decorative background circles
   Widget _buildCircle(double size, double opacity) {
     return Container(
       width: size,
@@ -101,48 +97,42 @@ class AbsenceCard extends StatelessWidget {
     );
   }
 
-  // Helper method for the circular attendance badge
   Widget _buildAttendanceBadge(double ratio) {
     return Stack(
       alignment: Alignment.center,
       children: [
         SizedBox(
-          width: 70, // Slightly larger
+          width: 70,
           height: 70,
           child: CircularProgressIndicator(
             value: ratio,
             backgroundColor: AppColors.white.withOpacity(0.2),
-            // Light background
             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.white),
-            // White/light progress
             strokeWidth: 6,
           ),
         ),
         Text(
           '${(ratio * 100).toInt()}%',
           style: AppTextStyles.customText(
-            // Use custom text style
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: AppColors.white, // Text on dark background
+            color: AppColors.white,
           ),
         ),
       ],
     );
   }
 
-  // Helper method for the month name and attendance data
   Widget _buildInfoSection(int attended, int absent, String monthName) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      // Align to start (Right in RTL)
       children: [
         Text(
           monthName,
           style: AppTextStyles.customText(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: AppColors.white, // Text on dark background
+            color: AppColors.white,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -150,14 +140,12 @@ class AbsenceCard extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            // Attended Days
             _buildAttendanceDetail(
               label: 'حضور',
               count: attended,
-              color: AppColors.white.withOpacity(0.9), // Slightly lighter color
+              color: AppColors.white.withOpacity(0.9),
             ),
             const SizedBox(width: 12),
-            // Absent Days
             _buildAttendanceDetail(
               label: 'غياب',
               count: absent,
@@ -169,12 +157,10 @@ class AbsenceCard extends StatelessWidget {
     );
   }
 
-  // Helper method for the individual attendance/absence counts
   Widget _buildAttendanceDetail(
       {required String label, required int count, required Color color}) {
     return Row(
       children: [
-        // Using a distinct color for the count for emphasis
         Text(
           '$count',
           style: AppTextStyles.customText(

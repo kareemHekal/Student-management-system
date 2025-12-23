@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../loadingFile/loading_alert/run_with_loading.dart';
-import '../models/Big invoice.dart';
+import '../models/big_invoice.dart';
 import '../models/payment.dart';
 
 class AddExpenseDialog extends StatefulWidget {

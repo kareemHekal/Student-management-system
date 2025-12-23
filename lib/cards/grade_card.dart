@@ -3,7 +3,7 @@ import 'package:student_management_system/theme/text_style.dart';
 
 import '../theme/colors_app.dart';
 
-// --- Card Helpers (Kept consistent with withAlpha usage) ---
+// --- Card Helpers ---
 class _CardHelpers {
   static Widget buildCircle(double size, double opacity) {
     int alpha = (opacity * 255).round();
@@ -64,7 +64,6 @@ class GradeActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Define the consistent color for non-delete actions (0.20 opacity -> Alpha 51)
     const Color defaultActionColor = AppColors.white;
     const int defaultActionAlpha = 51; // 0.20 opacity
 
@@ -75,7 +74,6 @@ class GradeActionCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
-          // Dark Gradient Theme
           gradient: const LinearGradient(
             colors: [
               AppColors.primaryMain,
@@ -86,7 +84,7 @@ class GradeActionCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryMain.withAlpha(102), // 0.4 opacity
+              color: AppColors.primaryMain.withAlpha(102),
               blurRadius: 14,
               offset: const Offset(0, 6),
               spreadRadius: -4,
@@ -100,7 +98,6 @@ class GradeActionCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // School Icon
                 Icon(
                   Icons.school,
                   size: 30,
@@ -108,14 +105,14 @@ class GradeActionCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
 
-                // Grade Name (Title)
                 Expanded(
                   child: Text(
                     gradeName,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     softWrap: true,
-                    style: const TextStyle(
+                    // تم التعديل هنا لاستخدام الكلاس الخاص بك
+                    style: AppTextStyles.customText(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.white,
@@ -127,43 +124,33 @@ class GradeActionCard extends StatelessWidget {
 
             const Divider(color: AppColors.white, thickness: 0.5, height: 25),
 
-            // 2. ACTIONS ROW (4 items, Delete on the right)
+            // 2. ACTIONS ROW
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                // Delete (Moved to the start/right in RTL)
                 _buildActionItem(
                   icon: Icons.delete_forever,
                   label: 'حذف',
                   onPressed: onDelete,
-                  color: AppColors.statusAbsent, // Red background
+                  color: AppColors.statusAbsent,
                 ),
-
-                // Edit (Rename Grade)
                 _buildActionItem(
                   icon: Icons.edit,
                   label: 'تعديل',
                   onPressed: onRename,
-                  color: defaultActionColor
-                      .withAlpha(defaultActionAlpha), // Consistent background
+                  color: defaultActionColor.withAlpha(defaultActionAlpha),
                 ),
-
-                // Exams (Assignment Icon)
                 _buildActionItem(
                   icon: Icons.assignment,
                   label: 'الامتحانات',
                   onPressed: onNavigateToExams,
-                  color: defaultActionColor
-                      .withAlpha(defaultActionAlpha), // Consistent background
+                  color: defaultActionColor.withAlpha(defaultActionAlpha),
                 ),
-
-                // Subscriptions (Monetization Icon)
                 _buildActionItem(
                   icon: Icons.monetization_on,
                   label: 'الاشتراكات',
                   onPressed: onNavigateToSubscriptions,
-                  color: defaultActionColor
-                      .withAlpha(defaultActionAlpha), // Consistent background
+                  color: defaultActionColor.withAlpha(defaultActionAlpha),
                 ),
               ],
             ),
@@ -173,7 +160,6 @@ class GradeActionCard extends StatelessWidget {
     );
   }
 
-  // Helper widget to build a column for the action button and its label
   Widget _buildActionItem({
     required IconData icon,
     required String label,
@@ -187,16 +173,17 @@ class GradeActionCard extends StatelessWidget {
           tooltip: label,
           circleColor: color,
           iconColor: AppColors.textOnDark,
-          // Dark icon for contrast
           onPressed: onPressed,
         ),
         const SizedBox(height: 4),
-        Text(label,
-            style: AppTextStyles.customText(
-              fontSize: 12,
-              color: AppColors.white.withAlpha(204),
-              fontWeight: FontWeight.bold,
-            )),
+        Text(
+          label,
+          style: AppTextStyles.customText(
+            fontSize: 12,
+            color: AppColors.white.withAlpha(204),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../models/Magmo3aModel.dart';
-import '../theme/colors_app.dart';
-import '../theme/text_style.dart';
+import '../../models/Magmo3aModel.dart';
+import '../../theme/colors_app.dart';
+import '../../theme/text_style.dart';
 
 class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
   final Magmo3amodel? magmo3aModel;
@@ -22,7 +22,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
           height: 100,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [
                 AppColors.primaryMain,
                 AppColors.secondaryMain,
@@ -88,7 +88,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
         child: Text(
           translateDayToArabic(magmo3aModel?.days ?? ""),
           style: AppTextStyles.customText(
-            fontSize: 18, // ⬅️ أكبر
+            fontSize: 18,
             color: AppColors.primaryDark,
             fontWeight: FontWeight.bold,
           ),
@@ -129,7 +129,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
       children: [
         Icon(
           icon,
-          size: 17, // ⬅️ أكبر
+          size: 17,
           color: AppColors.secondaryMain,
         ),
         const SizedBox(width: 6),
@@ -140,7 +140,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
               TextSpan(
                 text: "$label :  ",
                 style: AppTextStyles.customText(
-                  fontSize: 15, // ⬅️ أكبر
+                  fontSize: 15,
                   color: AppColors.secondaryMain,
                   fontWeight: FontWeight.bold,
                 ),
@@ -148,8 +148,9 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
               TextSpan(
                 text: value,
                 style: AppTextStyles.customText(
-                  fontSize: 15, // ⬅️ أكبر
-                  color: AppColors.textOnDark,
+                  fontSize: 15,
+                  color: AppColors.white,
+                  // تم تغييره للون الأبيض ليتناسب مع الخلفية الملونة
                   fontWeight: FontWeight.bold,
                 ),
               ),

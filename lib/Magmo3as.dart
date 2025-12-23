@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'cards/Magmo3aWidget.dart';
+import 'cards/magmo3at/Magmo3aWidget.dart';
 import 'firebase/firebase_functions.dart';
 import 'loadingFile/loadingWidget.dart';
 import 'models/Magmo3aModel.dart';
 import 'theme/colors_app.dart';
-import 'bottomSheets/add_magmo3a.dart';
 
 class Magmo3as extends StatefulWidget {
   String day;

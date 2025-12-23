@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../theme/colors_app.dart';
-import '../theme/text_style.dart';
 import '../Alert dialogs/ResetAbscenceMonthDialog.dart';
 import '../Alert dialogs/Reset_Grade_student_subscriptions.dart';
 import '../Alert dialogs/add_out_come.dart';
 import '../Alert dialogs/change_password.dart';
 import '../Alert dialogs/verifiy_password.dart';
 import '../constants.dart';
+import '../theme/colors_app.dart';
+import '../theme/text_style.dart';
 import 'PaymentCheckPage.dart';
 import 'allgrades.dart';
-import 'invoices page.dart';
+import 'invoices/monthly_invoices_page.dart';
 
 class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
@@ -70,7 +70,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
             title: "عرض جميع الفواتير",
             onTap: () => Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => const Invoicespage()),
+              MaterialPageRoute(builder: (_) => const MonthlyReportsPage()),
               (route) => false,
             ),
           ),

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 
-import '../cards/StudentWidget.dart';
 import '../firebase/firebase_functions.dart';
+import 'BottomSheets/student_chosen_pdf.dart';
+import 'cards/student/StudentWidget.dart';
 import 'models/Studentmodel.dart';
 import 'theme/colors_app.dart';
 
@@ -81,12 +78,10 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                                 IconButton(
                                   icon: const Icon(Icons.print,
                                       color: Colors.white),
-                                  onPressed: () async {
-                                    if (_filteredStudents.isNotEmpty) {
-                                      await _generatePdf(_filteredStudents);
-                                    } else {
-                                      print("لا يوجد طلاب للطباعة");
-                                    }
+                                  onPressed: () {
+                                    StudentChosenPdf.show(
+                                        context: context,
+                                        students: _filteredStudents);
                                   },
                                 ),
                                 Text(
@@ -211,147 +206,6 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
           ],
         ),
       ),
-    );
-  }
-  _generatePdf(List<Studentmodel> students) async {
-    final pdf = pw.Document();
-
-    // Load font
-    final fontData = await rootBundle.load("fonts/NotoKufiArabic-Regular.ttf");
-    final pw.Font font = pw.Font.ttf(fontData);
-
-    // Page dimensions for landscape A4
-    final pageWidth = PdfPageFormat.a4.landscape.width;
-    final pageHeight = PdfPageFormat.a4.landscape.height;
-
-    const int crossAxisCount = 6; // 6 cards per row
-    const double spacing = 10.0; // spacing between cards
-
-    // Calculate card width
-    final cardWidth =
-        (pageWidth - (crossAxisCount + 1) * spacing) / crossAxisCount;
-
-    // Compute the required height for each card based on the student with the longest name
-    double computeCardHeight(
-        List<Studentmodel> students, pw.Font font, double cardWidth) {
-      double maxHeight = 80; // minimum height
-      final textStyle = pw.TextStyle(font: font, fontSize: 10);
-      final phoneStyle = pw.TextStyle(font: font, fontSize: 9);
-
-      for (var s in students) {
-        final name = s.name ?? "Unknown";
-        final phone = s.phoneNumber ?? "لا يوجد رقم تلفون";
-
-        // Estimate height for name and phone
-        final nameLines =
-            (name.length / 20).ceil(); // roughly 20 chars per line
-        final phoneLines = 1;
-        final totalLines = nameLines + phoneLines;
-
-        final height = totalLines * 12 + 16; // 12pt per line + padding
-        if (height > maxHeight) maxHeight = height as double;
-      }
-      return maxHeight;
-    }
-
-    final cardHeight = computeCardHeight(students, font, cardWidth);
-
-    // Calculate maximum rows per page dynamically
-    final maxRowsPerPage =
-        ((pageHeight - spacing) / (cardHeight + spacing)).floor();
-
-    final totalStudents = students.length;
-    final totalCardsPerPage = crossAxisCount * maxRowsPerPage;
-    final totalPages = (totalStudents / totalCardsPerPage).ceil();
-
-    for (int pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4.landscape,
-          build: (pw.Context context) {
-            return pw.Column(
-              children: List.generate(maxRowsPerPage, (rowIndex) {
-                return pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.start,
-                  children: List.generate(crossAxisCount, (colIndex) {
-                    final studentIndex = pageIndex * totalCardsPerPage +
-                        rowIndex * crossAxisCount +
-                        colIndex;
-
-                    if (studentIndex < totalStudents) {
-                      final student = students[studentIndex];
-                      final nameText = student.name ?? "Unknown";
-                      final phoneNumber =
-                          student.phoneNumber ?? "لا يوجد رقم تلفون";
-
-                      return pw.Container(
-                        width: cardWidth,
-                        height: cardHeight,
-                        padding: const pw.EdgeInsets.all(6),
-                        margin: pw.EdgeInsets.all(spacing / 2),
-                        decoration: pw.BoxDecoration(
-                          border: pw.Border.all(color: PdfColors.grey),
-                          borderRadius: pw.BorderRadius.circular(6),
-                        ),
-                        child: pw.Row(
-                          children: [
-                            // Left side: name + phone
-                            pw.Expanded(
-                              child: pw.Column(
-                                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                mainAxisAlignment: pw.MainAxisAlignment.center,
-                                children: [
-                                  pw.Text(
-                                    nameText,
-                                    style:
-                                        pw.TextStyle(font: font, fontSize: 10),
-                                    maxLines: 2,
-                                    overflow: pw.TextOverflow.clip,
-                                    textDirection: pw.TextDirection.rtl,
-                                  ),
-                                  pw.SizedBox(height: 4),
-                                  pw.Text(
-                                    "Phone: $phoneNumber",
-                                    style: pw.TextStyle(
-                                        font: font,
-                                        fontSize: 9,
-                                        color: PdfColors.grey800),
-                                    textDirection: pw.TextDirection.rtl,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Right side: QR code
-                            pw.Container(
-                              width: 50,
-                              height: 50,
-                              child: pw.BarcodeWidget(
-                                data: phoneNumber,
-                                barcode: pw.Barcode.qrCode(),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    } else {
-                      // Empty container for alignment
-                      return pw.SizedBox(
-                        width: cardWidth,
-                        height: cardHeight,
-                      );
-                    }
-                  }),
-                );
-              }),
-            );
-          },
-        ),
-      );
-    }
-
-    // Print the document
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
     );
   }
 }

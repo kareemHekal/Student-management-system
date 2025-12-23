@@ -96,7 +96,7 @@ class StudentCubit extends Cubit<StudentState> {
           date: date ?? "",
           day: day ?? "",
           amount: paidSub.paidAmount ?? 0,
-          description: paidSub.description ?? "",
+          description: paidSub.description ?? paidSub.description,
           grade: level ?? "",
           phoneNumber: studentNumberController.text,
           motherPhone: motherNumberController.text,

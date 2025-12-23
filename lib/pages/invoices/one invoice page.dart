@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../Alert dialogs/DeleteOutcomeBillDialog.dart';
-import '../Alert dialogs/verifiy_password.dart';
-import '../cards/In come widget.dart';
-import '../cards/outcome widget.dart';
-import '../firebase/firebase_functions.dart';
-import '../models/Big invoice.dart';
-import '../models/Invoice.dart';
-import '../theme/colors_app.dart';
+import '../../Alert dialogs/DeleteOutcomeBillDialog.dart';
+import '../../Alert dialogs/verifiy_password.dart';
+import '../../cards/invoices/In come widget.dart';
+import '../../cards/invoices/outcome widget.dart';
+import '../../firebase/firebase_functions.dart';
+import '../../models/Invoice.dart';
+import '../../models/big_invoice.dart';
+import '../../theme/colors_app.dart';
 
 class OneInivoicePage extends StatefulWidget {
   final BigInvoice invoice;

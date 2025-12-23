@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:student_management_system/theme/text_style.dart'; // تأكد من المسار الصحيح
 import 'package:url_launcher/url_launcher_string.dart';
 
-import '../Alert dialogs/DeleteIncomeBillDialog.dart';
-import '../Alert dialogs/verifiy_password.dart';
-import '../firebase/firebase_functions.dart';
-import '../models/Invoice.dart';
-import '../models/subscription_fee.dart';
-import '../theme/colors_app.dart';
+import '../../Alert dialogs/DeleteIncomeBillDialog.dart';
+import '../../Alert dialogs/verifiy_password.dart';
+import '../../firebase/firebase_functions.dart';
+import '../../models/Invoice.dart';
+import '../../models/subscription_fee.dart';
+import '../../theme/colors_app.dart';
 
 class InComeWidget extends StatefulWidget {
   final Invoice invoice;
@@ -40,16 +41,13 @@ class _InComeWidgetState extends State<InComeWidget> {
     }
   }
 
-  // --- DELETE LOGIC MOVED TO A SEPARATE FUNCTION ---
   void _showDeleteConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return DeleteIncomeBillDialog(
           onConfirm: () async {
-            // Close the confirmation dialog first
             Navigator.of(dialogContext).pop();
-
             final parentContext = context;
 
             await showVerifyPasswordDialog(
@@ -63,8 +61,11 @@ class _InComeWidgetState extends State<InComeWidget> {
                   );
 
                   ScaffoldMessenger.of(parentContext).showSnackBar(
-                    const SnackBar(
-                      content: Text('تم حذف الفاتورة بنجاح'),
+                    SnackBar(
+                      content: Text(
+                        'تم حذف الفاتورة بنجاح',
+                        style: AppTextStyles.customText(color: AppColors.white),
+                      ),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -76,7 +77,10 @@ class _InComeWidgetState extends State<InComeWidget> {
                 } catch (e) {
                   ScaffoldMessenger.of(parentContext).showSnackBar(
                     SnackBar(
-                      content: Text('حدث خطأ أثناء حذف الفاتورة: $e'),
+                      content: Text(
+                        'حدث خطأ أثناء حذف الفاتورة: $e',
+                        style: AppTextStyles.customText(color: AppColors.white),
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -95,117 +99,94 @@ class _InComeWidgetState extends State<InComeWidget> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12),
-      child: GestureDetector(
-        // *** REMOVED onLongPress LOGIC ***
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22), // Consistent radius
-            // VIBRANT GRADIENT THEME
-            gradient: const LinearGradient(
-              colors: [
-                AppColors.primaryMain,
-                AppColors.secondaryMain,
-              ],
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryMain.withOpacity(0.35),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-                spreadRadius: -4,
-              ),
-            ],
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: const LinearGradient(
+            colors: [AppColors.primaryMain, AppColors.secondaryMain],
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
           ),
-          child: Stack(
-            children: [
-              // ===== Decorative Circles (Unchanged) =====
-              // 1. Large Circle on the Right Edge (NEW)
-              Positioned(
-                top: 0,
-                bottom: 0,
-                right: -50, // Pushed out to the right
-                child: Center(
-                  child: _CardHelpers.buildCircle(120, 0.1),
-                ),
-              ),
-
-              // 2. Medium Circle near Top Left Corner (NEW)
-              Positioned(
-                top: -10,
-                left: 50,
-                child: _CardHelpers.buildCircle(80, 0.08),
-              ),
-
-              // 3. Small Circle in the Bottom Right Corner (NEW)
-              Positioned(
-                bottom: -5,
-                left: -20,
-                child: _CardHelpers.buildCircle(90, 0.15),
-              ),
-              // ===== Card Content (Inner Padding) =====
-              Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context),
-                    const Divider(color: AppColors.white, thickness: 0.5),
-                    const SizedBox(height: 8),
-                    // Information Rows (unchanged)
-                    _buildInfoRow(context, false, "اسم الطالب:",
-                        widget.invoice.studentName),
-                    _buildInfoRow(context, true, "رقم الطالب:",
-                        widget.invoice.studentPhoneNumber),
-                    _buildInfoRow(context, true, "رقم الأم:",
-                        widget.invoice.momPhoneNumber),
-                    _buildInfoRow(context, true, "رقم الأب:",
-                        widget.invoice.dadPhoneNumber),
-                    _buildInfoRow(
-                        context, false, "الصف:", widget.invoice.grade),
-                    _buildInfoRow(context, false, "المبلغ:",
-                        "${widget.invoice.amount.toStringAsFixed(2)} ج.م"),
-                    _buildInfoRow(
-                        context,
-                        false,
-                        "اسم الأشتراك:",
-                        subscriptionFee?.subscriptionName ??
-                            " الاشتراك لم يعد موجود "),
-                    _buildInfoRow(
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryMain.withOpacity(0.35),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+              spreadRadius: -4,
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              bottom: 0,
+              right: -50,
+              child: Center(child: _CardHelpers.buildCircle(120, 0.1)),
+            ),
+            Positioned(
+              top: -10,
+              left: 50,
+              child: _CardHelpers.buildCircle(80, 0.08),
+            ),
+            Positioned(
+              bottom: -5,
+              left: -20,
+              child: _CardHelpers.buildCircle(90, 0.15),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context),
+                  const Divider(color: AppColors.white, thickness: 0.5),
+                  const SizedBox(height: 8),
+                  _buildInfoRow(context, false, "اسم الطالب:",
+                      widget.invoice.studentName),
+                  _buildInfoRow(context, true, "رقم الطالب:",
+                      widget.invoice.studentPhoneNumber),
+                  _buildInfoRow(context, true, "رقم الأم:",
+                      widget.invoice.momPhoneNumber),
+                  _buildInfoRow(context, true, "رقم الأب:",
+                      widget.invoice.dadPhoneNumber),
+                  _buildInfoRow(context, false, "الصف:", widget.invoice.grade),
+                  _buildInfoRow(context, false, "المبلغ:",
+                      "${widget.invoice.amount.toStringAsFixed(2)} ج.م"),
+                  _buildInfoRow(
                       context,
                       false,
-                      "الوصف:",
-                      widget.invoice.description.isEmpty
-                          ? "لا يوجد وصف"
-                          : widget.invoice.description,
-                    ),
-                    _buildInfoRow(
-                        context,
-                        false,
-                        "التاريخ:",
-                        DateFormat('yyyy-MM-dd')
-                            .format(widget.invoice.dateTime)),
-                    _buildInfoRow(context, false, "الوقت:",
-                        DateFormat('hh:mm a').format(widget.invoice.dateTime)),
-                  ],
-                ),
+                      "اسم الأشتراك:",
+                      subscriptionFee?.subscriptionName ??
+                          " الاشتراك لم يعد موجود "),
+                  _buildInfoRow(
+                    context,
+                    false,
+                    "الوصف:",
+                    widget.invoice.description.isEmpty
+                        ? "لا يوجد وصف"
+                        : widget.invoice.description,
+                  ),
+                  _buildInfoRow(context, false, "التاريخ:",
+                      DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime)),
+                  _buildInfoRow(context, false, "الوقت:",
+                      DateFormat('hh:mm a').format(widget.invoice.dateTime)),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // --- Header now includes three action circles: View, Edit, and Delete ---
   Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
+        Text(
           "تفاصيل الإيراد",
-          style: TextStyle(
+          style: AppTextStyles.customText(
             color: AppColors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -214,7 +195,6 @@ class _InComeWidgetState extends State<InComeWidget> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 2. Edit Button in Circle
             _CardHelpers.buildActionCircle(
               icon: Icons.edit,
               tooltip: 'تعديل الفاتورة',
@@ -230,8 +210,6 @@ class _InComeWidgetState extends State<InComeWidget> {
               },
             ),
             const SizedBox(width: 8),
-
-            // 3. Delete Button in Circle (New Location)
             _CardHelpers.buildActionCircle(
               icon: Icons.delete_forever,
               tooltip: 'حذف الفاتورة',
@@ -247,7 +225,6 @@ class _InComeWidgetState extends State<InComeWidget> {
     );
   }
 
-  // --- _buildInfoRow remains the same ---
   Widget _buildInfoRow(
       BuildContext context, bool isPhoneNumber, String label, String value) {
     void _launchPhoneNumber(String phoneNumber) async {
@@ -264,7 +241,7 @@ class _InComeWidgetState extends State<InComeWidget> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: AppTextStyles.customText(
               color: AppColors.white,
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -278,13 +255,14 @@ class _InComeWidgetState extends State<InComeWidget> {
                 child: Text(
                   value,
                   textAlign: TextAlign.end,
-                  style: TextStyle(
+                  style: AppTextStyles.customText(
                     color: isPhoneNumber
                         ? AppColors.secondaryMain
                         : AppColors.white,
                     fontSize: 16,
                     fontWeight:
                         isPhoneNumber ? FontWeight.bold : FontWeight.normal,
+                  ).copyWith(
                     decoration: isPhoneNumber
                         ? TextDecoration.underline
                         : TextDecoration.none,
@@ -298,7 +276,6 @@ class _InComeWidgetState extends State<InComeWidget> {
     );
   }
 
-  // --- _showEditDialog remains the same ---
   void _showEditDialog(BuildContext context) {
     final amountController =
         TextEditingController(text: widget.invoice.amount.toStringAsFixed(2));
@@ -309,40 +286,45 @@ class _InComeWidgetState extends State<InComeWidget> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text("تعديل فاتورة الإيراد"),
+          title: Text("تعديل فاتورة الإيراد",
+              style: AppTextStyles.customText(
+                  fontWeight: FontWeight.bold, fontSize: 18)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "المبلغ"),
+                style: AppTextStyles.customText(color: Colors.black),
+                decoration: InputDecoration(
+                  labelText: "المبلغ",
+                  labelStyle: AppTextStyles.customText(fontSize: 14),
+                ),
               ),
               TextFormField(
                 controller: descriptionController,
-                decoration: const InputDecoration(labelText: "الوصف"),
+                style: AppTextStyles.customText(color: Colors.black),
+                decoration: InputDecoration(
+                  labelText: "الوصف",
+                  labelStyle: AppTextStyles.customText(fontSize: 14),
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("إلغاء"),
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("إلغاء",
+                  style: AppTextStyles.customText(color: Colors.grey)),
             ),
             TextButton(
               onPressed: () {
                 String formattedDate =
                     DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime);
-
                 double parsedAmount = double.tryParse(amountController.text) ??
                     widget.invoice.amount;
-
-                double differenceAmount = (widget.invoice.amount -
-                        (double.tryParse(amountController.text) ?? 0)) *
-                    -1;
-                ;
+                double differenceAmount =
+                    (widget.invoice.amount - parsedAmount) * -1;
 
                 Invoice updatedInvoice = Invoice(
                   studentId: widget.invoice.studentId,
@@ -366,13 +348,13 @@ class _InComeWidgetState extends State<InComeWidget> {
 
                 Navigator.pushNamedAndRemoveUntil(
                     context, "/HomeScreen", (route) => false);
-                setState(() {});
               },
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: Colors.blue,
               ),
-              child: const Text("تأكيد"),
+              child: Text("تأكيد",
+                  style: AppTextStyles.customText(color: AppColors.white)),
             ),
           ],
         );
@@ -381,7 +363,6 @@ class _InComeWidgetState extends State<InComeWidget> {
   }
 }
 
-// Assuming these helpers are accessible for consistency
 class _CardHelpers {
   static Widget buildCircle(double size, double opacity) {
     return Container(
@@ -411,11 +392,7 @@ class _CardHelpers {
       child: IconButton(
         padding: EdgeInsets.zero,
         tooltip: tooltip,
-        icon: Icon(
-          icon,
-          color: iconColor,
-          size: 20,
-        ),
+        icon: Icon(icon, color: iconColor, size: 20),
         onPressed: onPressed,
       ),
     );

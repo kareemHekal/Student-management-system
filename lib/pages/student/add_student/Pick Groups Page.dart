@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../cards/magmo3afor display widget.dart';
-import '../firebase/firebase_functions.dart';
-import '../loadingFile/loadingWidget.dart';
-import '../models/Magmo3aModel.dart';
-import '../theme/colors_app.dart';
+import '../../../cards/magmo3at/magmo3afor display widget.dart';
+import '../../../firebase/firebase_functions.dart';
+import '../../../loadingFile/loadingWidget.dart';
+import '../../../models/Magmo3aModel.dart';
+import '../../../theme/colors_app.dart';
 
 class ChoosedaysToAttend extends StatefulWidget {
   final String? level;

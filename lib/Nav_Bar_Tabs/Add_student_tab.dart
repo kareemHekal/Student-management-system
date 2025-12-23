@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/pages/student/add_student/add_student_widget.dart';
 
-import '../add_student_widget.dart';
 import '../firebase/firebase_functions.dart';
 import '../theme/colors_app.dart';
 

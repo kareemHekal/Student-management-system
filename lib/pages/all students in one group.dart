@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import 'package:student_management_system/BottomSheets/student_chosen_pdf.dart';
 
-import '../cards/StudentWidget.dart';
+import '../cards/student/StudentWidget.dart';
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loadingWidget.dart';
 import '../models/Magmo3aModel.dart';
@@ -62,8 +59,8 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
           IconButton(
             icon: const Icon(Icons.picture_as_pdf,
                 color: AppColors.secondaryMain),
-            onPressed: () async {
-              await _generatePdf(context);
+            onPressed: () {
+              StudentChosenPdf.show(context: context, students: allStudents);
             },
           ),
         ],
@@ -242,94 +239,4 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
     );
   }
 
-  Future<void> _generatePdf(BuildContext context) async {
-    final pdf = pw.Document();
-    final fontData = await rootBundle.load("fonts/NotoKufiArabic-Regular.ttf");
-    final pw.Font font = pw.Font.ttf(fontData);
-    List<Studentmodel> pdfStudents = allStudents;
-
-    final String formattedTime = widget.magmo3aModel.time != null
-        ? '${widget.magmo3aModel.time!.hourOfPeriod == 0 ? 12 : widget.magmo3aModel.time!.hourOfPeriod}:${widget.magmo3aModel.time!.minute.toString().padLeft(2, '0')} ${(widget.magmo3aModel.time!.period == DayPeriod.am) ? 'صباحًا' : 'مساءً'}'
-        : 'مجموعة بدون اسم';
-
-    List<Studentmodel> boys =
-        pdfStudents.where((s) => s.gender == 'Male').toList();
-    List<Studentmodel> girls =
-        pdfStudents.where((s) => s.gender == 'Female').toList();
-
-    boys.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-    girls.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-
-    const int maxEntriesPerPage = 40;
-
-    void addStudentPages(String title, List<Studentmodel> students, bool showGroupInfo) {
-      for (int page = 0; page * maxEntriesPerPage < students.length; page++) {
-        pdf.addPage(
-          pw.Page(
-            pageFormat: PdfPageFormat.a4,
-            margin: const pw.EdgeInsets.all(20),
-            build: (pw.Context context) {
-              return pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  if (page == 0 && showGroupInfo) ...[
-                    pw.Text("وقت المجموعة: $formattedTime",
-                        style: pw.TextStyle(
-                            font: font,
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold)),
-                    pw.Text("الصف: ${widget.magmo3aModel.grade ?? 'غير محدد'}",
-                        textDirection:
-                            _isArabic(widget.magmo3aModel.grade ?? '')
-                                ? pw.TextDirection.rtl
-                                : pw.TextDirection.ltr,
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("اليوم: ${widget.magmo3aModel.days ?? 'غير محدد'}",
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("عدد الأولاد: ${boys.length}",
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("عدد البنات: ${girls.length}",
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("إجمالي عدد الطلاب: ${boys.length + girls.length}",
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.SizedBox(height: 10),
-                    pw.Text(title,
-                        style: pw.TextStyle(
-                            font: font,
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold)),
-                    pw.SizedBox(height: 5),
-                  ],
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: students
-                        .skip(page * maxEntriesPerPage)
-                        .take(maxEntriesPerPage)
-                        .map((student) => pw.Text(
-                              student.name ?? 'بدون اسم',
-                              textDirection: pw.TextDirection.rtl,
-                              style: pw.TextStyle(font: font, fontSize: 8),
-                    ))
-                        .toList(),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      }
-    }
-
-    addStudentPages("الأولاد:", boys, true);
-    addStudentPages("البنات:", girls, true);
-
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  }
-
-  bool _isArabic(String text) {
-    final arabicRegex = RegExp(r'[\u0600-\u06FF]');
-    return arabicRegex.hasMatch(text);
-  }
 }

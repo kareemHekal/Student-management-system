@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../models/Magmo3aModel.dart';
-import '../theme/colors_app.dart';
-import '../theme/text_style.dart';
+import '../../models/Magmo3aModel.dart';
+import '../../theme/colors_app.dart';
+import '../../theme/text_style.dart';
 
 class Groupsmallcard extends StatelessWidget {
   final Magmo3amodel? magmo3aModel;
@@ -135,6 +135,7 @@ class Groupsmallcard extends StatelessWidget {
             children: [
               TextSpan(
                 text: "$label: ",
+                // تم التأكد من استخدام الستايل المخصص هنا
                 style: AppTextStyles.customText(
                   fontSize: 14,
                   color: AppColors.secondaryMain,
@@ -143,9 +144,11 @@ class Groupsmallcard extends StatelessWidget {
               ),
               TextSpan(
                 text: value,
+                // تم التأكد من استخدام الستايل المخصص هنا
                 style: AppTextStyles.customText(
                   fontSize: 14,
-                  color: AppColors.textOnDark,
+                  color: AppColors.white,
+                  // تم تعديله للون الأبيض لزيادة الوضوح على التدرج
                   fontWeight: FontWeight.bold,
                 ),
               ),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
-import '../BottomSheets/add_magmo3a.dart';
-import '../models/Magmo3aModel.dart';
-import '../pages/all students in one group.dart';
-import '../theme/colors_app.dart';
-import '../theme/text_style.dart';
+import '../../BottomSheets/add_magmo3a.dart';
+import '../../models/Magmo3aModel.dart';
+import '../../pages/all students in one group.dart';
+import '../../theme/colors_app.dart';
+import '../../theme/text_style.dart';
 
 class Magmo3aWidget extends StatelessWidget {
   final Magmo3amodel magmo3aModel;

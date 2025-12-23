@@ -4,6 +4,7 @@ import '../Alert dialogs/add_edit_subscription_for_grade.dart';
 import '../Alert dialogs/delete_subscription.dart';
 import '../models/subscription_fee.dart';
 import '../theme/colors_app.dart';
+import '../theme/text_style.dart'; // استيراد ملف الستايلات الموحد
 
 class SubscriptionCard extends StatelessWidget {
   final SubscriptionFee subscriptionFee;
@@ -24,7 +25,7 @@ class SubscriptionCard extends StatelessWidget {
     );
   }
 
-  // Helper method for the icon buttons inside circles (No functional change)
+  // Helper method for the icon buttons inside circles
   Widget _buildActionCircle({
     required IconData icon,
     required Color circleColor,
@@ -61,7 +62,7 @@ class SubscriptionCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [
                   AppColors.primaryMain,
                   AppColors.secondaryMain,
@@ -80,14 +81,11 @@ class SubscriptionCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                // ===== Decorative Circles (ADJUSTED PLACEMENT) =====
+                // ===== Decorative Circles =====
                 Positioned(
-                  // *** ADJUSTED POSITIONING FOR CURVE FIT ***
-                  // Pushing the center of the circle further into the corner.
-                  top: -10, // Increased offset towards the top edge
-                  right: -10, // Increased offset towards the right edge
-                  child: _buildCircle(
-                      60, 0.1), // Slightly increased size (from 50 to 60)
+                  top: -10,
+                  right: -10,
+                  child: _buildCircle(60, 0.1),
                 ),
                 Positioned(
                   bottom: -40,
@@ -101,7 +99,6 @@ class SubscriptionCard extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: Row(
                     children: [
-                      // Payments Icon (I'll keep this white for better contrast with the gradient)
                       const Icon(
                         Icons.payments_rounded,
                         size: 38,
@@ -116,7 +113,7 @@ class SubscriptionCard extends StatelessWidget {
                           children: [
                             Text(
                               subscriptionFee.subscriptionName,
-                              style: const TextStyle(
+                              style: AppTextStyles.customText(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.white,
@@ -124,9 +121,9 @@ class SubscriptionCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              // Using AppColors.white for consistency with AppColors.textOnDark
-                              '${subscriptionFee.subscriptionAmount.toStringAsFixed(2)} EGP',
-                              style: const TextStyle(
+                              '${subscriptionFee.subscriptionAmount.toStringAsFixed(2)} ج.م',
+                              // تم تغيير العملة للعربية لتناسب RTL
+                              style: AppTextStyles.customText(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.white,
@@ -136,14 +133,14 @@ class SubscriptionCard extends StatelessWidget {
                         ),
                       ),
 
-                      // --- ACTION BUTTONS (Edit and Delete) IN CIRCLES ---
+                      // --- ACTION BUTTONS (Edit and Delete) ---
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // 1. Edit Icon in Circle
                           _buildActionCircle(
                             icon: Icons.edit,
-                            circleColor: AppColors.primaryMain.withOpacity(0.3),
+                            circleColor: AppColors.white.withOpacity(0.2),
+                            // تحسين لون الخلفية للزر
                             iconColor: AppColors.white,
                             onPressed: () {
                               showAddOrEditSubscriptionDialog(
@@ -153,13 +150,11 @@ class SubscriptionCard extends StatelessWidget {
                               );
                             },
                           ),
-                          // CORRECTED: Added SizedBox for spacing instead of 'spacing: 12'
                           const SizedBox(width: 12),
-
-                          // 2. Delete Icon in Circle
                           _buildActionCircle(
                             icon: Icons.delete_forever,
-                            circleColor: AppColors.primaryMain.withOpacity(0.3),
+                            circleColor: AppColors.statusAbsent
+                                .withOpacity(0.8), // لون أحمر أوضح للحذف
                             iconColor: AppColors.white,
                             onPressed: () {
                               showDialog(

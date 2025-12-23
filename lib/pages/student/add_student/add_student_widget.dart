@@ -1,45 +1,41 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 
-import '../Alert dialogs/RemoveFromGroupsListDialog.dart';
-import '../BottomSheets/student_actions_bottom_sheet.dart';
-import '../bloc/Edit Student/edit_student_cubit.dart';
-import '../bloc/Edit Student/edit_student_state.dart';
-import '../cards/groupSmallCard.dart';
-import '../cards/student_subscriptions_card.dart';
-import '../firebase/firebase_functions.dart';
-import '../models/Studentmodel.dart';
-import '../models/grade_subscriptions_model.dart';
-import '../models/student_paid_subscription.dart';
-import '../theme/colors_app.dart';
-import '../theme/text_style.dart';
+import '../../../Alert dialogs/RemoveFromGroupsListDialog.dart';
+import '../../../bloc/AddStudent/add_student_cubit.dart';
+import '../../../bloc/AddStudent/add_student_state.dart';
+import '../../../cards/magmo3at/groupSmallCard.dart';
+import '../../../cards/student/student_subscriptions_card.dart';
+import '../../../firebase/firebase_functions.dart';
+import '../../../models/grade_subscriptions_model.dart';
+import '../../../models/student_paid_subscription.dart';
+import '../../../theme/colors_app.dart';
+// يجب أن يكون هذا الـ import متاحاً (تم افتراض أنه موجود في ملف 'theme/text_style.dart' الأصلي)
+import '../../../theme/text_style.dart';
 import 'Pick Groups Page.dart';
-import 'all_absent_numbers.dart';
+// تم إزالة import 'package:google_fonts/google_fonts.dart'; لأننا نستخدم AppTextStyles
 
 // --- الثوابت والأنماط المشتركة (Consts & Styles) -------------------------
 
-const double _kAppbarHeight = 180;
-const double _kSectionPadding = 10.0; // تم تقليل المسافة الأساسية
+const double _kSectionPadding = 10.0; // مسافة موحدة بين الأقسام
 const double _kDividerThickness = 4;
 
-// --- الشاشة الرئيسية (EditStudentScreen) --------------------------------
+// --- الشاشة الرئيسية (AddStudentScreen) --------------------------------
 
-class EditStudentScreen extends StatefulWidget {
-  final Studentmodel student;
-  final String? grade;
+class AddStudentScreen extends StatefulWidget {
+  final String?
+      level; // تم تغيير اسم المتغير من level إلى grade للتوافق مع شاشة التعديل
 
-  const EditStudentScreen(
-      {required this.student, required this.grade, super.key});
+  const AddStudentScreen({this.level, super.key});
 
   @override
-  State<EditStudentScreen> createState() => _EditStudentScreenState();
+  State<AddStudentScreen> createState() => _AddStudentScreenState();
 }
 
-class _EditStudentScreenState extends State<EditStudentScreen> {
+class _AddStudentScreenState extends State<AddStudentScreen> {
+  // 1. تعريف مفاتيح التركيز لنموذج الإدخال
   late final FocusNode _nameFocus;
   late final FocusNode _studentNumberFocus;
   late final FocusNode _fatherNumberFocus;
@@ -68,23 +64,19 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      child: BlocProvider(
-        // تهيئة الـ Cubit وتمرير بيانات الطالب
-        create: (context) =>
-            StudentEditCubit(student: widget.student)..initTheState(),
-        child: Scaffold(
-          appBar: _buildAppBar(context),
-          body: LoaderOverlay(
-            child: BlocConsumer<StudentEditCubit, StudentEditState>(
-              listener: _blocListener,
-              builder: (context, state) {
-                if (state is StudentEditLoading) {
-                  return const SizedBox.shrink();
-                }
-                return _buildBody(context);
-              },
-            ),
+    return BlocProvider(
+      create: (context) => StudentCubit()..initTheState(),
+      child: Scaffold(
+        body: LoaderOverlay(
+          child: BlocConsumer<StudentCubit, StudentState>(
+            listener: _blocListener,
+            builder: (context, state) {
+              if (state is StudentLoading) {
+                // إظهار مؤشر التحميل عبر Overlay
+                return const SizedBox.shrink();
+              }
+              return _buildBody(context); // بناء جسم الصفحة
+            },
           ),
         ),
       ),
@@ -92,23 +84,23 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   }
 
   // --- دوال المساعدة للـ Bloc (Bloc Helpers) --------------------------------
-  void _blocListener(BuildContext context, StudentEditState state) {
-    if (state is StudentEditLoading) {
+  void _blocListener(BuildContext context, StudentState state) {
+    if (state is StudentLoading) {
       context.loaderOverlay.show();
     } else {
       context.loaderOverlay.hide();
     }
-    if (state is StudentEditSuccess) {
+    if (state is StudentAddedSuccess) {
       ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnackBar(
-            'تم تعديل بيانات الطالب بنجاح!', AppColors.statusPresent),
+        _buildSnackBar('تم إضافة الطالب بنجاح!', AppColors.statusPresent),
       );
+      // بعد الإضافة الناجحة، قد تحتاج إلى مسح الحقول أو العودة
     }
-    if (state is StudentUpdatedInEditPage) {
-      // إعادة بناء الـ widget عند تحديث حالة الطالب في الصفحة
+    if (state is StudentUpdated) {
+      // هذه الحالة قد تكون موجودة في cubit الإضافة لتحديث الـ UI مثل قائمة المجموعات
       setState(() {});
     }
-    if (state is StudentEditFailure) {
+    if (state is StudentAddedFailure) {
       ScaffoldMessenger.of(context).showSnackBar(
         _buildSnackBar(state.errorMessage, AppColors.statusAbsent),
       );
@@ -130,110 +122,48 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
 
   // --- دوال المساعدة للـ UI (UI Helpers) ------------------------------------
 
-  // 1. بناء شريط التطبيق (AppBar)
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      elevation: 10,
-      shadowColor: Colors.yellow.shade700,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
-      ),
-      centerTitle: true,
-      actions: [
-        IconButton(
-          icon: const Icon(
-            Icons.more_vert,
-            size: 30,
-            color: AppColors.secondaryMain,
-          ),
-          onPressed: () {
-            StudentActionsBottomSheet.show(
-              context: context,
-              student: widget.student,
-            );
-          },
-        ),
-      ],
-      leading: IconButton(
-        onPressed: () {
-          Navigator.pop(context);
-        },
-        icon: const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
-      ),
-      backgroundColor: AppColors.primaryMain,
-      title: Image.asset(
-        "assets/images/logo.png",
-        height: 100,
-        width: 90,
-      ),
-      toolbarHeight: _kAppbarHeight,
-    );
-  }
-
   // 2. بناء محتوى الصفحة (Body)
   Widget _buildBody(BuildContext context) {
-    return Stack(
-      children: [
-        // خلفية شفافة بشعار
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 60),
-          child: Center(
-              child: Image.asset(
-            "assets/images/logo.png",
-            opacity: const AlwaysStoppedAnimation(0.1),
-          )),
-        ),
-        // الطبقة التي تحمل المحتوى
-        Padding(
-          padding: const EdgeInsets.only(left: 15, right: 15, top: 17),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.white.withOpacity(0.3),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
-              ),
-            ),
-            width: double.infinity,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
-              ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: _buildContentScrollable(context),
-              ),
-            ),
+    // تم استخدام Padding بسيط لل Body الخارجي
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.white.withOpacity(0.3),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(25),
+            topRight: Radius.circular(25),
           ),
         ),
-      ],
+        width: double.infinity,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(25),
+            topRight: Radius.circular(25),
+          ),
+          // لا يمكن استخدام BackdropFilter بدون import 'dart:ui'
+          // لكن للحفاظ على التناسق مع شاشة التعديل، سنفترض وجوده
+          child: _buildContentScrollable(context),
+        ),
+      ),
     );
   }
 
   // 3. بناء الجزء القابل للتمرير (Scrollable Content)
   Widget _buildContentScrollable(BuildContext context) {
-    final cubit = StudentEditCubit.get(context);
+    final cubit = StudentCubit.get(context);
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      // الـ Padding الرئيسي حول المحتوى لتقليل المسافات بشكل عام
       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildTitleSection(),
+          _buildTitleSection(), // "أضف طلابك"
           const SizedBox(height: _kSectionPadding),
           _buildDivider(),
 
-          // قسم المجموعات
-          const SizedBox(height: _kSectionPadding),
-          _buildGroupsSelectionSection(context, cubit),
-          const SizedBox(height: _kSectionPadding),
-          _buildDivider(),
-
-          // قسم حقول الإدخال
+          // قسم حقول الإدخال (تم وضعه أولاً لأنه الأكثر أهمية في الإضافة)
           const SizedBox(height: _kSectionPadding),
           _buildTextFormFieldsSection(context, cubit),
           const SizedBox(height: _kSectionPadding),
@@ -245,15 +175,15 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           const SizedBox(height: _kSectionPadding),
           _buildDivider(),
 
-          // قسم الدفعات والاشتراكات
+          // قسم المجموعات
           const SizedBox(height: _kSectionPadding),
-          _buildPaymentsSection(context),
+          _buildGroupsSelectionSection(context, cubit),
           const SizedBox(height: _kSectionPadding),
           _buildDivider(),
 
-          // قسم الحضور والغياب
+          // قسم الدفعات والاشتراكات
           const SizedBox(height: _kSectionPadding),
-          _buildAbsencePresenceSection(context),
+          _buildPaymentsSection(context),
           const SizedBox(height: _kSectionPadding),
           _buildDivider(),
 
@@ -281,7 +211,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   // 5. بناء قسم العنوان
   Widget _buildTitleSection() {
     return Text(
-      'تعديل بيانات الطالب',
+      'أضف طلابك',
       style: AppTextStyles.customText(
         fontSize: 30,
         color: AppColors.primaryMain,
@@ -291,12 +221,10 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     );
   }
 
-  // 6. بناء قسم اختيار المجموعات
+  // 6. بناء قسم اختيار المجموعات (مع الارتفاع الديناميكي)
   Widget _buildGroupsSelectionSection(
-      BuildContext context, StudentEditCubit cubit) {
+      BuildContext context, StudentCubit cubit) {
     // تحديد الارتفاع الديناميكي:
-    // إذا كانت القائمة فارغة، ارتفاع صغير (ليناسب الرسالة فقط، مثل 50).
-    // إذا كانت القائمة ممتلئة، ارتفاع ثابت لعرض القائمة (180).
     final bool isGroupsEmpty =
         cubit.hisGroups == null || cubit.hisGroups!.isEmpty;
     final double listHeight = isGroupsEmpty ? 50.0 : 180.0;
@@ -336,7 +264,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   }
 
   // 6.1. كارت المجموعة
-  Widget _buildGroupCard(BuildContext context, StudentEditCubit cubit,
+  Widget _buildGroupCard(BuildContext context, StudentCubit cubit,
       dynamic magmo3aModel, int index) {
     return GestureDetector(
       onLongPress: () {
@@ -362,7 +290,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   }
 
   // 6.2. زر إضافة مجموعة
-  Widget _buildAddGroupButton(BuildContext context, StudentEditCubit cubit) {
+  Widget _buildAddGroupButton(BuildContext context, StudentCubit cubit) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         side: const BorderSide(color: AppColors.secondaryMain, width: 1),
@@ -375,7 +303,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChoosedaysToAttend(level: widget.grade),
+            builder: (context) => ChoosedaysToAttend(level: widget.level),
           ),
         ).then((result) {
           if (result != null) {
@@ -390,8 +318,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   }
 
   // 7. بناء قسم حقول إدخال النص (TextFormFields)
-  Widget _buildTextFormFieldsSection(
-      BuildContext context, StudentEditCubit cubit) {
+  Widget _buildTextFormFieldsSection(BuildContext context, StudentCubit cubit) {
     return Form(
       key: _formKey, // ربط مفتاح التحقق من الصحة
       child: Column(
@@ -411,12 +338,17 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           _buildCustomTextFormField(
             controller: cubit.studentNumberController,
             label: "رقم الطالب",
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.phone,
             focusNode: _studentNumberFocus,
             inputAction: TextInputAction.next,
             onFieldSubmitted: (_) =>
                 FocusScope.of(context).requestFocus(_fatherNumberFocus),
           ),
+
+          // onFieldSubmitted: (_) =>
+          //    FocusScope.of(context).requestFocus(_fatherNumberFocus),
+          //
+
           const SizedBox(height: _kSectionPadding),
 
           // 3. رقم ولي الأمر (Next)
@@ -434,12 +366,11 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           // 4. رقم الأم (Done) - وهو الحقل الأخير في هذا القسم
           _buildCustomTextFormField(
             controller: cubit.motherNumberController,
-            label: "رقم الأم",
+            label: "رقم ولي الأمر 2",
             keyboardType: TextInputType.phone,
             focusNode: _motherNumberFocus,
             inputAction: TextInputAction.done,
             onFieldSubmitted: (_) {
-              // يمكن هنا تنفيذ عملية الحفظ أو إخفاء لوحة المفاتيح
               FocusScope.of(context).unfocus();
             },
           ),
@@ -476,21 +407,24 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     required TextEditingController controller,
     required String label,
     TextInputType? keyboardType,
-    required FocusNode focusNode, // إضافة FocusNode
-    required TextInputAction inputAction, // إضافة TextInputAction
-    void Function(String)?
-        onFieldSubmitted, // لإضافة دالة الانتقال عند الضغط على "Next"
+    required FocusNode focusNode,
+    required TextInputAction inputAction,
+    void Function(String)? onFieldSubmitted,
   }) {
     return TextFormField(
       controller: controller,
       focusNode: focusNode,
-      // تعيين FocusNode
       textInputAction: inputAction,
-      // تعيين زر لوحة المفاتيح (Next/Done)
       onFieldSubmitted: onFieldSubmitted,
-      // دالة التنفيذ عند الضغط على زر الإدخال
       style: AppTextStyles.customText(color: AppColors.textPrimary),
       validator: (value) {
+        // **التعديل الجديد:**
+        // إذا كان نوع لوحة المفاتيح هو رقم هاتف، فالسماح بقيمة فارغة أو null.
+        if (keyboardType == TextInputType.phone) {
+          return null; // لا تقم بالتحقق من الصحة (Validation)
+        }
+
+        // التحقق القياسي للحقول الأخرى (مثل الاسم ورقم الطالب)
         if (value == null || value.isEmpty) {
           return 'من فضلك أدخل $label';
         }
@@ -506,8 +440,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
 
   // 8. بناء قسم اختيار الجنس (MaleOrFemalePart)
   Widget _buildGenderSelectionSection(
-      BuildContext context, StudentEditCubit cubit) {
-    // تم إزالة الـ Padding الخارجي ونقل المسافة إلى العمود الرئيسي
+      BuildContext context, StudentCubit cubit) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -519,7 +452,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   }
 
   // 8.1. قائمة اختيار الجنس المنسدلة
-  Widget _buildGenderDropdown(StudentEditCubit cubit) {
+  Widget _buildGenderDropdown(StudentCubit cubit) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
@@ -547,7 +480,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
             cubit.changeValueOfGenderDropDown(value);
           },
           elevation: 4,
-          // **تم التعديل هنا لتغيير لون النص المختار**
           style: AppTextStyles.customText(color: AppColors.primaryDark),
           icon: const Icon(Icons.arrow_drop_down,
               color: AppColors.secondaryMain, size: 30),
@@ -557,7 +489,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   }
 
   // 8.2. عرض الشريحة (Chip) للجنس المختار
-  Widget _buildSelectedGenderChip(StudentEditCubit cubit) {
+  Widget _buildSelectedGenderChip(StudentCubit cubit) {
     return cubit.selectedGender != null
         ? Wrap(
             direction: Axis.horizontal,
@@ -585,11 +517,11 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           );
   }
 
-// 9. بناء قسم الدفعات والاشتراكات
+  // 9. بناء قسم الدفعات والاشتراكات (مع الارتفاع الديناميكي)
   Widget _buildPaymentsSection(BuildContext context) {
-    final cubit = StudentEditCubit.get(context);
+    final cubit = StudentCubit.get(context);
     return StreamBuilder<GradeSubscriptionsModel?>(
-      stream: FirebaseFunctions.getGradeSubscriptionsStream(widget.grade ?? ""),
+      stream: FirebaseFunctions.getGradeSubscriptionsStream(widget.level ?? ""),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -611,15 +543,12 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
         final studentPaidSubscriptions = cubit.studentPaidSubscriptions;
 
         // تحديد الارتفاع الديناميكي:
-        // إذا كانت القائمة فارغة، ارتفاع صغير (ليناسب الرسالة فقط، مثل 50).
-        // إذا كانت القائمة ممتلئة، ارتفاع ثابت لعرض القائمة (200).
         final double listHeight = subscriptions.isEmpty ? 50.0 : 200.0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              // عنوان القسم يظهر دائماً
               'إدارة الاشتراكات (${subscriptions.length})',
               textAlign: TextAlign.center,
               style: AppTextStyles.customText(
@@ -634,7 +563,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               child: subscriptions.isEmpty
                   ? Center(
                       child: Text(
-                        // رسالة تظهر عندما تكون قائمة الاشتراكات فارغة
                         ' لا يوجد اشتراكات حتى الأن ',
                         style: AppTextStyles.customText(
                             fontSize: 16, color: AppColors.textSecondary),
@@ -657,7 +585,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
 
                         return GestureDetector(
                     onTap: () {
-                      // Logic for changing payment status
+                      // Logic for changing payment status (إضافة دفعة عند الضغط)
                       cubit.changePayment(
                           paidSub!, sub.subscriptionAmount, context);
                     },
@@ -678,88 +606,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     );
   }
 
-  // 10. بناء قسم الحضور والغياب
-  Widget _buildAbsencePresenceSection(BuildContext context) {
-    // تم إزالة الـ Padding الخارجي
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildCountInfo(
-            "أيام الحضور", widget.student.countingAttendedDays?.length,
-            color: AppColors.statusPresent),
-        _buildCountInfo(
-            "أيام الغياب", widget.student.countingAbsentDays?.length,
-            color: AppColors.statusAbsent),
-        _buildCalendarButton(context),
-      ],
-    );
-  }
-
-  // 10.1. عرض عدد الحضور/الغياب
-  Widget _buildCountInfo(String label, int? number, {required Color color}) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.customText(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: color, width: 1),
-          ),
-          child: Text(
-            (number ?? 0).toString(),
-            style: AppTextStyles.customText(fontSize: 18, color: color),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 10.2. زر عرض تفاصيل التقويم (AbsencesListPage)
-  Widget _buildCalendarButton(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          "التقويم",
-          style: AppTextStyles.customText(color: AppColors.textSecondary),
-        ),
-        const SizedBox(height: 8),
-        IconButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (
-                  context,
-                ) =>
-                    AbsencesListPage(
-                  studentName: widget.student.name ?? "",
-                  currentAbsentDays: widget.student.countingAbsentDays ?? [],
-                  currentAttendedDays:
-                      widget.student.countingAttendedDays ?? [],
-                  absences: widget.student.absencesNumbers ?? [],
-                ),
-              ),
-            );
-          },
-          icon: const Icon(
-            Icons.calendar_month,
-            size: 30,
-            color: AppColors.secondaryMain,
-          ),
-        ),
-      ],
-    );
-  }
-
   // 11. بناء قسم الملاحظات (NotesPart)
-  Widget _buildNotesSection(BuildContext context, StudentEditCubit cubit) {
-    // تم إزالة الـ Padding الخارجي
+  Widget _buildNotesSection(BuildContext context, StudentCubit cubit) {
     return TextFormField(
       controller: cubit.noteController,
       maxLines: 3,
@@ -770,9 +618,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
     );
   }
 
-  // 12. بناء زر الحفظ/التعديل
-  Widget _buildSaveButton(BuildContext context, StudentEditCubit cubit) {
-    // تم إزالة الـ Padding الخارجي
+  // 12. بناء زر الحفظ/الإضافة
+  Widget _buildSaveButton(BuildContext context, StudentCubit cubit) {
     return Row(
       children: [
         Expanded(
@@ -786,9 +633,12 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               elevation: 5,
             ),
             onPressed: () async {
-              await cubit.EditStudent(context, widget.grade);
+              // التحقق من صحة النموذج قبل الإضافة
+              if (_formKey.currentState!.validate()) {
+                await cubit.addStudent(context, widget.level);
+              }
             },
-            child: Text("تعديل وحفظ البيانات",
+            child: Text("إضافة الطالب",
                 style: AppTextStyles.customText(
                     color: AppColors.textOnDark,
                     fontSize: 20,

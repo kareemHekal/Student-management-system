@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../models/student_paid_subscription.dart';
-import '../models/subscription_fee.dart';
-import '../theme/colors_app.dart';
-
-// Assuming _CardHelpers is available for visual consistency,
-// though not strictly needed here as we use explicit styling.
+import '../../models/student_paid_subscription.dart';
+import '../../models/subscription_fee.dart';
+import '../../theme/colors_app.dart';
+import '../../theme/text_style.dart'; // تأكد من استيراد ملف الستايلات الموحد
 
 class StudentSubscriptionsCard extends StatelessWidget {
   final StudentPaidSubscriptions? studentPaidSubscription;
@@ -24,27 +22,26 @@ class StudentSubscriptionsCard extends StatelessWidget {
     final double ratio = total == 0 ? 0 : paid / total;
     final double remaining = (total - paid).clamp(0, double.infinity);
 
-    // Dynamic color for the remaining amount based on payment status
+    // تحديد لون المتبقي بناءً على وجود مديونية
     Color remainingColor;
     if (remaining > 0) {
-      remainingColor = AppColors.statusLate; // Yellow/Amber for debt
+      remainingColor = AppColors.statusLate; // اللون الأصفر/الكهرماني للديون
     } else {
-      remainingColor = AppColors.secondaryMain; // Green/Success for fully paid
+      remainingColor = AppColors.secondaryMain; // اللون الأخضر عند اكتمال الدفع
     }
 
-    // Dynamic color for the progress ring
+    // لون حلقة التقدم
     Color progressRingColor =
         ratio >= 1.0 ? AppColors.secondaryMain : AppColors.statusLate;
 
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.7,
       child: Directionality(
-        textDirection: TextDirection.rtl, // Ensure RTL compatibility
+        textDirection: TextDirection.rtl,
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22), // Consistent radius
-            // Standard Dark Gradient Theme
+            borderRadius: BorderRadius.circular(22),
             gradient: const LinearGradient(
               colors: [
                 AppColors.primaryMain,
@@ -66,7 +63,7 @@ class StudentSubscriptionsCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // 🔵 Circle showing percentage paid (Themed)
+                // 🔵 دائرة النسبة المئوية
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -76,68 +73,70 @@ class StudentSubscriptionsCard extends StatelessWidget {
                       child: CircularProgressIndicator(
                         value: ratio,
                         backgroundColor: AppColors.white.withOpacity(0.3),
-                        // Light background for contrast
                         valueColor:
                             AlwaysStoppedAnimation<Color>(progressRingColor),
-                        // Dynamic color
                         strokeWidth: 6,
                       ),
                     ),
                     Text(
                       '${(ratio * 100).toInt()}%',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.white), // White text
+                      style: AppTextStyles.customText(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.white,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(width: 16),
 
-                // 💵 Subscription info (Themed)
+                // 💵 معلومات الاشتراك
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    // Align to RTL start (right)
                     children: [
                       Text(
                         subscriptionFee.subscriptionName,
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.white), // White text
+                        style: AppTextStyles.customText(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.white,
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      // Info details aligned to start
                       Text(
                         'القيمة المطلوبة: ${total.toStringAsFixed(2)} ج.م',
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.white.withOpacity(0.8)),
+                        style: AppTextStyles.customText(
+                          fontSize: 14,
+                          color: AppColors.white.withOpacity(0.8),
+                        ),
                       ),
                       Text(
                         'المدفوع: ${paid.toStringAsFixed(2)} ج.م',
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.white.withOpacity(0.8)),
+                        style: AppTextStyles.customText(
+                          fontSize: 14,
+                          color: AppColors.white.withOpacity(0.8),
+                        ),
                       ),
                       Text(
                         'المتبقي: ${remaining.toStringAsFixed(2)} ج.م',
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: remaining > 0
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: remainingColor), // Highlight remaining
+                        style: AppTextStyles.customText(
+                          fontSize: 14,
+                          fontWeight: remaining > 0
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: remainingColor,
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                // 💰 Money icon (Themed)
+                // 💰 أيقونة العملة
                 Icon(
                   Icons.monetization_on,
                   size: 36,
-                  color: AppColors.white.withOpacity(0.8), // Light icon color
+                  color: AppColors.white.withOpacity(0.8),
                 ),
               ],
             ),

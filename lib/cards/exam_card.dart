@@ -4,10 +4,9 @@ import '../Alert dialogs/add_edit_exam.dart';
 import '../Alert dialogs/delete_exam.dart';
 import '../models/exam_model.dart';
 import '../pages/exam_grades_checker.dart';
-import '../theme/colors_app.dart'; // Import AppColors
+import '../theme/colors_app.dart';
+import '../theme/text_style.dart'; // استيراد ملف الستايل الخاص بك
 
-// Assuming these helper methods exist in a class or extension for reuse
-// I'll define them here for completeness based on previous context
 class _CardHelpers {
   static Widget buildCircle(double size, double opacity) {
     return Container(
@@ -57,7 +56,6 @@ class ExamCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      // Assuming RTL context
       textDirection: TextDirection.rtl,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -75,8 +73,7 @@ class ExamCard extends StatelessWidget {
           },
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22), // Consistent radius
-              // VIBRANT GRADIENT THEME
+              borderRadius: BorderRadius.circular(22),
               gradient: const LinearGradient(
                 colors: [
                   AppColors.primaryMain,
@@ -96,32 +93,27 @@ class ExamCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                // ===== Decorative Circles (Dynamic Placement) =====
-                // Large Circle on the Bottom Right Corner
                 Positioned(
                   bottom: -30,
                   right: -30,
                   child: _CardHelpers.buildCircle(100, 0.15),
                 ),
-                // Small Circle on the Top Left Edge
                 Positioned(
                   top: 10,
                   left: 10,
                   child: _CardHelpers.buildCircle(50, 0.1),
                 ),
 
-                // ===== Card Content =====
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // --- Title Row with Edit & Delete Actions ---
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Icon(
-                            Icons.school, // Exam related icon
+                            Icons.school,
                             size: 28,
                             color: AppColors.white,
                           ),
@@ -129,11 +121,10 @@ class ExamCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               exam.name,
-                              style: const TextStyle(
+                              style: AppTextStyles.customText(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color:
-                                    AppColors.white, // White text on gradient
+                                color: AppColors.white,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -141,11 +132,9 @@ class ExamCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
 
-                          // Action Buttons (Edit and Delete) in Circles
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // 1. Edit Icon in Circle
                               _CardHelpers.buildActionCircle(
                                 icon: Icons.edit,
                                 tooltip: 'تعديل الامتحان',
@@ -160,11 +149,9 @@ class ExamCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
 
-                              // 2. Delete Icon in Circle
                               _CardHelpers.buildActionCircle(
                                 icon: Icons.delete_forever,
                                 tooltip: 'حذف الامتحان',
-                                // Use Red for the background of the delete action
                                 circleColor: AppColors.statusAbsent,
                                 iconColor: AppColors.white,
                                 onPressed: () {
@@ -184,17 +171,14 @@ class ExamCard extends StatelessWidget {
                       const Divider(
                           color: AppColors.white, height: 20, thickness: 0.5),
 
-                      // --- Mini Exams List ---
                       if (exam.miniExams == null || exam.miniExams!.isEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
                             'لا يوجد نماذج للامتحان',
-                            style: TextStyle(
+                            style: AppTextStyles.customText(
                               fontSize: 16,
                               color: AppColors.secondaryMain,
-                              // Use secondary color for emphasis
-                              fontStyle: FontStyle.italic,
                             ),
                           ),
                         )
@@ -202,11 +186,11 @@ class ExamCard extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 8.0),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
                               child: Text(
                                 'النماذج الفرعية:',
-                                style: TextStyle(
+                                style: AppTextStyles.customText(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.white,
@@ -220,7 +204,6 @@ class ExamCard extends StatelessWidget {
                                     horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
                                   color: AppColors.white.withOpacity(0.1),
-                                  // Subtle background
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
@@ -229,7 +212,7 @@ class ExamCard extends StatelessWidget {
                                   children: [
                                     Text(
                                       mini.miniExamName,
-                                      style: const TextStyle(
+                                      style: AppTextStyles.customText(
                                         fontSize: 16,
                                         color: AppColors.white,
                                         fontWeight: FontWeight.w500,
@@ -237,10 +220,9 @@ class ExamCard extends StatelessWidget {
                                     ),
                                     Text(
                                       'الدرجة الكاملة: ${mini.fullGrade.toStringAsFixed(0)}',
-                                      style: const TextStyle(
+                                      style: AppTextStyles.customText(
                                         fontSize: 16,
                                         color: AppColors.textOnDark,
-                                        // Use secondary color for the grade
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
