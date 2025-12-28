@@ -58,20 +58,20 @@ class Magmo3aWidget extends StatelessWidget {
             child: Stack(
               children: [
                 Positioned(
-                  top: -30,
-                  left: -30,
+                  top: -25,
+                  right: -25,
                   child: Container(
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.secondaryMain.withOpacity(0.08),
+                      color: AppColors.secondaryMain.withOpacity(0.2),
                     ),
                   ),
                 ),
                 Positioned(
                   bottom: -20,
-                  right: 60,
+                  left: 90,
                   child: Container(
                     width: 60,
                     height: 60,

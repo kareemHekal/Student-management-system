@@ -294,47 +294,48 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   // 6. بناء قسم اختيار المجموعات
   Widget _buildGroupsSelectionSection(
       BuildContext context, StudentEditCubit cubit) {
-    // تحديد الارتفاع الديناميكي:
-    // إذا كانت القائمة فارغة، ارتفاع صغير (ليناسب الرسالة فقط، مثل 50).
-    // إذا كانت القائمة ممتلئة، ارتفاع ثابت لعرض القائمة (180).
     final bool isGroupsEmpty =
         cubit.hisGroups == null || cubit.hisGroups!.isEmpty;
-    final double listHeight = isGroupsEmpty ? 50.0 : 180.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Center(
-            child: Text("المجموعات المشترك بها : ${cubit.hisGroups?.length} ",
+            child: Text(
+                "المجموعات المشترك بها : ${cubit.hisGroups?.length ?? 0} ",
                 style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.bold))),
         const SizedBox(height: 8),
-        SizedBox(
-          height: listHeight, // استخدام الارتفاع الديناميكي
-          child: isGroupsEmpty
-              ? Center(
-                  child: Text(
-                    "لم تقم باختيار أي مجموعة بعد",
-                    style: AppTextStyles.customText(
-                        color: AppColors.textSecondary),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  itemCount: cubit.hisGroups!.length,
-                  itemBuilder: (context, index) {
-                    final magmo3aModel = cubit.hisGroups![index];
-                    return _buildGroupCard(context, cubit, magmo3aModel, index);
-                  },
-                ),
-        ),
+        // تم إلغاء الـ SizedBox ذو الارتفاع الثابت واستبداله بـ shrinkWrap
+        if (isGroupsEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20.0),
+            child: Center(
+              child: Text(
+                "لم تقم باختيار أي مجموعة بعد",
+                style: AppTextStyles.customText(color: AppColors.textSecondary),
+              ),
+            ),
+          )
+        else
+          ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            shrinkWrap: true,
+            // تجعل القائمة تأخذ مساحة عناصرها فقط
+            physics: const NeverScrollableScrollPhysics(),
+            // تمنع تضارب السكرول
+            itemCount: cubit.hisGroups!.length,
+            itemBuilder: (context, index) {
+              final magmo3aModel = cubit.hisGroups![index];
+              return _buildGroupCard(context, cubit, magmo3aModel, index);
+            },
+          ),
         const SizedBox(height: 10),
         _buildAddGroupButton(context, cubit),
       ],
     );
   }
-
   // 6.1. كارت المجموعة
   Widget _buildGroupCard(BuildContext context, StudentEditCubit cubit,
       dynamic magmo3aModel, int index) {
@@ -595,7 +596,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // الحالة 1: الصف لا يحتوي على تعريف اشتراكات من Firebase (snapshot.data == null)
         if (!snapshot.hasData || snapshot.data == null) {
           return Center(
             child: Text(
@@ -610,16 +610,10 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
         final subscriptions = gradeSubs.subscriptions;
         final studentPaidSubscriptions = cubit.studentPaidSubscriptions;
 
-        // تحديد الارتفاع الديناميكي:
-        // إذا كانت القائمة فارغة، ارتفاع صغير (ليناسب الرسالة فقط، مثل 50).
-        // إذا كانت القائمة ممتلئة، ارتفاع ثابت لعرض القائمة (200).
-        final double listHeight = subscriptions.isEmpty ? 50.0 : 200.0;
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              // عنوان القسم يظهر دائماً
               'إدارة الاشتراكات (${subscriptions.length})',
               textAlign: TextAlign.center,
               style: AppTextStyles.customText(
@@ -629,35 +623,37 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              height: listHeight, // استخدام الارتفاع الديناميكي
-              child: subscriptions.isEmpty
-                  ? Center(
-                      child: Text(
-                        // رسالة تظهر عندما تكون قائمة الاشتراكات فارغة
-                        ' لا يوجد اشتراكات حتى الأن ',
-                        style: AppTextStyles.customText(
-                            fontSize: 16, color: AppColors.textSecondary),
-                      ),
-                    )
-                  : ListView.builder(
-                      scrollDirection: Axis.vertical,
-                      itemCount: subscriptions.length,
-                      itemBuilder: (context, index) {
-                        final sub = subscriptions[index];
-                        // البحث عن الدفعة المقابلة للطالب
-                        final paidSub = studentPaidSubscriptions?.firstWhere(
-                          (s) => s.subscriptionId == sub.id,
-                          orElse: () => StudentPaidSubscriptions(
-                            description: "",
-                            subscriptionId: sub.id,
-                            paidAmount: 0,
-                          ),
-                        );
+            // تم إلغاء الـ SizedBox واستخدام الـ ListView بشكل مباشر مع physics مناسبة
+            if (subscriptions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                child: Center(
+                  child: Text(
+                    ' لا يوجد اشتراكات حتى الأن ',
+                    style: AppTextStyles.customText(
+                        fontSize: 16, color: AppColors.textSecondary),
+                  ),
+                ),
+              )
+            else
+              ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: subscriptions.length,
+                itemBuilder: (context, index) {
+                  final sub = subscriptions[index];
+                  final paidSub = studentPaidSubscriptions?.firstWhere(
+                    (s) => s.subscriptionId == sub.id,
+                    orElse: () => StudentPaidSubscriptions(
+                      description: "",
+                      subscriptionId: sub.id,
+                      paidAmount: 0,
+                    ),
+                  );
 
-                        return GestureDetector(
+                  return GestureDetector(
                     onTap: () {
-                      // Logic for changing payment status
                       cubit.changePayment(
                           paidSub!, sub.subscriptionAmount, context);
                     },
@@ -667,17 +663,15 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
                         studentPaidSubscription: paidSub,
                         subscriptionFee: sub,
                       ),
-                          ),
-                        );
-                      },
                     ),
-            ),
+                  );
+                },
+              ),
           ],
         );
       },
     );
   }
-
   // 10. بناء قسم الحضور والغياب
   Widget _buildAbsencePresenceSection(BuildContext context) {
     // تم إزالة الـ Padding الخارجي
