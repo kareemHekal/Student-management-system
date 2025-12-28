@@ -181,7 +181,7 @@ class StudentCubit extends Cubit<StudentState> {
       double fullPrice, BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => PaidDialog(
+      builder: (_) => addStudentPaidDialog(
         paidAmount: studentPaidSubscription.paidAmount,
         fullPrice: fullPrice,
         onSave: (editedAmount, comingDescription) {

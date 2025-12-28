@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:student_management_system/theme/colors_app.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
+import 'package:student_management_system/theme/text_style.dart';
 import '../firebase/exams_functions.dart';
 import '../loadingFile/loading_alert/run_with_loading.dart';
 import '../models/exam_model.dart';
@@ -8,12 +10,13 @@ import '../models/mini_exam.dart';
 Future<void> showAddEditExamDialog({
   required BuildContext context,
   required String gradeName,
-  ExamModel? exam, // null → add, not null → edit
+  ExamModel? exam,
 }) async {
   final _formKey = GlobalKey<FormState>();
   final ScrollController scrollController = ScrollController();
   final examNameController = TextEditingController(text: exam?.name ?? '');
-  final miniExamFields = exam?.miniExams
+
+  final List<MiniExamField> miniExamFields = exam?.miniExams
           ?.map((e) => MiniExamField(
                 miniExamNameController:
                     TextEditingController(text: e.miniExamName),
@@ -29,11 +32,13 @@ Future<void> showAddEditExamDialog({
       fullGradeController: TextEditingController(),
     ));
     Future.delayed(const Duration(milliseconds: 100), () {
-      scrollController.animateTo(
-        scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
   }
 
@@ -44,129 +49,100 @@ Future<void> showAddEditExamDialog({
   }
 
   final isEdit = exam != null;
-  final themeColor = isEdit ? Colors.blue : Colors.green;
 
   await showDialog(
     context: context,
     builder: (context) {
       return StatefulBuilder(builder: (context, setState) {
         return AlertDialog(
-          backgroundColor: themeColor[50],
+          backgroundColor: AppColors.white,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: Text(
-            isEdit ? 'تعديل امتحان' : 'إضافة امتحان',
-            style:
-                TextStyle(color: themeColor[900], fontWeight: FontWeight.bold),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          titlePadding: EdgeInsets.zero,
+          title: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: AppColors.primaryMain,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Text(
+              isEdit ? 'تعديل الامتحان' : 'إضافة امتحان جديد',
+              style: AppTextStyles.customText(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.white,
+              ),
+            ),
           ),
           content: Form(
             key: _formKey,
             child: SizedBox(
-              width: double.maxFinite,
+              width: MediaQuery.of(context).size.width * 0.9,
               child: SingleChildScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
                 controller: scrollController,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Exam Name
-                    TextFormField(
-                      controller: examNameController,
-                      decoration: InputDecoration(
-                        labelText: 'اسم الامتحان',
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: themeColor.shade700),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: themeColor.shade900, width: 2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'من فضلك أدخل اسم الامتحان';
-                        }
-                        return null;
-                      },
-                    ),
                     const SizedBox(height: 15),
-
-                    // Mini Exams Section
+                    _buildModernField(
+                      controller: examNameController,
+                      label: 'اسم الامتحان',
+                      icon: Icons.edit_note,
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                              ? 'أدخل الاسم'
+                              : null,
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Divider(thickness: 1),
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('الامتحانات الفرعية',
-                            style: TextStyle(fontSize: 16)),
+                            style: AppTextStyles.customText(
+                                fontWeight: FontWeight.bold)),
                         IconButton(
                           onPressed: () => setState(addMiniExamField),
-                          icon: Icon(Icons.add, color: themeColor[800]),
+                          icon: const Icon(Icons.add_circle,
+                              color: AppColors.secondaryMain, size: 28),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 5),
                     ...List.generate(miniExamFields.length, (index) {
                       final field = miniExamFields[index];
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 5),
+                        padding: const EdgeInsets.only(bottom: 10),
                         child: Row(
                           children: [
                             Expanded(
                               flex: 2,
-                              child: TextFormField(
+                              child: _buildModernField(
                                 controller: field.miniExamNameController,
-                                decoration: InputDecoration(
-                                  labelText: 'اسم الامتحان الفرعي',
-                                  enabledBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                          color: themeColor.shade700),
-                                      borderRadius: BorderRadius.circular(10)),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                          color: themeColor.shade900, width: 2),
-                                      borderRadius: BorderRadius.circular(10)),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'أدخل اسم الامتحان الفرعي';
-                                  }
-                                  return null;
-                                },
+                                label: 'اسم الفرعي',
+                                validator: (val) =>
+                                    val!.isEmpty ? 'مطلوب' : null,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: TextFormField(
+                              child: _buildModernField(
                                 controller: field.fullGradeController,
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  labelText: 'الدرجة الكاملة',
-                                  enabledBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                          color: themeColor.shade700),
-                                      borderRadius: BorderRadius.circular(10)),
-                                  focusedBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                          color: themeColor.shade900, width: 2),
-                                      borderRadius: BorderRadius.circular(10)),
-                                ),
-                                validator: (value) {
-                                  final n = double.tryParse(value ?? '');
-                                  if (value == null || value.isEmpty) {
-                                    return 'أدخل الدرجة';
-                                  } else if (n == null || n <= 0) {
-                                    return 'الدرجة يجب أن تكون رقم صالح';
-                                  }
-                                  return null;
-                                },
+                                label: 'الدرجة',
+                                isNumber: true,
+                                validator: (val) =>
+                                    val!.isEmpty ? 'مطلوب' : null,
                               ),
                             ),
                             IconButton(
                               onPressed: () =>
                                   setState(() => removeMiniExamField(index)),
-                              icon: Icon(Icons.delete, color: themeColor[700]),
+                              icon: const Icon(Icons.delete_sweep,
+                                  color: AppColors.statusAbsent),
                             ),
                           ],
                         ),
@@ -180,10 +156,16 @@ Future<void> showAddEditExamDialog({
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('إلغاء', style: TextStyle(color: themeColor[900])),
+              child: Text('إلغاء',
+                  style:
+                      AppTextStyles.customText(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: themeColor[700]),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.buttonPrimary,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
                   await runWithLoading(context, () async {
@@ -195,7 +177,6 @@ Future<void> showAddEditExamDialog({
                                 i < exam!.miniExams!.length
                             ? exam.miniExams![i]
                             : null;
-
                         return MiniExam(
                           id: oldMini?.id ?? "",
                           miniExamName: miniExamFields[i]
@@ -208,17 +189,27 @@ Future<void> showAddEditExamDialog({
                       }),
                     );
 
+                    // Logic choice
                     if (isEdit) {
                       await FirebaseExams.updateExam(gradeName, newExam);
                     } else {
                       await FirebaseExams.addExam(gradeName, newExam);
                     }
-                  });
 
-                  Navigator.pop(context); // إغلاق الـ dialog بعد الانتهاء
+                    // --- Use your reusable component here ---
+                    if (context.mounted) {
+                      AppSnackBars.showSuccess(
+                          context,
+                          isEdit
+                              ? "تم تحديث بيانات الامتحان"
+                              : "تمت إضافة الامتحان بنجاح");
+                    }
+                  });
+                  if (context.mounted) Navigator.pop(context);
                 }
               },
-              child: Text('حفظ', style: TextStyle(color: Colors.white)),
+              child: Text('حفظ',
+                  style: AppTextStyles.customText(color: Colors.white)),
             ),
           ],
         );
@@ -227,7 +218,6 @@ Future<void> showAddEditExamDialog({
   );
 }
 
-// Helper class for dynamic mini exams
 class MiniExamField {
   final TextEditingController miniExamNameController;
   final TextEditingController fullGradeController;
@@ -236,4 +226,28 @@ class MiniExamField {
     required this.miniExamNameController,
     required this.fullGradeController,
   });
+}
+
+Widget _buildModernField({
+  required TextEditingController controller,
+  required String label,
+  IconData? icon,
+  bool isNumber = false,
+  String? Function(String?)? validator,
+}) {
+  return TextFormField(
+    controller: controller,
+    keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon:
+          icon != null ? Icon(icon, color: AppColors.primaryMain) : null,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primaryMain, width: 2),
+      ),
+    ),
+    validator: validator,
+  );
 }

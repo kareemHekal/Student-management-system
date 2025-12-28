@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/theme/colors_app.dart';
+import 'package:student_management_system/theme/text_style.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
 
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loading_alert/run_with_loading.dart';
@@ -16,80 +19,150 @@ Future<void> renameGrade({
     context: context,
     builder: (context) {
       return AlertDialog(
+        backgroundColor: AppColors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'اسم المرحلة الجديد',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: gradeController,
-            decoration: InputDecoration(
-              hintText: 'اسم المرحلة الجديد',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+        titlePadding: EdgeInsets.zero,
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: AppColors.primaryMain,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.edit_note_rounded,
+                  color: AppColors.white, size: 28),
+              const SizedBox(width: 12),
+              Text(
+                'تغيير اسم الصف',
+                style: AppTextStyles.customText(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.white,
+                ),
               ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'من فضلك أدخل اسم المرحلة الجديد';
-              }
-              return null;
-            },
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () async {
-              String newGrade = gradeController.text.trim();
-
-              // 2️⃣ Fetch grades list
-              List<String> fetchedGrades =
-                  await FirebaseFunctions.getGradesList();
-
-              // 3️⃣ Check if new grade already exists
-              if (fetchedGrades.contains(newGrade)) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("الصف موجود بالفعل!"),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-                return; // ⛔ Stop here
-              }
-
-              // 4️⃣ Continue rename
-              showVerifyPasswordDialog(
-                context: context,
-                onVerified: () async {
-                  await runWithLoading(context, () async {
-                    await FirebaseFunctions.renameGrade(
-                      oldGrade,
-                      newGrade,
-                    );
-                  });
-
-                  Navigator.pop(context);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("تم تغيير اسم الصف بنجاح"),
-                      backgroundColor: Colors.green,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 15),
+              Text(
+                "أدخل الاسم الجديد للصف الدراسي أدناه:",
+                style: AppTextStyles.customText(
+                    fontSize: 14, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 20),
+              Form(
+                key: formKey,
+                child: TextFormField(
+                  controller: gradeController,
+                  autofocus: true,
+                  style: AppTextStyles.customText(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                  decoration: InputDecoration(
+                    labelText: 'اسم المرحلة الجديد',
+                    hintText: 'مثال: الصف الثالث الثانوي',
+                    prefixIcon: const Icon(Icons.school_outlined,
+                        color: AppColors.primaryMain),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide(color: Colors.grey[200]!),
                     ),
-                  );
-                },
-              );
-            },
-            child: const Text('تأكيد'),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: const BorderSide(
+                          color: AppColors.primaryMain, width: 1.5),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'من فضلك أدخل اسم المرحلة الجديد';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'إلغاء',
+                    style: AppTextStyles.customText(
+                        color: AppColors.textSecondary),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryMain,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      String newGrade = gradeController.text.trim();
+
+                      // Get current grades to prevent duplicates
+                      List<String> fetchedGrades =
+                          await FirebaseFunctions.getGradesList();
+
+                      if (fetchedGrades.contains(newGrade)) {
+                        if (context.mounted) {
+                          AppSnackBars.showError(
+                              context, "هذا الصف موجود بالفعل!");
+                        }
+                        return;
+                      }
+
+                      // Proceed with password verification
+                      if (context.mounted) {
+                        showVerifyPasswordDialog(
+                          context: context,
+                          onVerified: () async {
+                            await runWithLoading(context, () async {
+                              await FirebaseFunctions.renameGrade(
+                                  oldGrade, newGrade);
+                            });
+                            if (context.mounted) {
+                              Navigator.pop(context); // Close rename dialog
+                              AppSnackBars.showSuccess(
+                                  context, "تم تغيير اسم الصف بنجاح ✅");
+                            }
+                          },
+                        );
+                      }
+                    }
+                  },
+                  child: Text(
+                    'تأكيد',
+                    style: AppTextStyles.customText(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       );

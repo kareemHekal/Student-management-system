@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:student_management_system/theme/snack_bar.dart';
+import 'package:student_management_system/theme/text_style.dart';
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loading_alert/run_with_loading.dart';
 import '../models/subscription_fee.dart';
-import '../theme/colors_app.dart'; // For your custom green theme
+import '../theme/colors_app.dart';
 import 'verifiy_password.dart';
 
-Future<void> showAddOrEditSubscriptionDialog(
-  BuildContext context,
-  String gradeName, {
-  SubscriptionFee? subscriptionFee,
-}) async {
+Future<void> showAddOrEditSubscriptionDialog(BuildContext context,
+    String gradeName, {
+      SubscriptionFee? subscriptionFee,
+    }) async {
   final bool isEdit = subscriptionFee != null;
 
   final TextEditingController nameController =
@@ -20,28 +20,29 @@ Future<void> showAddOrEditSubscriptionDialog(
       text: subscriptionFee?.subscriptionAmount.toString() ?? '');
   final formKey = GlobalKey<FormState>();
 
-  // 🎨 Define color scheme
-  final Color mainColor =
-      isEdit ? Colors.blue.shade50 : AppColors.secondaryMain;
-  final Color textColor =
-      isEdit ? Colors.blue.shade900 : AppColors.secondaryMain;
-  final Color accentColor =
-      isEdit ? Colors.blue.shade400 : AppColors.secondaryMain;
-
   await showDialog(
     context: context,
     builder: (context) {
       return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        backgroundColor: mainColor,
-        title: Text(
-          isEdit ? 'تعديل الاشتراك' : 'إضافة اشتراك جديد',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: textColor,
-            fontSize: 18,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.white,
+        titlePadding: EdgeInsets.zero,
+        title: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: AppColors.primaryMain,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: Text(
+            isEdit ? 'تعديل بيانات الاشتراك' : 'إضافة اشتراك جديد',
+            style: AppTextStyles.customText(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.white,
+            ),
           ),
         ),
         content: Form(
@@ -49,134 +50,163 @@ Future<void> showAddOrEditSubscriptionDialog(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
+              const SizedBox(height: 10),
+              _buildModernTextField(
                 controller: nameController,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  hintText: 'اسم الاشتراك (مثلاً: شهر يناير)',
-                  hintStyle: TextStyle(color: textColor.withOpacity(0.6)),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: accentColor),
-                  ),
-                  prefixIcon: Icon(Icons.text_fields, color: accentColor),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'من فضلك أدخل اسم الاشتراك';
-                  }
-                  return null;
-                },
+                label: 'اسم الاشتراك',
+                hint: 'مثلاً: شهر يناير',
+                icon: Icons.description_outlined,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'من فضلك أدخل اسم الاشتراك'
+                    : null,
               ),
-              const SizedBox(height: 12),
-              TextFormField(
+              const SizedBox(height: 16),
+              _buildModernTextField(
                 controller: amountController,
-                style: TextStyle(color: textColor),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                label: 'المبلغ المستحق',
+                hint: '0.00',
+                icon: Icons.monetization_on_outlined,
+                isNumber: true,
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                 ],
-                decoration: InputDecoration(
-                  hintText: 'المبلغ (مثلاً: 150)',
-                  hintStyle: TextStyle(color: textColor.withOpacity(0.6)),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: accentColor),
-                  ),
-                  prefixIcon: Icon(Icons.monetization_on, color: accentColor),
-                ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.isEmpty)
                     return 'من فضلك أدخل المبلغ';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'من فضلك أدخل رقم صالح';
-                  }
+                  if (double.tryParse(value) == null) return 'أدخل رقم صالح';
                   return null;
                 },
               ),
             ],
           ),
         ),
+        actionsPadding: const EdgeInsets.only(left: 15, right: 15, bottom: 15),
         actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: accentColor,
-              textStyle: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            child: const Text('إلغاء'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: accentColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'إلغاء',
+                    style: AppTextStyles.customText(
+                        color: AppColors.textSecondary),
+                  ),
+                ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              elevation: 3,
-            ),
-            child: Text(isEdit ? 'تعديل' : 'حفظ'),
-            onPressed: () async {
-              if (!(formKey.currentState?.validate() ?? false)) return;
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isEdit
+                        ? AppColors.primaryMain
+                        : AppColors.secondaryMain,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () async {
+                    if (!(formKey.currentState?.validate() ?? false)) return;
 
-              await runWithLoading(context, () async {
-                if (isEdit) {
-                  await showVerifyPasswordDialog(
-                    context: context,
-                    onVerified: () async {
-                      await FirebaseFunctions.updateSubscriptionInGrade(
-                        gradeName,
-                        SubscriptionFee(
-                          id: subscriptionFee.id,
-                          subscriptionName: nameController.text.trim(),
-                          subscriptionAmount:
-                              double.tryParse(amountController.text.trim()) ??
-                                  0.0,
-                        ),
-                      );
+                    await runWithLoading(context, () async {
+                      if (isEdit) {
+                        await showVerifyPasswordDialog(
+                          context: context,
+                          onVerified: () async {
+                            await FirebaseFunctions.updateSubscriptionInGrade(
+                              gradeName,
+                              SubscriptionFee(
+                                id: subscriptionFee.id,
+                                subscriptionName: nameController.text.trim(),
+                                subscriptionAmount: double.tryParse(
+                                        amountController.text.trim()) ??
+                                    0.0,
+                              ),
+                            );
 
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('تم تعديل الاشتراك بنجاح'),
-                            backgroundColor: accentColor,
-                          ),
+                            if (context.mounted) {
+                              AppSnackBars.showSuccess(
+                                  context, 'تم تعديل الاشتراك بنجاح');
+                            }
+                          },
                         );
+                      } else {
+                        await FirebaseFunctions.addSubscriptionToGrade(
+                          gradeName,
+                          nameController.text.trim(),
+                          double.tryParse(amountController.text.trim()) ?? 0.0,
+                        );
+
+                        if (context.mounted) {
+                          AppSnackBars.showSuccess(
+                              context, 'تم إضافة الاشتراك بنجاح');
+                        }
                       }
-                    },
-                  );
-                } else {
-                  await FirebaseFunctions.addSubscriptionToGrade(
-                    gradeName,
-                    nameController.text.trim(),
-                    double.tryParse(amountController.text.trim()) ?? 0.0,
-                  );
 
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('تم إضافة الاشتراك بنجاح'),
-                        backgroundColor: accentColor,
-                      ),
-                    );
-                  }
-                }
-
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-              });
-            },
+                      if (context.mounted) Navigator.pop(context);
+                    });
+                  },
+                  child: Text(
+                    isEdit ? 'تعديل' : 'حفظ',
+                    style: AppTextStyles.customText(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       );
     },
+  );
+}
+
+/// Reusable Modern TextField Helper
+Widget _buildModernTextField({
+  required TextEditingController controller,
+  required String label,
+  required String hint,
+  required IconData icon,
+  bool isNumber = false,
+  List<TextInputFormatter>? inputFormatters,
+  String? Function(String?)? validator,
+}) {
+  return TextFormField(
+    controller: controller,
+    keyboardType: isNumber
+        ? const TextInputType.numberWithOptions(decimal: true)
+        : TextInputType.text,
+    inputFormatters: inputFormatters,
+    style: AppTextStyles.customText(fontSize: 15),
+    decoration: InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: AppColors.primaryMain, size: 22),
+      filled: true,
+      fillColor: Colors.grey[50],
+      labelStyle: AppTextStyles.customText(
+          color: AppColors.textSecondary, fontSize: 14),
+      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: Colors.grey[200]!),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: AppColors.primaryMain, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: AppColors.statusAbsent, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: AppColors.statusAbsent, width: 1.5),
+      ),
+    ),
+    validator: validator,
   );
 }

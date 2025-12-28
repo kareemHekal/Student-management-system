@@ -9,7 +9,7 @@ import '../Alert dialogs/verifiy_password.dart';
 import '../constants.dart';
 import '../theme/colors_app.dart';
 import '../theme/text_style.dart';
-import 'PaymentCheckPage.dart';
+import 'subscription_checker/PaymentCheckPage.dart';
 import 'allgrades.dart';
 import 'invoices/monthly_invoices_page.dart';
 

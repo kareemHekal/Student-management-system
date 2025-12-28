@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:student_management_system/firebase/firebase_functions.dart';
 
 import '../../BottomSheets/add_magmo3a.dart';
 import '../../models/Magmo3aModel.dart';
@@ -279,7 +280,8 @@ class Magmo3aWidget extends StatelessWidget {
             ),
             onPressed: () {
               Navigator.pop(context);
-              // هنا ممكن تضيف المنطق لحذف المجموعة
+              FirebaseFunctions.deleteMagmo3aFromDay(
+                  magmo3aModel.days ?? "", magmo3aModel.id);
             },
             child: Text(
               "تأكيد الحذف",

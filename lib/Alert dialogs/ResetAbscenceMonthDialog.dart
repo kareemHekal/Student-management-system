@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/theme/colors_app.dart';
+import 'package:student_management_system/theme/text_style.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
 
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loading_alert/run_with_loading.dart';
 
 class StartNewMonthDialog extends StatefulWidget {
+  const StartNewMonthDialog({super.key});
+
   @override
   State<StartNewMonthDialog> createState() => _StartNewMonthDialogState();
 }
@@ -21,84 +26,164 @@ class _StartNewMonthDialogState extends State<StartNewMonthDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-        'تسجيل عدد ايام حضور وغياب كل طالب للشهر المنتهي',
-        style: TextStyle(color: Colors.green[900], fontSize: 20),
-      ),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      backgroundColor: AppColors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      titlePadding: EdgeInsets.zero,
+      title: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: AppColors.secondaryMain, // Fresh Green Theme
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Row(
           children: [
-            Text(
-              'ادخل اسم الشهر الذي انتهى',
-              style: TextStyle(color: Colors.green[800], fontSize: 14),
-            ),
-            SizedBox(height: 8),
-            TextFormField(
-              controller: monthController,
-              decoration: InputDecoration(
-                hintText: 'ادخل اسم الشهر الي خلص',
-                border: OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.green),
+            const Icon(Icons.calendar_month_rounded,
+                color: AppColors.white, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'بدء شهر جديد',
+                style: AppTextStyles.customText(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.white,
                 ),
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'الرجاء إدخال اسم الشهر';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: 12),
-            Text(
-              'سيتم حفظ عدد أيام الحضور والغياب للشهر السابق وبدء عد أيام الشهر الجديد.',
-              style: TextStyle(color: Colors.green[800], fontSize: 12),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          child: Text('إلغاء', style: TextStyle(color: Colors.green[400])),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-          child: const Text('تأكيد', style: TextStyle(color: Colors.white)),
-          onPressed: () async {
-            if (_formKey.currentState!.validate()) {
-              final finishedMonthName = monthController.text.trim();
-
-              // Show the loading and run the Firestore function
-              await runWithLoading(context, () async {
-                await FirebaseFunctions.saveMonthAndStartNew(finishedMonthName);
-              });
-
-              // Close the dialog after loading finishes
-              if (context.mounted && Navigator.canPop(context)) {
-                Navigator.pushNamedAndRemoveUntil(
-                    context, "/HomeScreen", (_) => false);
-              }
-
-              // Optional: show a success message
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("تم حفظ الشهر '$finishedMonthName' بنجاح"),
-                    backgroundColor: Colors.green,
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 15),
+              Text(
+                'أرشفة بيانات الشهر المنتهي وبدء عداد جديد',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.customText(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: monthController,
+                style: AppTextStyles.customText(
+                    fontSize: 16, fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
+                  labelText: 'اسم الشهر المنتهي',
+                  hintText: 'مثال: أكتوبر 2023',
+                  prefixIcon: const Icon(Icons.history_toggle_off_rounded,
+                      color: AppColors.secondaryMain),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide(color: Colors.grey[200]!),
                   ),
-                );
-              }
-            }
-          },
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: const BorderSide(
+                        color: AppColors.secondaryMain, width: 1.5),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'الرجاء إدخال اسم الشهر';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryMain.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.secondaryMain.withOpacity(0.1)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded,
+                        color: AppColors.secondaryMain, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'سيتم تصفير عداد الحضور والغياب الحالي وحفظه في السجل التاريخي للطلاب.',
+                        style: AppTextStyles.customText(
+                          color: AppColors.secondaryMain,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+      actions: [
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'إلغاء',
+                  style:
+                      AppTextStyles.customText(color: AppColors.textSecondary),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondaryMain,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: () async {
+                  if (_formKey.currentState!.validate()) {
+                    final finishedMonthName = monthController.text.trim();
+
+                    await runWithLoading(context, () async {
+                      await FirebaseFunctions.saveMonthAndStartNew(
+                          finishedMonthName);
+                    });
+
+                    if (context.mounted) {
+                      AppSnackBars.showSuccess(
+                          context, "تم أرشفة شهر $finishedMonthName بنجاح ✅");
+                      Navigator.pushNamedAndRemoveUntil(
+                          context, "/HomeScreen", (_) => false);
+                    }
+                  }
+                },
+                child: Text(
+                  'تأكيد',
+                  style: AppTextStyles.customText(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
-      backgroundColor: Colors.green[50],
     );
   }
 }

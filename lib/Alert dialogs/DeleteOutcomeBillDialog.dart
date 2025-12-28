@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/theme/colors_app.dart';
+import 'package:student_management_system/theme/text_style.dart';
+import 'package:student_management_system/theme/snack_bar.dart'; // Using your custom snackbar logic
 
 import '../loadingFile/loading_alert/run_with_loading.dart';
 
@@ -8,73 +11,132 @@ class DeleteOutcomeBillDialog extends StatelessWidget {
   final Future<void> Function() onConfirm;
 
   const DeleteOutcomeBillDialog({
-    Key? key,
+    super.key,
     required this.title,
     required this.content,
     required this.onConfirm,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      backgroundColor: Colors.red[50],
-      title: Text(
-        title,
-        style: TextStyle(
-          color: Colors.red[900],
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
+      backgroundColor: AppColors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      titlePadding: EdgeInsets.zero,
+      title: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: AppColors.statusAbsent, // Red danger theme
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.outbox_rounded, color: AppColors.white, size: 28),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: AppTextStyles.customText(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.white,
+              ),
+            ),
+          ],
         ),
       ),
       content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          const SizedBox(height: 15),
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: AppColors.statusAbsent.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(15),
+              border:
+                  Border.all(color: AppColors.statusAbsent.withOpacity(0.2)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.warning_amber_rounded,
+                    color: AppColors.statusAbsent),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    content,
+                    style: AppTextStyles.customText(
+                      color: AppColors.statusAbsent,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(
-            content,
-            style: TextStyle(
-              color: Colors.red[700],
-              fontSize: 16,
+            "تنبيه: حذف المصروف سيؤثر على إجمالي الحسابات اليومية.",
+            textAlign: TextAlign.center,
+            style: AppTextStyles.customText(
+              fontSize: 12,
+              color: AppColors.textSecondary.withOpacity(0.7),
             ),
           ),
         ],
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
       actions: [
-        TextButton(
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.red[900],
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            textStyle: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          child: const Text("إلغاء"),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.red[600],
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  "إلغاء",
+                  style:
+                      AppTextStyles.customText(color: AppColors.textSecondary),
+                ),
+              ),
             ),
-            elevation: 5,
-          ),
-          child: const Text("تأكيد"),
-          onPressed: () async {
-            runWithLoading(context, () async {
-              await onConfirm();
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                "/HomeScreen",
-                (route) => false,
-              );
-            });
-          },
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.statusAbsent,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: () async {
+                  await runWithLoading(context, () async {
+                    await onConfirm();
+
+                    if (context.mounted) {
+                      AppSnackBars.showSuccess(context, "تم حذف المصروف بنجاح");
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        "/HomeScreen",
+                        (route) => false,
+                      );
+                    }
+                  });
+                },
+                child: Text(
+                  "تأكيد الحذف",
+                  style: AppTextStyles.customText(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/pages/pdf_genrators/detaild_students_pdf.dart';
 
 import '../models/Studentmodel.dart';
@@ -24,15 +25,19 @@ class StudentChosenPdf {
                 icon: Icons.list_alt,
                 label: 'مدفوعات الطلاب ',
                 onPressed: () async {
-                  await StudentsPdfGenerator.generateStudentsDetailsPdf(
-                      students);
+                  await runWithLoading(context, () async {
+                    await StudentsPdfGenerator.generateStudentsDetailsPdf(
+                        students);
+                  });
                 },
               ),
               _ActionItem(
                 icon: Icons.qr_code_rounded,
                 label: 'qr codes',
                 onPressed: () async {
-                  await StudentsPdfGenerator.generateQrCodesPdf(students);
+                  await runWithLoading(context, () async {
+                    await StudentsPdfGenerator.generateQrCodesPdf(students);
+                  });
                 },
               ),
             ],
