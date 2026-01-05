@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../cards/magmo3at/magmo3afor display widget.dart';
+import '../../../cards/magmo3at/magmo3a_for_display_widget.dart';
 import '../../../firebase/firebase_functions.dart';
 import '../../../loadingFile/loadingWidget.dart';
 import '../../../models/Magmo3aModel.dart';

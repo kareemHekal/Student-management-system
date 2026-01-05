@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
 
-import '../models/Studentmodel.dart';
+import '../models/Student_model.dart';
 import '../models/exam_model.dart';
 import '../models/mini_exam.dart';
 import '../models/student_exam_grade.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:student_management_system/theme/snack_bar.dart'; // Using your specific import
 import 'package:student_management_system/theme/colors_app.dart';
+import 'package:student_management_system/theme/snack_bar.dart'; // Using your specific import
 import 'package:student_management_system/theme/text_style.dart';
 
 import '../firebase/firebase_functions.dart';
@@ -75,9 +75,6 @@ Future<void> showChangePasswordDialog(BuildContext context) async {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'من فضلك أدخل كلمة المرور الجديدة';
-                  }
-                  if (value.length < 4) {
-                    return 'كلمة المرور ضعيفة جداً';
                   }
                   return null;
                 },

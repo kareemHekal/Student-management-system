@@ -4,7 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import '../../models/Studentmodel.dart';
+import '../../models/Student_model.dart';
 import '../../models/exam_model.dart';
 
 bool _isArabic(String? text) {

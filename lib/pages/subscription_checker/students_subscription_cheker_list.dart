@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_management_system/cards/student/StudentWidget.dart';
-import 'package:student_management_system/models/Studentmodel.dart';
+import 'package:student_management_system/models/Student_model.dart';
 
 class StudentResultListPage extends StatelessWidget {
   final String title;

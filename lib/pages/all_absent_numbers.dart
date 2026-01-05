@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
-import 'package:student_management_system/models/day_record.dart';
+import 'package:student_management_system/models/absence_app/day_record.dart';
 
 import '../cards/absence_card.dart';
-import '../models/absence_model.dart';
+import '../models/absence_app/student_absence_model.dart';
 import '../theme/colors_app.dart';
 import 'pdf_genrators/absent_generator.dart';
 
 class AbsencesListPage extends StatelessWidget {
-  final List<AbsenceModel> absences;
+  final List<StudentAbsencesModel> absences;
   final List<DayRecord> currentAbsentDays;
   final List<DayRecord> currentAttendedDays;
   final String studentName;
@@ -24,7 +24,7 @@ class AbsencesListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // ✅ Create current month absence model
-    AbsenceModel currentMonth = AbsenceModel(
+    StudentAbsencesModel currentMonth = StudentAbsencesModel(
       monthName: "الشهر الحالي",
       attendedDays: currentAttendedDays,
       absentDays: currentAbsentDays,

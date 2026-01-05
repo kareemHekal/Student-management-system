@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../Alert dialogs/add_exam_degree.dart';
 import '../cards/student/student_exam_grade.dart';
-import '../models/Studentmodel.dart';
+import '../models/Student_model.dart';
 import '../models/student_exam_grade.dart';
 import '../theme/colors_app.dart';
 

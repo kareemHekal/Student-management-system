@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../Alert dialogs/edit_on_payment.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
-import '../../models/Studentmodel.dart';
+import '../../models/Student_model.dart';
 import '../../models/student_paid_subscription.dart';
 import 'edit_student_state.dart';
 

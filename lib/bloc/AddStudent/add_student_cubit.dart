@@ -5,7 +5,7 @@ import '../../Alert dialogs/show_add_student_payment_dialog.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../home.dart';
 import '../../models/Magmo3aModel.dart';
-import '../../models/Studentmodel.dart';
+import '../../models/Student_model.dart';
 import '../../models/student_paid_subscription.dart';
 import 'add_student_state.dart';
 

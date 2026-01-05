@@ -1,19 +1,19 @@
 import 'day_record.dart';
 
-class AbsenceModel {
+class StudentAbsencesModel {
   String monthName;
   List<DayRecord> attendedDays;
   List<DayRecord> absentDays;
 
-  AbsenceModel({
+  StudentAbsencesModel({
     required this.monthName,
     required this.attendedDays,
     required this.absentDays,
   });
 
   /// Convert a JSON map to AbsenceModel
-  factory AbsenceModel.fromJson(Map<String, dynamic> json) {
-    return AbsenceModel(
+  factory StudentAbsencesModel.fromJson(Map<String, dynamic> json) {
+    return StudentAbsencesModel(
       monthName: json['monthName'] as String? ?? '',
       absentDays: (json['absentDays'] as List<dynamic>?)
               ?.map((e) => DayRecord.fromJson(Map<String, dynamic>.from(e)))
@@ -36,12 +36,12 @@ class AbsenceModel {
   }
 
   /// Create a copy with optional new values
-  AbsenceModel copyWith({
+  StudentAbsencesModel copyWith({
     String? monthName,
     List<DayRecord>? attendedDays,
     List<DayRecord>? absentDays,
   }) {
-    return AbsenceModel(
+    return StudentAbsencesModel(
       monthName: monthName ?? this.monthName,
       attendedDays: attendedDays ?? this.attendedDays,
       absentDays: absentDays ?? this.absentDays,

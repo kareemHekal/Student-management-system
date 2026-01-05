@@ -3,9 +3,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:student_management_system/constants.dart';
-import 'package:student_management_system/models/day_record.dart';
+import 'package:student_management_system/models/absence_app/day_record.dart';
 
-import '../../models/Studentmodel.dart';
+import '../../models/Student_model.dart';
 
 class StudentsPdfGenerator {
   static Future<void> generateStudentsDetailsPdf(

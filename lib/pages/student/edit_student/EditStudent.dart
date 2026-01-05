@@ -12,7 +12,7 @@ import '../../../bloc/Edit Student/edit_student_state.dart';
 import '../../../cards/magmo3at/groupSmallCard.dart';
 import '../../../cards/student/student_subscriptions_card.dart';
 import '../../../firebase/firebase_functions.dart';
-import '../../../models/Studentmodel.dart';
+import '../../../models/Student_model.dart';
 import '../../../models/grade_subscriptions_model.dart';
 import '../../../models/student_paid_subscription.dart';
 import '../../../theme/colors_app.dart';

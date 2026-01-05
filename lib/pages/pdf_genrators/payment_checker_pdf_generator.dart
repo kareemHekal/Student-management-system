@@ -1,10 +1,11 @@
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:student_management_system/models/student_paid_subscription.dart';
 import 'package:student_management_system/models/subscription_fee.dart';
-import '../../models/Studentmodel.dart';
+
+import '../../models/Student_model.dart';
 
 Future<void> generatePdf(
     {required List<Studentmodel> students,

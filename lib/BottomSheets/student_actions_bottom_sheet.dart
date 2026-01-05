@@ -3,7 +3,7 @@ import 'package:printing/printing.dart';
 
 import '../firebase/firebase_functions.dart';
 import '../models/Invoice.dart';
-import '../models/Studentmodel.dart';
+import '../models/Student_model.dart';
 import '../models/subscription_fee.dart';
 import '../pages/all_bills_for_student.dart';
 import '../pages/all_student_exam_grades.dart';

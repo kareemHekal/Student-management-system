@@ -1,6 +1,8 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
+import 'package:student_management_system/absent_home_screen.dart';
+
 import 'Nav_Bar_Tabs/Add_student_tab.dart';
 import 'Nav_Bar_Tabs/groups_tab.dart';
 import 'pages/drawer.dart';
@@ -67,6 +69,20 @@ class _HomescreenState extends State<Homescreen> {
             width: 90,
           ),
           toolbarHeight: 120,
+          actions: [
+            IconButton(
+                onPressed: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AbsentHomePage(),
+                    ),
+                    (route) => false,
+                  );
+                },
+                icon: Icon(Icons.qr_code_outlined,
+                    color: AppColors.secondaryMain))
+          ],
           leading: IconButton(
             onPressed: () {
               _advancedDrawerController.showDrawer();

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../models/absence_model.dart';
+import '../models/absence_app/student_absence_model.dart';
 import '../theme/colors_app.dart';
 import '../theme/text_style.dart';
 
 class AbsenceCard extends StatelessWidget {
-  final AbsenceModel absence;
+  final StudentAbsencesModel absence;
 
   const AbsenceCard({Key? key, required this.absence}) : super(key: key);
 

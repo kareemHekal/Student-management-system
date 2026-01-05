@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../Alert dialogs/Notify Absence.dart';
 import '../../bloc/Edit Student/edit_student_cubit.dart';
 import '../../firebase/firebase_functions.dart';
-import '../../models/Studentmodel.dart';
+import '../../models/Student_model.dart';
 import '../../pages/student/edit_student/EditStudent.dart';
 import '../../theme/colors_app.dart';
 import '../../theme/text_style.dart';
+import 'student_card_functions.dart'; // Import the helper
 
 class StudentWidget extends StatelessWidget {
   final Studentmodel studentModel;
@@ -34,7 +34,7 @@ class StudentWidget extends StatelessWidget {
             begin: Alignment.bottomRight,
             end: Alignment.topRight,
             colors: [
-              AppColors.primaryMain.withOpacity(.7), // زدت الوضوح شوية
+              AppColors.primaryMain.withOpacity(.7),
               AppColors.secondaryMain.withOpacity(.7),
             ],
           ),
@@ -76,20 +76,14 @@ class StudentWidget extends StatelessWidget {
 
   Widget _buildAvatar() {
     final bool isMale = studentModel.gender == 'ذكر';
-
     final IconData genderIcon = isMale ? Icons.person : Icons.person_3;
-
     final Color avatarColor =
         isMale ? AppColors.white.withOpacity(.2) : Colors.pink.withOpacity(.2);
 
     return CircleAvatar(
       backgroundColor: avatarColor,
       radius: 28,
-      child: Icon(
-        genderIcon,
-        size: 34,
-        color: AppColors.white, // الحفاظ على اللون الأبيض للأناقة
-      ),
+      child: Icon(genderIcon, size: 34, color: AppColors.white),
     );
   }
 
@@ -103,7 +97,7 @@ class StudentWidget extends StatelessWidget {
           maxLines: 2,
           style: AppTextStyles.customText(
             fontSize: 18,
-            color: AppColors.white, // أبيض واضح للاسم
+            color: AppColors.white,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -111,8 +105,7 @@ class StudentWidget extends StatelessWidget {
           "صف الطالب:  ${studentModel.grade}",
           style: AppTextStyles.customText(
             fontSize: 13,
-            color: AppColors.white.withOpacity(0.85), // أبيض هادئ
-            fontWeight: FontWeight.normal,
+            color: AppColors.white.withOpacity(0.85),
           ),
         )
       ],
@@ -127,9 +120,8 @@ class StudentWidget extends StatelessWidget {
         _iconButton(Icons.sticky_note_2, () => _showNoteDialog(context)),
         if (!IsComingFromGroup) ...[
           const SizedBox(width: 8),
-          _iconButton(Icons.delete_forever_outlined, () {
-            _deleteDialog(context);
-          }),
+          _iconButton(
+              Icons.delete_forever_outlined, () => _deleteDialog(context)),
         ],
       ],
     );
@@ -139,16 +131,14 @@ class StudentWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _info("رقم الطالب", studentModel.phoneNumber ?? "N/A", isPhone: true),
-        _info("رقم ولي الأمر", studentModel.fatherPhone ?? "N/A",
-            isPhone: true),
-        _info("رقم ولي الأمر 2", studentModel.motherPhone ?? "N/A",
-            isPhone: true),
+        _info("رقم الطالب", studentModel.phoneNumber ?? "N/A"),
+        _info("رقم ولي الأمر", studentModel.fatherPhone ?? "N/A"),
+        _info("رقم ولي الأمر 2", studentModel.motherPhone ?? "N/A"),
       ],
     );
   }
 
-  Widget _info(String label, String value, {bool isPhone = false}) => Column(
+  Widget _info(String label, String value) => Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -158,21 +148,20 @@ class StudentWidget extends StatelessWidget {
                   "$label:",
                   style: AppTextStyles.customText(
                     fontSize: 14,
-                    color: AppColors.white.withOpacity(0.9), // لون التسمية
+                    color: AppColors.white.withOpacity(0.9),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: GestureDetector(
-                    onLongPress:
-                        isPhone ? () => launchUrlString("tel:$value") : null,
+                    onLongPress: () => StudentActionsHelper.launchPhone(value),
                     child: Text(
                       value,
                       textAlign: TextAlign.right,
                       style: AppTextStyles.customText(
                         fontSize: 15,
-                        color: AppColors.white, // القيمة باللون الأبيض الصريح
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -190,7 +179,7 @@ class StudentWidget extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.white.withOpacity(.15), // خلفية شفافة بيضاء
+            color: AppColors.white.withOpacity(.15),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: AppColors.white, size: 20),
@@ -204,9 +193,8 @@ class StudentWidget extends StatelessWidget {
       runSpacing: 6,
       children: days.map((g) {
         final time = (g.time != null)
-            ? "${g.time!.hour}:${g.time!.minute.toString().padLeft(2, '0')}"
+            ? StudentActionsHelper.formatTime12Hour(g.time!)
             : "—";
-
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
@@ -220,19 +208,15 @@ class StudentWidget extends StatelessWidget {
               Text(
                 g.days ?? "",
                 style: AppTextStyles.customText(
-                  fontSize: 13,
-                  color: AppColors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                    fontSize: 13,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(width: 6),
               Text(
                 time,
                 style: AppTextStyles.customText(
-                  fontSize: 12,
-                  color: AppColors.white.withOpacity(0.9),
-                  fontWeight: FontWeight.normal,
-                ),
+                    fontSize: 12, color: AppColors.white.withOpacity(0.9)),
               ),
             ],
           ),
@@ -241,29 +225,20 @@ class StudentWidget extends StatelessWidget {
     );
   }
 
-  // --- Dialogs الستايلات هنا للألوان التقليدية لضمان سهولة القراءة داخل الصندوق الأبيض ---
-
   void _showNoteDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          "ملاحظات",
-          style: AppTextStyles.customText(
-            fontSize: 18,
-            color: AppColors.primaryMain,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          studentModel.note ?? "لا توجد ملاحظات",
-          style: AppTextStyles.customText(
-            fontSize: 15,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: Text("ملاحظات",
+            style: AppTextStyles.customText(
+                fontSize: 18,
+                color: AppColors.primaryMain,
+                fontWeight: FontWeight.bold)),
+        content: Text(studentModel.note ?? "لا توجد ملاحظات",
+            style: AppTextStyles.customText(
+                fontSize: 15, color: AppColors.textPrimary)),
       ),
     );
   }
@@ -273,39 +248,28 @@ class StudentWidget extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          "حذف الطالب",
-          style: AppTextStyles.customText(
-            fontSize: 18,
-            color: AppColors.statusAbsent,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          "هل انت متأكد من حذف الطالب؟",
-          style: AppTextStyles.customText(
-            fontSize: 15,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: Text("حذف الطالب",
+            style: AppTextStyles.customText(
+                fontSize: 18,
+                color: AppColors.statusAbsent,
+                fontWeight: FontWeight.bold)),
+        content: Text("هل انت متأكد من حذف الطالب؟",
+            style: AppTextStyles.customText(
+                fontSize: 15, color: AppColors.textPrimary)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("إلغاء",
-                style:
-                    AppTextStyles.customText(color: AppColors.textSecondary)),
-          ),
+              onPressed: () => Navigator.pop(context),
+              child: Text("إلغاء",
+                  style: AppTextStyles.customText(
+                      color: AppColors.textSecondary))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.statusAbsent,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
+                backgroundColor: AppColors.statusAbsent,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10))),
             onPressed: () {
               FirebaseFunctions.deleteStudentFromHisCollection(
-                studentModel.grade ?? "",
-                studentModel.id,
-              );
+                  studentModel.grade ?? "", studentModel.id);
               Navigator.pop(context);
             },
             child: Text("حذف",
@@ -318,14 +282,12 @@ class StudentWidget extends StatelessWidget {
 
   void _openEditPage(BuildContext context) {
     Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider(
-          create: (_) => StudentEditCubit(student: studentModel),
-          child: EditStudentScreen(grade: grade, student: studentModel),
-        ),
-      ),
-    );
+        context,
+        MaterialPageRoute(
+            builder: (_) => BlocProvider(
+                create: (_) => StudentEditCubit(student: studentModel),
+                child:
+                    EditStudentScreen(grade: grade, student: studentModel))));
   }
 
   void _sendDialog(BuildContext context) {
@@ -333,33 +295,29 @@ class StudentWidget extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          "إرسال رسالة",
-          style: AppTextStyles.customText(
-            fontSize: 18,
-            color: AppColors.primaryMain,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: Text("إرسال رسالة",
+            style: AppTextStyles.customText(
+                fontSize: 18,
+                color: AppColors.primaryMain,
+                fontWeight: FontWeight.bold)),
         content: SelectRecipientDialogContent(
-          sendMessageToFather: () async => _sendWA(
-              studentModel.fatherPhone ?? "",
-              "عزيزي والد ${studentModel.name}"),
-          sendMessageToMother: () async => _sendWA(
-              studentModel.motherPhone ?? "",
-              "عزيزتي والدة ${studentModel.name}"),
-          sendMessageToStudent: () async => _sendWA(
-              studentModel.phoneNumber ?? "", "عزيزي ${studentModel.name}"),
+          sendMessageToFather: () =>
+              StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                  studentName: studentModel.name!,
+                  parentRole: 'father',
+                  phoneNumber: studentModel.fatherPhone ?? ""),
+          sendMessageToMother: () =>
+              StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                  studentName: studentModel.name!,
+                  parentRole: 'mother',
+                  phoneNumber: studentModel.motherPhone ?? ""),
+          sendMessageToStudent: () =>
+              StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                  studentName: studentModel.name!,
+                  parentRole: 'student',
+                  phoneNumber: studentModel.phoneNumber ?? ""),
         ),
       ),
     );
-  }
-
-  void _sendWA(String phone, String msg) {
-    final cleaned = phone.replaceAll('+', '').replaceAll(' ', '');
-    final formatted =
-        cleaned.startsWith('0') ? '20${cleaned.substring(1)}' : cleaned;
-    final encoded = Uri.encodeComponent(msg);
-    launchUrlString("https://wa.me/$formatted?text=$encoded");
   }
 }

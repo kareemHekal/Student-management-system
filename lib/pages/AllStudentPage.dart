@@ -11,12 +11,12 @@ class AllStudentsTab extends StatefulWidget {
   State<AllStudentsTab> createState() => _AllStudentsTabState();
 }
 
-String? grade;
-bool isLoading = true;
-List<String>? grades;
-late bool thereIsGrades;
-
 class _AllStudentsTabState extends State<AllStudentsTab> {
+  String? grade;
+  bool isLoading = true;
+  List<String>? grades;
+  late bool thereIsGrades;
+
   @override
   void initState() {
     super.initState();

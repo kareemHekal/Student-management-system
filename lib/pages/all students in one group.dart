@@ -5,7 +5,7 @@ import '../cards/student/StudentWidget.dart';
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loadingWidget.dart';
 import '../models/Magmo3aModel.dart';
-import '../models/Studentmodel.dart';
+import '../models/Student_model.dart';
 import '../theme/colors_app.dart';
 
 class StudentInAgroup extends StatefulWidget {

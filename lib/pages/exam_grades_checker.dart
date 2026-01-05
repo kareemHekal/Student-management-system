@@ -3,7 +3,7 @@ import 'package:printing/printing.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
 
 import '../firebase/exams_functions.dart';
-import '../models/Studentmodel.dart';
+import '../models/Student_model.dart';
 import '../models/exam_model.dart';
 import '../theme/colors_app.dart';
 import 'pdf_genrators/exam_pdf_generator.dart';

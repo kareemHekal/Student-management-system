@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/pages/pdf_genrators/detaild_students_pdf.dart';
 
-import '../models/Studentmodel.dart';
+import '../models/Student_model.dart';
 import '../theme/colors_app.dart';
 
 class StudentChosenPdf {

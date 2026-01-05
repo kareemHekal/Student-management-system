@@ -4,8 +4,8 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import '../../models/absence_model.dart';
-import '../../models/day_record.dart';
+import '../../models/absence_app/day_record.dart';
+import '../../models/absence_app/student_absence_model.dart';
 
 bool _isArabic(String? text) {
   if (text == null || text.isEmpty) return false;
@@ -15,7 +15,7 @@ bool _isArabic(String? text) {
 
 Future<Uint8List> generateAbsenceReportPdf({
   required String studentName,
-  required List<AbsenceModel> absences,
+  required List<StudentAbsencesModel> absences,
   required List<DayRecord> currentAbsentDays,
   required List<DayRecord> currentAttendedDays,
 }) async {
@@ -38,7 +38,7 @@ Future<Uint8List> generateAbsenceReportPdf({
   }
 
   // إنشاء نموذج الشهر الحالي
-  AbsenceModel currentMonth = AbsenceModel(
+  StudentAbsencesModel currentMonth = StudentAbsencesModel(
     monthName: "الشهر الحالي",
     attendedDays: currentAttendedDays,
     absentDays: currentAbsentDays,

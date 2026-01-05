@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../firebase/firebase_functions.dart';
 import 'BottomSheets/student_chosen_pdf.dart';
 import 'cards/student/StudentWidget.dart';
-import 'models/Studentmodel.dart';
+import 'models/Student_model.dart';
 import 'theme/colors_app.dart';
 
 class StudentStreamBuilder extends StatefulWidget {

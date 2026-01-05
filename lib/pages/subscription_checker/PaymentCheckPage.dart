@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/pages/pdf_genrators/payment_checker_pdf_generator.dart';
 
 import '../../firebase/firebase_functions.dart';
 import '../../home.dart';
-import '../../models/Studentmodel.dart';
+import '../../models/Student_model.dart';
 import '../../models/student_paid_subscription.dart';
 import '../../models/subscription_fee.dart';
 import '../../theme/colors_app.dart';

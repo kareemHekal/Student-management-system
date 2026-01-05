@@ -1,6 +1,6 @@
 import 'Magmo3aModel.dart';
-import 'absence_model.dart';
-import 'day_record.dart';
+import 'absence_app/day_record.dart';
+import 'absence_app/student_absence_model.dart';
 import 'student_exam_grade.dart';
 import 'student_paid_subscription.dart';
 
@@ -18,11 +18,12 @@ class Studentmodel {
   // Lists for related data
   List<Magmo3amodel>? hisGroups;
   List<String>? hisGroupsId;
-  List<AbsenceModel>? absencesNumbers;
+  List<StudentAbsencesModel>? absencesNumbers;
   List<StudentPaidSubscriptions>? studentPaidSubscriptions;
   List<StudentExamGrade>? studentExamsGrades;
   List<DayRecord>? countingAttendedDays;
   List<DayRecord>? countingAbsentDays;
+  List<Map<String, String>>? notes;
 
   // Additional student information
   String? note;
@@ -45,7 +46,7 @@ class Studentmodel {
     this.studentExamsGrades,
     this.countingAttendedDays,
     this.countingAbsentDays,
-  });
+      this.notes});
 
   /// Factory method to create a `Studentmodel` instance from a JSON object.
   factory Studentmodel.fromJson(Map<String, dynamic> json) {
@@ -59,7 +60,10 @@ class Studentmodel {
       gender: json['gender'],
       grade: json['grade'],
       fatherPhone: json['fatherphone'],
-
+      notes: json["notes"] != null
+          ? List<Map<String, String>>.from(
+              json["notes"].map((note) => Map<String, String>.from(note)))
+          : [],
       hisGroups: (json['hisGroups'] as List<dynamic>?)
               ?.map((group) =>
                   Magmo3amodel.fromJson(Map<String, dynamic>.from(group)))
@@ -70,8 +74,8 @@ class Studentmodel {
               .toList() ??
           [],
       absencesNumbers: (json['absencesNumbers'] as List<dynamic>?)
-              ?.map((item) =>
-                  AbsenceModel.fromJson(Map<String, dynamic>.from(item)))
+              ?.map((item) => StudentAbsencesModel.fromJson(
+                  Map<String, dynamic>.from(item)))
               .toList() ??
           [],
       studentPaidSubscriptions:
@@ -103,6 +107,7 @@ class Studentmodel {
       'gender': gender ?? '',
       'grade': grade ?? '',
       'dateofadd': dateofadd ?? '',
+      'notes': notes,
       'note': note ?? '',
       'name': name ?? '',
       'fatherphone': fatherPhone ?? '',
