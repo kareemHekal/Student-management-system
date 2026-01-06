@@ -1174,6 +1174,11 @@ class FirebaseFunctions {
   }
 
   /// Fetches an absence record by its date.
+  ///
+  ///
+  ///
+  /// make this streaaaaam
+  ///
   static Future<AbsenceModel?> getAbsenceByDate(
       String day, String groupId, String date) async {
     try {
@@ -1217,51 +1222,6 @@ class FirebaseFunctions {
     } catch (e) {
       print("Error fetching student: $e");
       return null;
-    }
-  }
-
-  /// Updates a student within a specific absence record.
-  static Future<void> updateStudentInAbsence(String day, String magmo3aId,
-      String absenceDate, String studentId, Studentmodel updatedStudent) async {
-    try {
-      CollectionReference<Magmo3amodel> dayCollection = getDayCollection(day);
-      DocumentReference<Magmo3amodel> magmo3aDocRef =
-          dayCollection.doc(magmo3aId);
-      DocumentSnapshot<Magmo3amodel> magmo3aSnapshot =
-          await magmo3aDocRef.get();
-
-      if (!magmo3aSnapshot.exists) {
-        throw Exception("Group (Magmo3a) not found.");
-      }
-
-      CollectionReference<AbsenceModel> absencesSubcollectionRef =
-          magmo3aDocRef.collection('absences').withConverter<AbsenceModel>(
-                fromFirestore: (snapshot, _) =>
-                    AbsenceModel.fromJson(snapshot.data()!),
-                toFirestore: (value, _) => value.toJson(),
-              );
-
-      DocumentReference<AbsenceModel> absenceDocRef =
-          absencesSubcollectionRef.doc(absenceDate);
-      AbsenceModel? absenceData =
-          await absenceDocRef.get().then((snapshot) => snapshot.data());
-
-      if (absenceData != null) {
-        List<Studentmodel> students = absenceData.absentStudents;
-
-        for (int i = 0; i < students.length; i++) {
-          if (students[i].id == studentId) {
-            students[i] = updatedStudent;
-            break;
-          }
-        }
-
-        await absenceDocRef.set(absenceData);
-      } else {
-        print("Absence document not found.");
-      }
-    } catch (e) {
-      print("Error updating student in absence: $e");
     }
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:loader_overlay/loader_overlay.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
 
 import '../../../Alert dialogs/RemoveFromGroupsListDialog.dart';
 import '../../../BottomSheets/student_actions_bottom_sheet.dart';
@@ -49,7 +50,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   @override
   void initState() {
     super.initState();
-    // 2. تهيئة مفاتيح التركيز في initState
     _nameFocus = FocusNode();
     _studentNumberFocus = FocusNode();
     _fatherNumberFocus = FocusNode();
@@ -58,7 +58,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
 
   @override
   void dispose() {
-    // 3. التخلص من مفاتيح التركيز عند الخروج من الشاشة
     _nameFocus.dispose();
     _studentNumberFocus.dispose();
     _fatherNumberFocus.dispose();
@@ -70,7 +69,6 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   Widget build(BuildContext context) {
     return Material(
       child: BlocProvider(
-        // تهيئة الـ Cubit وتمرير بيانات الطالب
         create: (context) =>
             StudentEditCubit(student: widget.student)..initTheState(),
         child: Scaffold(
@@ -99,42 +97,25 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       context.loaderOverlay.hide();
     }
     if (state is StudentEditSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnackBar(
-            'تم تعديل بيانات الطالب بنجاح!', AppColors.statusPresent),
-      );
+      AppSnackBars.showSuccess(context, "تم تعديل بيانات الطالب بنجاح");
     }
     if (state is StudentUpdatedInEditPage) {
-      // إعادة بناء الـ widget عند تحديث حالة الطالب في الصفحة
       setState(() {});
     }
     if (state is StudentEditFailure) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnackBar(state.errorMessage, AppColors.statusAbsent),
-      );
+      AppSnackBars.showError(context, "لقد حدثت مشكله ${state.errorMessage}");
     }
     if (state is StudentValidationError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnackBar(state.errorMessage, AppColors.statusAbsent),
-      );
+      AppSnackBars.showError(context, "لقد حدثت مشكله ${state.errorMessage}");
     }
   }
 
-  SnackBar _buildSnackBar(String content, Color color) {
-    return SnackBar(
-      content: Text(content),
-      backgroundColor: color,
-      duration: const Duration(seconds: 2),
-    );
-  }
-
-  // --- دوال المساعدة للـ UI (UI Helpers) ------------------------------------
 
   // 1. بناء شريط التطبيق (AppBar)
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       elevation: 10,
-      shadowColor: Colors.yellow.shade700,
+      shadowColor: AppColors.primaryMain,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
@@ -336,6 +317,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       ],
     );
   }
+
   // 6.1. كارت المجموعة
   Widget _buildGroupCard(BuildContext context, StudentEditCubit cubit,
       dynamic magmo3aModel, int index) {
@@ -672,6 +654,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
       },
     );
   }
+
   // 10. بناء قسم الحضور والغياب
   Widget _buildAbsencePresenceSection(BuildContext context) {
     // تم إزالة الـ Padding الخارجي

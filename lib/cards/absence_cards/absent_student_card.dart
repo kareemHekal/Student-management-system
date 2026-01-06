@@ -316,11 +316,8 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
               String dateKey = widget.selectedDateStr;
               widget.studentModel.notes ??= [];
               widget.studentModel.notes!.add({dateKey: _noteController.text});
-              FirebaseFunctions.updateStudentInAbsence(
-                  widget.selectedDate,
+              FirebaseFunctions.updateStudentInCollection(widget.selectedDate,
                   widget.magmo3aModel.id,
-                  widget.selectedDateStr,
-                  widget.studentModel.id,
                   widget.studentModel);
               Navigator.pop(context);
             },

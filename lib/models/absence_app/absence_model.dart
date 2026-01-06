@@ -1,43 +1,31 @@
-import 'package:student_management_system/models/Student_model.dart';
-
 class AbsenceModel {
-  final String date; // The date of the absence record.
-  int? numberOfStudents; // Total number of students in the record.
-  List<Studentmodel> absentStudents; // List of absent students.
-  List<Studentmodel> attendStudents; // List of attending students.
+  final String date;
+  final int numberOfStudents;
+  final List<String> absentStudentIds;
+  final List<String> attendStudentIds;
 
   AbsenceModel({
     required this.date,
     required this.numberOfStudents,
-    required this.absentStudents,
-    required this.attendStudents,
+    required this.absentStudentIds,
+    required this.attendStudentIds,
   });
 
-  // Factory constructor to create an instance from JSON.
   factory AbsenceModel.fromJson(Map<String, dynamic> json) {
     return AbsenceModel(
-      date: json['date'] ?? '', // Default to an empty string if date is null.
-      numberOfStudents: json['numberOfStudents'] ?? 0, // Default to 0 if null.
-      absentStudents: (json['absentStudents'] as List<dynamic>? ?? [])
-          .map((studentJson) =>
-              Studentmodel.fromJson(studentJson as Map<String, dynamic>))
-          .toList(),
-      attendStudents: (json['attendStudents'] as List<dynamic>? ?? [])
-          .map((studentJson) =>
-              Studentmodel.fromJson(studentJson as Map<String, dynamic>))
-          .toList(),
+      date: json['date'] ?? '',
+      numberOfStudents: json['numberOfStudents'] ?? 0,
+      absentStudentIds: List<String>.from(json['absentStudentIds'] ?? []),
+      attendStudentIds: List<String>.from(json['attendStudentIds'] ?? []),
     );
   }
 
-  // Method to convert an instance to JSON.
   Map<String, dynamic> toJson() {
     return {
       'date': date,
       'numberOfStudents': numberOfStudents,
-      'absentStudents':
-          absentStudents.map((student) => student.toJson()).toList(),
-      'attendStudents':
-          attendStudents.map((student) => student.toJson()).toList(),
+      'absentStudentIds': absentStudentIds,
+      'attendStudentIds': attendStudentIds,
     };
   }
 }

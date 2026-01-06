@@ -28,3 +28,9 @@ class SearchStudent extends AbsentIntent {
 
   SearchStudent({required this.query});
 }
+
+class RestoreStudentToAbsent extends AbsentIntent {
+  final Studentmodel student;
+
+  RestoreStudentToAbsent(this.student);
+}

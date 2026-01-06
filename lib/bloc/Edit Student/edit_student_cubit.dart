@@ -13,8 +13,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
 
   StudentEditCubit({required this.student}) : super(StudentEditInitial());
 
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   late String? date;
   late String? day;
   String? selectedGender;
@@ -174,13 +172,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       emit(StudentEditFailure(errorMessage: e.toString()));
     }
     Navigator.pop(context);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Colors.green,
-        content: Text('تم تعديل بيانات الطالب بنجاح!'),
-      ),
-    );
   }
 
   void setTheSelectedGenderByNull() {

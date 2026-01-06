@@ -26,14 +26,13 @@ class AbsentCubit extends Cubit<AbsentState> {
 
   final searchController = TextEditingController();
 
-  List<Studentmodel> studentsList = [];
+  List<Studentmodel> absentStudents = [];
   List<Studentmodel> attendStudents = [];
-  List<Studentmodel> filteredStudentsList = [];
+  List<Studentmodel> filteredAbsentStudentsList = [];
+  List<Studentmodel> filteredAttendStudentsList = [];
 
   bool? isAttendanceStarted;
-  int? numberofstudents;
-
-  late bool isStudentInList;
+  int? numberOfStudents;
 
   // ------------------- HANDLE INTENT -------------------
   Future<void> handleIntent(AbsentIntent intent) async {
@@ -58,7 +57,12 @@ class AbsentCubit extends Cubit<AbsentState> {
 
       case SearchStudent:
         final i = intent as SearchStudent;
-        _searchStudent(i.query);
+        _searchAbsentStudents(i.query);
+        break;
+
+      case RestoreStudentToAbsent:
+        final i = intent as RestoreStudentToAbsent;
+        await _restoreStudent(i.student);
         break;
     }
   }
@@ -68,6 +72,10 @@ class AbsentCubit extends Cubit<AbsentState> {
     emit(AbsentLoading());
 
     try {
+      // Clear old data to avoid duplicates
+      absentStudents.clear();
+      attendStudents.clear();
+
       final absentRecord = await FirebaseFunctions.getAbsenceByDate(
         selectedDay,
         magmo3aModel.id,
@@ -75,11 +83,36 @@ class AbsentCubit extends Cubit<AbsentState> {
       );
 
       if (absentRecord != null) {
-        studentsList = absentRecord.absentStudents;
-        attendStudents = absentRecord.attendStudents;
-        numberofstudents = absentRecord.numberOfStudents;
-        filteredStudentsList = studentsList;
+        // 🔹 Fetch absent students in parallel
+        final absentFutures = absentRecord.absentStudentIds.map(
+          (String studentId) => FirebaseFunctions.getStudentById(
+            magmo3aModel.grade ?? "",
+            studentId,
+          ),
+        );
+
+        final absentResults = await Future.wait(absentFutures);
+        absentStudents.addAll(
+          absentResults.whereType<Studentmodel>(),
+        );
+
+        // 🔹 Fetch attending students in parallel
+        final attendFutures = absentRecord.attendStudentIds.map(
+          (String studentId) => FirebaseFunctions.getStudentById(
+            magmo3aModel.grade ?? "",
+            studentId,
+          ),
+        );
+
+        final attendResults = await Future.wait(attendFutures);
+        attendStudents.addAll(
+          attendResults.whereType<Studentmodel>(),
+        );
+
+        numberOfStudents = absentRecord.numberOfStudents ?? 0;
+        filteredAbsentStudentsList = absentStudents;
         isAttendanceStarted = true;
+
         emit(AttendanceStarted());
       } else {
         await _fetchStudentsList();
@@ -98,9 +131,9 @@ class AbsentCubit extends Cubit<AbsentState> {
         magmo3aModel.id,
       );
 
-      studentsList = snapshot.docs.map((doc) => doc.data()).toList();
-      filteredStudentsList = studentsList;
-      numberofstudents = studentsList.length;
+      absentStudents = snapshot.docs.map((doc) => doc.data()).toList();
+      filteredAbsentStudentsList = absentStudents;
+      numberOfStudents = absentStudents.length;
       isAttendanceStarted = false;
       emit(AbsenceFetched());
 
@@ -114,7 +147,7 @@ class AbsentCubit extends Cubit<AbsentState> {
   Future<void> _startTakingAbsence() async {
     emit(AbsentLoading());
 
-    for (var student in studentsList) {
+    for (var student in absentStudents) {
       student.countingAbsentDays ??= [];
       student.countingAbsentDays!
           .add(DayRecord(date: selectedDateStr, day: selectedDay));
@@ -128,10 +161,10 @@ class AbsentCubit extends Cubit<AbsentState> {
     isAttendanceStarted = true;
 
     final absenceModel = AbsenceModel(
-      attendStudents: attendStudents,
+      numberOfStudents: absentStudents.length,
       date: selectedDateStr,
-      numberOfStudents: studentsList.length,
-      absentStudents: studentsList,
+      attendStudentIds: attendStudents.map((s) => s.id).toList(),
+      absentStudentIds: absentStudents.map((s) => s.id).toList(),
     );
 
     await FirebaseFunctions.updateAbsenceByDateInSubcollection(
@@ -156,17 +189,17 @@ class AbsentCubit extends Cubit<AbsentState> {
     try {
       // UI Update: Move to lists immediately for responsiveness
       attendStudents.add(student);
-      studentsList.removeWhere((s) => s.id == student.id);
-      filteredStudentsList =
-          List.from(studentsList); // Create new list reference
+      absentStudents.removeWhere((s) => s.id == student.id);
+      filteredAbsentStudentsList =
+          List.from(absentStudents); // Create new list reference
 
       emit(AbsenceFetched()); // Update the list in UI
 
       final absenceModel = AbsenceModel(
-        attendStudents: attendStudents,
+        numberOfStudents: numberOfStudents ?? 0,
         date: selectedDateStr,
-        numberOfStudents: numberofstudents,
-        absentStudents: studentsList,
+        attendStudentIds: attendStudents.map((s) => s.id).toList(),
+        absentStudentIds: absentStudents.map((s) => s.id).toList(),
       );
 
       // Firebase updates
@@ -257,15 +290,68 @@ class AbsentCubit extends Cubit<AbsentState> {
   }
 
   // ------------------- SEARCH STUDENT -------------------
-  void _searchStudent(String query) {
-    filteredStudentsList = query.isEmpty
-        ? studentsList
-        : studentsList
+  void _searchAbsentStudents(String query) {
+    filteredAbsentStudentsList = query.isEmpty
+        ? absentStudents
+        : absentStudents
             .where((student) => (student.name ?? '')
                 .toLowerCase()
                 .contains(query.toLowerCase()))
             .toList();
 
-    emit(SearchResultsUpdated(filteredStudentsList));
+    emit(SearchResultsUpdated(filteredAbsentStudentsList));
+  }
+
+  Future<void> _restoreStudent(Studentmodel student) async {
+    attendStudents.removeWhere((s) => s.id == student.id);
+    absentStudents.add(student);
+
+    student.countingAbsentDays ??= [];
+    student.countingAbsentDays!
+        .add(DayRecord(date: selectedDateStr, day: selectedDay));
+
+    student.countingAttendedDays?.removeWhere(
+      (d) => d.date == selectedDateStr && d.day == selectedDay,
+    );
+
+    final absenceModel = AbsenceModel(
+      date: selectedDateStr,
+      numberOfStudents: numberOfStudents ?? 0,
+      attendStudentIds: attendStudents.map((s) => s.id).toList(),
+      absentStudentIds: absentStudents.map((s) => s.id).toList(),
+    );
+
+    await FirebaseFunctions.updateStudentInCollection(
+      magmo3aModel.grade ?? "",
+      student.id,
+      student,
+    );
+
+    await FirebaseFunctions.updateAbsenceByDateInSubcollection(
+      selectedDay,
+      magmo3aModel.id,
+      selectedDateStr,
+      absenceModel,
+    );
+    refreshAbsentFilteredList();
+
+    emit(AbsenceFetched());
+  }
+
+  void searchAttendingStudents(String query) {
+    filteredAttendStudentsList = query.isEmpty
+        ? attendStudents
+        : attendStudents
+            .where((student) => (student.name ?? '')
+                .toLowerCase()
+                .contains(query.toLowerCase()))
+            .toList();
+
+    emit(SearchResultsUpdated(filteredAttendStudentsList));
+  }
+
+  void refreshAbsentFilteredList() {
+    filteredAbsentStudentsList = List.from(absentStudents);
+    emit(SearchResultsUpdated(filteredAbsentStudentsList));
   }
 }

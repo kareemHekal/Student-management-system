@@ -4,7 +4,7 @@ import 'package:student_management_system/models/Student_model.dart';
 
 import '../../BottomSheets/more_bottom_sheet_in_absent_page.dart';
 import '../../absent_home_screen.dart';
-import '../../cards/absence_cards/absent_student_model.dart';
+import '../../cards/absence_cards/absent_student_card.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../loadingFile/loading_alert/run_with_loading.dart';
 import '../../models/Magmo3aModel.dart';
@@ -157,8 +157,8 @@ class AbsentPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _statChip(
-                    "الكل: ${cubit.numberofstudents}", AppColors.primaryDark),
-                _statChip("غياب: ${cubit.studentsList.length}",
+                    "الكل: ${cubit.numberOfStudents}", AppColors.primaryDark),
+                _statChip("غياب: ${cubit.absentStudents.length}",
                     AppColors.statusAbsent),
                 _statChip("حضور: ${cubit.attendStudents.length}",
                     AppColors.statusPresent),
@@ -207,15 +207,17 @@ class AbsentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(15)),
               ),
               onPressed: () async {
-                cubit.numberofstudents = cubit.studentsList.length;
+                cubit.numberOfStudents = cubit.absentStudents.length;
                 await FirebaseFunctions.addAbsenceToSubcollection(
                   cubit.selectedDay,
                   cubit.magmo3aModel.id,
                   AbsenceModel(
                     date: cubit.selectedDateStr,
-                    numberOfStudents: cubit.numberofstudents,
-                    absentStudents: cubit.studentsList,
-                    attendStudents: cubit.attendStudents,
+                    numberOfStudents: cubit.numberOfStudents ?? 0,
+                    absentStudentIds:
+                        cubit.absentStudents.map((e) => e.id).toList(),
+                    attendStudentIds:
+                        cubit.attendStudents.map((e) => e.id).toList(),
                   ),
                 );
                 cubit.handleIntent(StartTakingAttendance());
@@ -228,12 +230,14 @@ class AbsentPage extends StatelessWidget {
         ),
       );
     }
-
+    if (cubit.filteredAbsentStudentsList.isEmpty) {
+      return _emptyAbsentState(); // Show empty state
+    }
     return ListView.builder(
       padding: const EdgeInsets.only(top: 10, bottom: 20),
-      itemCount: cubit.filteredStudentsList.length,
+      itemCount: cubit.filteredAbsentStudentsList.length,
       itemBuilder: (context, index) {
-        final student = cubit.filteredStudentsList[index];
+        final student = cubit.filteredAbsentStudentsList[index];
         return GestureDetector(
           onLongPress: () =>
               _showConfirmAttendanceDialog(context, cubit, student),
@@ -308,16 +312,17 @@ class AbsentPage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => CustomBottomSheet(
-        absenceModel: AbsenceModel(
-          date: cubit.selectedDateStr,
-          numberOfStudents: cubit.numberofstudents,
-          absentStudents: cubit.studentsList,
-          attendStudents: cubit.attendStudents,
-        ),
+        cubit: cubit,
+        // مرر الـ cubit مباشرة
+        absentStudent: cubit.absentStudents,
+        attendStudent: cubit.attendStudents,
+        date: cubit.selectedDateStr,
+        numberOfStudents: cubit.numberOfStudents ?? 0,
         selectedDay: cubit.selectedDay,
         magmo3aModel: cubit.magmo3aModel,
-        filteredStudentsList: cubit.filteredStudentsList,
+        filteredStudentsList: cubit.filteredAbsentStudentsList,
       ),
     );
   }
@@ -332,6 +337,30 @@ class AbsentPage extends StatelessWidget {
           Text("لا يمكنك تسجيل الحضور لتواريخ مستقبلية.",
               style: AppTextStyles.customText(
                   color: AppColors.statusAbsent, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyAbsentState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.people_outline_rounded,
+            size: 80,
+            color: AppColors.primaryMain.withOpacity(0.15),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'لا يوجد طلاب غائبون',
+            style: AppTextStyles.customText(
+              fontSize: 16,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );

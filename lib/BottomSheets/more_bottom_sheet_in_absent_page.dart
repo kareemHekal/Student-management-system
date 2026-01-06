@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:student_management_system/pages/absent/Students%20attending%20Page.dart';
+import 'package:student_management_system/pages/absent/students_attending_page.dart';
+import 'package:student_management_system/pages/absent/view_model/cubit.dart';
 
 import '../../Alert dialogs/Delete Absence.dart';
 import '../../absent_home_screen.dart';
@@ -11,21 +13,28 @@ import '../../firebase/firebase_functions.dart';
 import '../../loadingFile/loading_alert/run_with_loading.dart';
 import '../../models/Magmo3aModel.dart';
 import '../../models/Student_model.dart';
-import '../../models/absence_app/absence_model.dart';
 import '../../theme/colors_app.dart';
 import '../../theme/snack_bar.dart';
 import '../../theme/text_style.dart';
 
 class CustomBottomSheet extends StatefulWidget {
+  final AbsentCubit cubit;
   final List<Studentmodel> filteredStudentsList;
   final String selectedDay;
   final Magmo3amodel magmo3aModel;
-  final AbsenceModel absenceModel;
+  final String date;
+  final int numberOfStudents;
+  final List<Studentmodel> absentStudent;
+  final List<Studentmodel> attendStudent;
 
   const CustomBottomSheet({
     Key? key,
+    required this.cubit,
     required this.filteredStudentsList,
-    required this.absenceModel,
+    required this.date,
+    required this.numberOfStudents,
+    required this.absentStudent,
+    required this.attendStudent,
     required this.magmo3aModel,
     required this.selectedDay,
   }) : super(key: key);
@@ -39,6 +48,8 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = widget.cubit;
+
     return Container(
       padding: const EdgeInsets.only(top: 12, left: 16, right: 16, bottom: 20),
       decoration: BoxDecoration(
@@ -84,19 +95,21 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
                 icon: Icons.checklist_rtl_rounded,
                 label: "الحاضرون",
                 color: AppColors.secondaryMain,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StudentsAttending(
-                        absenceModel: widget.absenceModel,
-                        magmo3aModel: widget.magmo3aModel,
-                        selectedDay: widget.selectedDay,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: cubit,
+                          child: StudentsAttending(
+                            cubit: cubit,
+                            selectedDay: cubit.selectedDay,
+                            magmo3aModel: cubit.magmo3aModel,
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  }),
               _buildModernActionButton(
                 icon: Icons.delete_forever_rounded,
                 label: "حذف",
@@ -184,7 +197,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
           await FirebaseFunctions.deleteAbsenceFromSubcollection(
             widget.selectedDay,
             widget.magmo3aModel.id,
-            widget.absenceModel.date,
+            widget.date,
           ).then((_) async {
             await fixAttendanceCounts();
           }).catchError((error) {
@@ -248,8 +261,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
             ),
           ),
           pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 10)),
-          pw.Text(
-              "التاريخ: ${widget.absenceModel.date} | اليوم: ${widget.selectedDay}",
+          pw.Text("التاريخ: ${widget.date} | اليوم: ${widget.selectedDay}",
               style: pw.TextStyle(font: font, fontSize: 14)),
           pw.Divider(),
           pw.GridView(
@@ -268,7 +280,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
   }
 
   pw.Widget _buildPdfStudentCard(Studentmodel student, pw.Font font) {
-    String note = _buildNotesForDate(student, widget.absenceModel.date);
+    String note = _buildNotesForDate(student, widget.date);
     return pw.Container(
       margin: const pw.EdgeInsets.all(5),
       padding: const pw.EdgeInsets.all(10),
@@ -301,15 +313,15 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
     runWithLoading(context, () async {
       try {
         // Attendance adjustment logic...
-        for (var student in widget.absenceModel.absentStudents) {
+        for (var student in widget.absentStudent) {
           student.countingAbsentDays
-              ?.removeWhere((dr) => dr.date == widget.absenceModel.date);
+              ?.removeWhere((dr) => dr.date == widget.date);
           await FirebaseFunctions.updateStudentInCollection(
               widget.magmo3aModel.grade ?? "", student.id, student);
         }
-        for (var student in widget.absenceModel.attendStudents) {
+        for (var student in widget.attendStudent) {
           student.countingAttendedDays
-              ?.removeWhere((dr) => dr.date == widget.absenceModel.date);
+              ?.removeWhere((dr) => dr.date == widget.date);
           await FirebaseFunctions.updateStudentInCollection(
               widget.magmo3aModel.grade ?? "", student.id, student);
         }
