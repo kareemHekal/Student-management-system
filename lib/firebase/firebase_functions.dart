@@ -1066,32 +1066,6 @@ class FirebaseFunctions {
   // Absence Management Functions
   // =======================================================================
 
-  /// Adds an absence to the "absences" subcollection.
-  static Future<void> addAbsenceToSubcollection(
-      String day, String magmo3aId, AbsenceModel absence) async {
-    try {
-      CollectionReference<Magmo3amodel> dayCollection = getDayCollection(day);
-      DocumentReference<Magmo3amodel> magmo3aDocRef =
-          dayCollection.doc(magmo3aId);
-      DocumentSnapshot<Magmo3amodel> magmo3aSnapshot =
-          await magmo3aDocRef.get();
-
-      if (!magmo3aSnapshot.exists) {
-        throw Exception("Group (Magmo3a) not found.");
-      }
-
-      CollectionReference<AbsenceModel> absencesSubcollectionRef =
-          magmo3aDocRef.collection('absences').withConverter<AbsenceModel>(
-                fromFirestore: (snapshot, _) =>
-                    AbsenceModel.fromJson(snapshot.data()!),
-                toFirestore: (value, _) => value.toJson(),
-              );
-
-      await absencesSubcollectionRef.doc(absence.date).set(absence);
-    } catch (e) {
-      print("Error adding absence: $e");
-    }
-  }
 
   /// Deletes an absence from the "absences" subcollection.
   static Future<void> deleteAbsenceFromSubcollection(
@@ -1179,24 +1153,27 @@ class FirebaseFunctions {
   ///
   /// make this streaaaaam
   ///
-  static Future<AbsenceModel?> getAbsenceByDate(
-      String day, String groupId, String date) async {
+  static Stream<AbsenceModel?> getAbsenceByDateStream(
+      String day, String groupId, String date) {
     try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
+      return FirebaseFirestore.instance
           .collection(day)
           .doc(groupId)
           .collection('absences')
           .doc(date)
-          .get();
-
-      if (doc.exists) {
-        return AbsenceModel.fromJson(doc.data() as Map<String, dynamic>);
-      } else {
-        return null;
-      }
+          .snapshots()
+          .map((docSnapshot) {
+        if (docSnapshot.exists) {
+          return AbsenceModel.fromJson(
+              docSnapshot.data() as Map<String, dynamic>);
+        } else {
+          return null;
+        }
+      });
     } catch (e) {
-      print("Error fetching absence record: $e");
-      return null;
+      print("Error fetching absence record stream: $e");
+      // Return an empty stream on error
+      return Stream.value(null);
     }
   }
 

@@ -4,7 +4,6 @@ sealed class AbsentState {}
 
 class AbsentInitial extends AbsentState {}
 
-class AbsentLoading extends AbsentState {}
 
 class AbsenceFetched extends AbsentState {}
 

@@ -33,33 +33,33 @@ class AbsentCubit extends Cubit<AbsentState> {
 
   bool? isAttendanceStarted;
   int? numberOfStudents;
+  StreamSubscription? _absenceSubscription;
 
-  // ------------------- HANDLE INTENT -------------------
+  // ✅ متغير جديد للتحكم في الحالة الأولية ومنع ظهور الزر قبل البيانات
+  bool isFirstLoadDone = false;
+
   Future<void> handleIntent(AbsentIntent intent) async {
+    if (isClosed) return;
+
     switch (intent.runtimeType) {
       case FetchAbsence:
-        await _fetchAbsence();
+        await _fetchAbsenceStream();
         break;
-
       case StartTakingAttendance:
         await _startTakingAbsence();
         break;
-
       case AddStudentToPresent:
         final i = intent as AddStudentToPresent;
         await _addStudentToPresent(i.student, i.realStudentId);
         break;
-
       case ScanQrIntent:
         final i = intent as ScanQrIntent;
         await _scanQrcode(i.context);
         break;
-
       case SearchStudent:
         final i = intent as SearchStudent;
         _searchAbsentStudents(i.query);
         break;
-
       case RestoreStudentToAbsent:
         final i = intent as RestoreStudentToAbsent;
         await _restoreStudent(i.student);
@@ -67,133 +67,136 @@ class AbsentCubit extends Cubit<AbsentState> {
     }
   }
 
-  // ------------------- FETCH ABSENCE -------------------
-  Future<void> _fetchAbsence() async {
-    emit(AbsentLoading());
+  Future<void> _fetchAbsenceStream() async {
+    await _absenceSubscription?.cancel();
 
-    try {
-      // Clear old data to avoid duplicates
-      absentStudents.clear();
-      attendStudents.clear();
+    _absenceSubscription = FirebaseFunctions.getAbsenceByDateStream(
+      selectedDay,
+      magmo3aModel.id,
+      selectedDateStr,
+    ).listen((absenceRecord) async {
+      if (isClosed) return;
 
-      final absentRecord = await FirebaseFunctions.getAbsenceByDate(
-        selectedDay,
-        magmo3aModel.id,
-        selectedDateStr,
-      );
+      try {
+        if (absenceRecord != null) {
+          final absentFutures = absenceRecord.absentStudentIds
+              .map(
+                (id) => FirebaseFunctions.getStudentById(
+                    magmo3aModel.grade ?? "", id),
+              )
+              .toList();
 
-      if (absentRecord != null) {
-        // 🔹 Fetch absent students in parallel
-        final absentFutures = absentRecord.absentStudentIds.map(
-          (String studentId) => FirebaseFunctions.getStudentById(
-            magmo3aModel.grade ?? "",
-            studentId,
-          ),
-        );
+          final attendFutures = absenceRecord.attendStudentIds
+              .map(
+                (id) => FirebaseFunctions.getStudentById(
+                    magmo3aModel.grade ?? "", id),
+              )
+              .toList();
 
-        final absentResults = await Future.wait(absentFutures);
-        absentStudents.addAll(
-          absentResults.whereType<Studentmodel>(),
-        );
+          final results = await Future.wait([
+            Future.wait(absentFutures),
+            Future.wait(attendFutures),
+          ]);
 
-        // 🔹 Fetch attending students in parallel
-        final attendFutures = absentRecord.attendStudentIds.map(
-          (String studentId) => FirebaseFunctions.getStudentById(
-            magmo3aModel.grade ?? "",
-            studentId,
-          ),
-        );
+          if (isClosed) return;
 
-        final attendResults = await Future.wait(attendFutures);
-        attendStudents.addAll(
-          attendResults.whereType<Studentmodel>(),
-        );
+          absentStudents = results[0].whereType<Studentmodel>().toList();
+          attendStudents = results[1].whereType<Studentmodel>().toList();
 
-        numberOfStudents = absentRecord.numberOfStudents ?? 0;
-        filteredAbsentStudentsList = absentStudents;
-        isAttendanceStarted = true;
+          numberOfStudents = absenceRecord.numberOfStudents;
+          filteredAbsentStudentsList = List.from(absentStudents);
+          filteredAttendStudentsList = List.from(attendStudents);
+          isAttendanceStarted = true;
 
-        emit(AttendanceStarted());
-      } else {
-        await _fetchStudentsList();
+          // ✅ تم تحميل البيانات بنجاح
+          isFirstLoadDone = true;
+          emit(AttendanceStarted());
+        } else {
+          await _fetchStudentsList();
+        }
+      } catch (e) {
+        isFirstLoadDone = true; // نغلق حالة الانتظار حتى لو حدث خطأ
+        if (!isClosed) emit(AbsentError('Error: $e'));
       }
-    } catch (e) {
-      emit(AbsentError('Error fetching absence record: $e'));
-    }
+    });
   }
 
-  // ------------------- FETCH STUDENTS LIST -------------------
   Future<void> _fetchStudentsList() async {
-    emit(AbsentLoading());
     try {
       final snapshot = await FirebaseFunctions.getStudentsByGroupIdOnce(
         magmo3aModel.grade ?? "",
         magmo3aModel.id,
       );
 
+      if (isClosed) return;
+
       absentStudents = snapshot.docs.map((doc) => doc.data()).toList();
-      filteredAbsentStudentsList = absentStudents;
+      filteredAbsentStudentsList = List.from(absentStudents);
       numberOfStudents = absentStudents.length;
       isAttendanceStarted = false;
-      emit(AbsenceFetched());
 
+      // ✅ تم تحميل البيانات (يوم جديد)
+      isFirstLoadDone = true;
       emit(AbsenceFetched());
     } catch (e) {
-      emit(AbsentError("Error fetching students: $e"));
+      isFirstLoadDone = true;
+      if (!isClosed) emit(AbsentError("Error fetching students: $e"));
     }
   }
 
-  // ------------------- START ATTENDANCE -------------------
+  // --- بقية الدوال كما هي (StartTakingAttendance, Scan, Search, etc.) ---
+  // ... (نفس الكود الأصلي الذي أرفقته أنت في الـ Cubit)
+
   Future<void> _startTakingAbsence() async {
-    emit(AbsentLoading());
-
-    for (var student in absentStudents) {
-      student.countingAbsentDays ??= [];
-      student.countingAbsentDays!
-          .add(DayRecord(date: selectedDateStr, day: selectedDay));
-      await FirebaseFunctions.updateStudentInCollection(
-        student.grade ?? "",
-        student.id,
-        student,
+    try {
+      List<Future> batchOperations = [];
+      for (var student in absentStudents) {
+        student.countingAbsentDays ??= [];
+        bool exists = student.countingAbsentDays!
+            .any((d) => d.date == selectedDateStr && d.day == selectedDay);
+        if (!exists) {
+          student.countingAbsentDays!
+              .add(DayRecord(date: selectedDateStr, day: selectedDay));
+        }
+        batchOperations.add(
+          FirebaseFunctions.updateStudentInCollection(
+              student.grade ?? "", student.id, student),
+        );
+      }
+      numberOfStudents = absentStudents.length;
+      final absenceModel = AbsenceModel(
+        numberOfStudents: numberOfStudents ?? 0,
+        date: selectedDateStr,
+        attendStudentIds: attendStudents.map((s) => s.id).toList(),
+        absentStudentIds: absentStudents.map((s) => s.id).toList(),
       );
+      batchOperations.add(FirebaseFunctions.updateAbsenceByDateInSubcollection(
+          selectedDay, magmo3aModel.id, selectedDateStr, absenceModel));
+      await Future.wait(batchOperations);
+      isAttendanceStarted = true;
+      emit(AttendanceStarted());
+    } catch (e) {
+      emit(AbsentError('Failed to start attendance: $e'));
     }
-
-    isAttendanceStarted = true;
-
-    final absenceModel = AbsenceModel(
-      numberOfStudents: absentStudents.length,
-      date: selectedDateStr,
-      attendStudentIds: attendStudents.map((s) => s.id).toList(),
-      absentStudentIds: absentStudents.map((s) => s.id).toList(),
-    );
-
-    await FirebaseFunctions.updateAbsenceByDateInSubcollection(
-      selectedDay,
-      magmo3aModel.id,
-      selectedDateStr,
-      absenceModel,
-    );
-
-    emit(AttendanceStarted());
   }
 
-  // ------------------- ADD STUDENT TO PRESENT -------------------
   Future<void> _addStudentToPresent(
       Studentmodel student, String realStudentId) async {
-    // 1. Check if already present without using context
     if (attendStudents.any((s) => s.id == student.id)) {
       emit(AbsentError('⚠️ تم تسجيل حضوره من قبل.'));
       return;
     }
-
     try {
-      // UI Update: Move to lists immediately for responsiveness
       attendStudents.add(student);
       absentStudents.removeWhere((s) => s.id == student.id);
-      filteredAbsentStudentsList =
-          List.from(absentStudents); // Create new list reference
+      _updateFilteredLists();
+      emit(AbsenceFetched());
 
-      emit(AbsenceFetched()); // Update the list in UI
+      student.countingAttendedDays ??= [];
+      student.countingAttendedDays!
+          .add(DayRecord(date: selectedDateStr, day: selectedDay));
+      student.countingAbsentDays?.removeWhere((dayRecord) =>
+          dayRecord.date == selectedDateStr && dayRecord.day == selectedDay);
 
       final absenceModel = AbsenceModel(
         numberOfStudents: numberOfStudents ?? 0,
@@ -202,156 +205,135 @@ class AbsentCubit extends Cubit<AbsentState> {
         absentStudentIds: absentStudents.map((s) => s.id).toList(),
       );
 
-      // Firebase updates
-      await updateStudentAttendance(student, realStudentId);
-      await FirebaseFunctions.updateAbsenceByDateInSubcollection(
-        selectedDay,
-        magmo3aModel.id,
-        selectedDateStr,
-        absenceModel,
-      );
-
+      await Future.wait([
+        FirebaseFunctions.updateStudentInCollection(
+            magmo3aModel.grade ?? "", realStudentId, student),
+        FirebaseFunctions.updateAbsenceByDateInSubcollection(
+            selectedDay, magmo3aModel.id, selectedDateStr, absenceModel),
+      ]);
       isAttendanceStarted = true;
-      emit(ScanSuccess(
-          student)); // This will trigger the success snackbar in the UI
+      emit(ScanSuccess(student));
     } catch (e) {
+      attendStudents.removeWhere((s) => s.id == student.id);
+      absentStudents.add(student);
       emit(AbsentError('❌ فشل في تحديث الحضور: $e'));
     }
   }
 
-  Future<void> updateStudentAttendance(
-      Studentmodel student, String studentId) async {
-    student.countingAttendedDays ??= [];
-    student.countingAttendedDays!
-        .add(DayRecord(date: selectedDateStr, day: selectedDay));
+  Future<void> _restoreStudent(Studentmodel student) async {
+    try {
+      attendStudents.removeWhere((s) => s.id == student.id);
+      absentStudents.add(student);
+      _updateFilteredLists();
+      emit(AbsenceFetched());
 
-    student.countingAbsentDays ??= [];
-    student.countingAbsentDays!.removeWhere((dayRecord) =>
-        dayRecord.date == selectedDateStr && dayRecord.day == selectedDay);
+      student.countingAbsentDays ??= [];
+      student.countingAbsentDays!
+          .add(DayRecord(date: selectedDateStr, day: selectedDay));
+      student.countingAttendedDays?.removeWhere(
+          (d) => d.date == selectedDateStr && d.day == selectedDay);
 
-    await FirebaseFunctions.updateStudentInCollection(
-      magmo3aModel.grade ?? "",
-      studentId,
-      student,
-    );
+      final absenceModel = AbsenceModel(
+        date: selectedDateStr,
+        numberOfStudents: numberOfStudents ?? 0,
+        attendStudentIds: attendStudents.map((s) => s.id).toList(),
+        absentStudentIds: absentStudents.map((s) => s.id).toList(),
+      );
+
+      await Future.wait([
+        FirebaseFunctions.updateStudentInCollection(
+            magmo3aModel.grade ?? "", student.id, student),
+        FirebaseFunctions.updateAbsenceByDateInSubcollection(
+            selectedDay, magmo3aModel.id, selectedDateStr, absenceModel)
+      ]);
+      refreshAbsentFilteredList();
+    } catch (e) {
+      emit(AbsentError('Error restoring student: $e'));
+    }
   }
 
-  // ------------------- SCAN QR -------------------
-  Future<void> _scanQrcode(BuildContext context) async {
-    MobileScannerController _scannerController = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
-    );
-    ScaffoldMessengerState scaffoldMessenger = ScaffoldMessenger.of(context);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => BlocProvider.value(
-          value: this,
-          child: AiBarcodeScanner(
-            onDispose: () => debugPrint("Barcode scanner disposed!"),
-            hideGalleryButton: false,
-            controller: _scannerController,
-            onDetect: (BarcodeCapture capture) async {
-              _scannerController.stop();
-              await runWithLoading(context, () async {
-                final scannedValue = capture.barcodes.first.rawValue;
-                if (scannedValue == null) return;
-
-                scaffoldMessenger.clearSnackBars();
-
-                final student = await FirebaseFunctions.getStudentById(
-                  magmo3aModel.grade ?? "",
-                  scannedValue,
-                );
-
-                if (student != null &&
-                    student.hisGroupsId?.contains(magmo3aModel.id) == true) {
-                  await _addStudentToPresent(student, scannedValue);
-                } else {
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        student == null
-                            ? "لم يتم العثور على الطالب!"
-                            : "الطالب ليس ضمن هذه المجموعة!",
-                      ),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(milliseconds: 800),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              });
-              _scannerController.start();
-            },
-          ),
-        ),
-      ),
-    );
+  void _updateFilteredLists() {
+    if (searchController.text.isNotEmpty) {
+      _searchAbsentStudents(searchController.text);
+      searchAttendingStudents(searchController.text);
+    } else {
+      filteredAbsentStudentsList = List.from(absentStudents);
+      filteredAttendStudentsList = List.from(attendStudents);
+    }
   }
 
-  // ------------------- SEARCH STUDENT -------------------
   void _searchAbsentStudents(String query) {
     filteredAbsentStudentsList = query.isEmpty
-        ? absentStudents
+        ? List.from(absentStudents)
         : absentStudents
             .where((student) => (student.name ?? '')
                 .toLowerCase()
                 .contains(query.toLowerCase()))
             .toList();
-
     emit(SearchResultsUpdated(filteredAbsentStudentsList));
-  }
-
-  Future<void> _restoreStudent(Studentmodel student) async {
-    attendStudents.removeWhere((s) => s.id == student.id);
-    absentStudents.add(student);
-
-    student.countingAbsentDays ??= [];
-    student.countingAbsentDays!
-        .add(DayRecord(date: selectedDateStr, day: selectedDay));
-
-    student.countingAttendedDays?.removeWhere(
-      (d) => d.date == selectedDateStr && d.day == selectedDay,
-    );
-
-    final absenceModel = AbsenceModel(
-      date: selectedDateStr,
-      numberOfStudents: numberOfStudents ?? 0,
-      attendStudentIds: attendStudents.map((s) => s.id).toList(),
-      absentStudentIds: absentStudents.map((s) => s.id).toList(),
-    );
-
-    await FirebaseFunctions.updateStudentInCollection(
-      magmo3aModel.grade ?? "",
-      student.id,
-      student,
-    );
-
-    await FirebaseFunctions.updateAbsenceByDateInSubcollection(
-      selectedDay,
-      magmo3aModel.id,
-      selectedDateStr,
-      absenceModel,
-    );
-    refreshAbsentFilteredList();
-
-    emit(AbsenceFetched());
   }
 
   void searchAttendingStudents(String query) {
     filteredAttendStudentsList = query.isEmpty
-        ? attendStudents
+        ? List.from(attendStudents)
         : attendStudents
             .where((student) => (student.name ?? '')
                 .toLowerCase()
                 .contains(query.toLowerCase()))
             .toList();
-
     emit(SearchResultsUpdated(filteredAttendStudentsList));
   }
 
   void refreshAbsentFilteredList() {
     filteredAbsentStudentsList = List.from(absentStudents);
     emit(SearchResultsUpdated(filteredAbsentStudentsList));
+  }
+
+  Future<void> _scanQrcode(BuildContext context) async {
+    MobileScannerController _scannerController =
+        MobileScannerController(detectionSpeed: DetectionSpeed.noDuplicates);
+    ScaffoldMessengerState scaffoldMessenger = ScaffoldMessenger.of(context);
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+            value: this,
+            child: AiBarcodeScanner(
+              onDispose: () => debugPrint("Scanner disposed"),
+              hideGalleryButton: false,
+              controller: _scannerController,
+              onDetect: (BarcodeCapture capture) async {
+                _scannerController.stop();
+                await runWithLoading(context, () async {
+                  final scannedValue = capture.barcodes.first.rawValue;
+                  if (scannedValue == null) return;
+                  scaffoldMessenger.clearSnackBars();
+                  Studentmodel? student = [...absentStudents, ...attendStudents]
+                      .cast<Studentmodel?>()
+                      .firstWhere((s) => s!.id == scannedValue,
+                          orElse: () => null);
+                  if (student == null) {
+                    student = await FirebaseFunctions.getStudentById(
+                        magmo3aModel.grade ?? "", scannedValue);
+                  }
+                  if (student != null &&
+                      student.hisGroupsId?.contains(magmo3aModel.id) == true) {
+                    await _addStudentToPresent(student, scannedValue);
+                  } else {
+                    scaffoldMessenger.showSnackBar(SnackBar(
+                        content: Text(student == null
+                            ? "لم يتم العثور على الطالب!"
+                            : "الطالب ليس ضمن هذه المجموعة!"),
+                        backgroundColor: Colors.red));
+                  }
+                });
+                _scannerController.start();
+              },
+            ))));
+  }
+
+  @override
+  Future<void> close() {
+    _absenceSubscription?.cancel();
+    searchController.dispose();
+    return super.close();
   }
 }

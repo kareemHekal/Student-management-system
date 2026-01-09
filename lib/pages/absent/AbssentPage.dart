@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:student_management_system/models/Student_model.dart';
 
 import '../../BottomSheets/more_bottom_sheet_in_absent_page.dart';
 import '../../absent_home_screen.dart';
 import '../../cards/absence_cards/absent_student_card.dart';
-import '../../firebase/firebase_functions.dart';
 import '../../loadingFile/loading_alert/run_with_loading.dart';
 import '../../models/Magmo3aModel.dart';
-import '../../models/absence_app/absence_model.dart';
 import '../../theme/colors_app.dart';
 import '../../theme/snack_bar.dart';
 import '../../theme/text_style.dart';
@@ -32,40 +31,41 @@ class AbsentPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => AbsentCubit(
-          magmo3aModel: magmo3aModel,
-          selectedDateStr: selectedDateStr,
-          selectedDay: selectedDay)
-        ..handleIntent(FetchAbsence()),
+        magmo3aModel: magmo3aModel,
+        selectedDateStr: selectedDateStr,
+        selectedDay: selectedDay,
+      ),
       child: BlocConsumer<AbsentCubit, AbsentState>(
         listener: (context, state) {
           if (state is AbsentError) {
-            // Handles all errors (Firebase, logic, duplicate student)
             AppSnackBars.showError(context, state.error);
           }
           if (state is ScanSuccess) {
-            // Handles success messages
             AppSnackBars.showSuccess(
                 context, '✅ تم تسجيل حضور ${state.student.name} بنجاح!');
           }
         },
         builder: (context, state) {
           final cubit = context.read<AbsentCubit>();
+
+          // --- التحميل الأولي (Overlay Loading) ---
+          if (state is AbsentInitial) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              runWithLoading(context, () async {
+                await cubit.handleIntent(FetchAbsence());
+              });
+            });
+          }
+
           final selectedDate = DateTime.parse(cubit.selectedDateStr);
           final today = DateTime.now();
           final afterTomorrow = today.add(const Duration(days: 2));
 
-          if (state is AbsentLoading) {
-            return const Scaffold(
-                body: Center(
-                    child: CircularProgressIndicator(
-                        color: AppColors.primaryMain)));
-          }
-
           return Scaffold(
             backgroundColor: const Color(0xffF8F9FE),
-            // Light background for contrast
             appBar: _buildPremiumAppBar(
                 context, cubit, selectedDate, afterTomorrow),
+            // ✅ تم ربط الـ body بفلتر التحميل الأول
             body: selectedDate.isAfter(afterTomorrow)
                 ? _buildFutureDateWarning()
                 : _buildBody(context, cubit, selectedDate, afterTomorrow),
@@ -75,12 +75,13 @@ class AbsentPage extends StatelessWidget {
     );
   }
 
+  // ... (App Bar & Stats Chip functions remain the same) ...
   PreferredSizeWidget _buildPremiumAppBar(BuildContext context,
       AbsentCubit cubit, DateTime selectedDate, DateTime afterTomorrow) {
     return AppBar(
       backgroundColor: AppColors.primaryMain,
       elevation: 0,
-      toolbarHeight: 100,
+      toolbarHeight: 80,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.white),
         onPressed: () => Navigator.pushAndRemoveUntil(
@@ -90,7 +91,7 @@ class AbsentPage extends StatelessWidget {
         ),
       ),
       centerTitle: true,
-      title: Image.asset("assets/images/logo.png", height: 60),
+      title: Image.asset("assets/images/logo.png", height: 50),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
@@ -156,8 +157,8 @@ class AbsentPage extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _statChip(
-                    "الكل: ${cubit.numberOfStudents}", AppColors.primaryDark),
+                _statChip("المجموعة: ${cubit.numberOfStudents}",
+                    AppColors.primaryDark),
                 _statChip("غياب: ${cubit.absentStudents.length}",
                     AppColors.statusAbsent),
                 _statChip("حضور: ${cubit.attendStudents.length}",
@@ -181,13 +182,20 @@ class AbsentPage extends StatelessWidget {
       child: Text(label,
           style: AppTextStyles.customText(
               color: AppColors.white,
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.bold)),
     );
   }
 
+  // ------------------- BODY -------------------
   Widget _buildBody(BuildContext context, AbsentCubit cubit,
       DateTime selectedDate, DateTime afterTomorrow) {
+    // ✅ 1. إذا لم ينتهِ التحميل الأول بعد، لا تظهر شيئاً (الـ Loading Overlay شغال)
+    if (!cubit.isFirstLoadDone) {
+      return _buildShimmerLoading();
+    }
+
+    // ✅ 2. بعد انتهاء التحميل، نختبر هل نُظهر زر "البدء"؟
     if (cubit.isAttendanceStarted != true &&
         cubit.attendStudents.isEmpty &&
         selectedDate.isBefore(afterTomorrow)) {
@@ -196,7 +204,7 @@ class AbsentPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.groups_outlined,
-                size: 100, color: AppColors.primaryMain.withOpacity(0.2)),
+                size: 100, color: AppColors.primaryMain.withOpacity(0.1)),
             const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -207,20 +215,9 @@ class AbsentPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(15)),
               ),
               onPressed: () async {
-                cubit.numberOfStudents = cubit.absentStudents.length;
-                await FirebaseFunctions.addAbsenceToSubcollection(
-                  cubit.selectedDay,
-                  cubit.magmo3aModel.id,
-                  AbsenceModel(
-                    date: cubit.selectedDateStr,
-                    numberOfStudents: cubit.numberOfStudents ?? 0,
-                    absentStudentIds:
-                        cubit.absentStudents.map((e) => e.id).toList(),
-                    attendStudentIds:
-                        cubit.attendStudents.map((e) => e.id).toList(),
-                  ),
-                );
-                cubit.handleIntent(StartTakingAttendance());
+                await runWithLoading(context, () async {
+                  await cubit.handleIntent(StartTakingAttendance());
+                });
               },
               child: Text("ابدأ تسجيل الغياب الآن",
                   style: AppTextStyles.customText(
@@ -230,9 +227,12 @@ class AbsentPage extends StatelessWidget {
         ),
       );
     }
+
+    // ✅ 3. إذا كان التحميل تم والغياب بدأ، نُظهر القائمة أو الحالة الفارغة
     if (cubit.filteredAbsentStudentsList.isEmpty) {
-      return _emptyAbsentState(); // Show empty state
+      return _emptyAbsentState();
     }
+
     return ListView.builder(
       padding: const EdgeInsets.only(top: 10, bottom: 20),
       itemCount: cubit.filteredAbsentStudentsList.length,
@@ -253,6 +253,7 @@ class AbsentPage extends StatelessWidget {
     );
   }
 
+  // ... (بقية الـ Dialogs والـ States تظل كما هي) ...
   void _showConfirmAttendanceDialog(
       BuildContext context, AbsentCubit cubit, Studentmodel student) {
     showDialog(
@@ -261,10 +262,8 @@ class AbsentPage extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titlePadding: EdgeInsets.zero,
         title: _dialogHeader(Icons.check_circle_outline, "تحضير الطالب"),
-        content: Text(
-          "هل تريد تحضير الطالب ${student.name}؟\nسيتم نقله من قائمة الغياب.",
-          style: AppTextStyles.customText(fontSize: 15),
-        ),
+        content: Text("هل تريد تحضير الطالب ${student.name}؟",
+            style: AppTextStyles.customText(fontSize: 15)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
@@ -315,7 +314,6 @@ class AbsentPage extends StatelessWidget {
       isScrollControlled: true,
       builder: (context) => CustomBottomSheet(
         cubit: cubit,
-        // مرر الـ cubit مباشرة
         absentStudent: cubit.absentStudents,
         attendStudent: cubit.attendStudents,
         date: cubit.selectedDateStr,
@@ -347,22 +345,96 @@ class AbsentPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.people_outline_rounded,
-            size: 80,
-            color: AppColors.primaryMain.withOpacity(0.15),
-          ),
+          Icon(Icons.people_outline_rounded,
+              size: 80, color: AppColors.primaryMain.withOpacity(0.1)),
           const SizedBox(height: 16),
-          Text(
-            'لا يوجد طلاب غائبون',
-            style: AppTextStyles.customText(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text('لا يوجد طلاب غائبون',
+              style: AppTextStyles.customText(
+                  fontSize: 16,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.bold)),
         ],
       ),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: AppColors.primaryMain.withOpacity(0.2),
+          highlightColor: AppColors.secondaryMain.withOpacity(0.4),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 15),
+            padding: const EdgeInsets.all(12),
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              // هذا اللون سيتم استبداله بألوان الـ Shimmer أعلاه
+              borderRadius: BorderRadius.circular(20),
+              border:
+                  Border.all(color: AppColors.primaryMain.withOpacity(0.05)),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 5),
+                // 1. مكان الأيقونة الدائرية
+                Container(
+                  width: 55,
+                  height: 55,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 15),
+
+                // 2. محاكاة النصوص
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // مستطيل الاسم
+                      Container(
+                        width: 180,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // مستطيل الكود
+                      Container(
+                        width: 100,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 3. شكل جانبي صغير مكان حالة الحضور
+                Container(
+                  width: 40,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(width: 5),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

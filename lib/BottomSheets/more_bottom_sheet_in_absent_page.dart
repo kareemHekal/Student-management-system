@@ -92,9 +92,9 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
                 },
               ),
               _buildModernActionButton(
-                icon: Icons.checklist_rtl_rounded,
-                label: "الحاضرون",
-                color: AppColors.secondaryMain,
+                  icon: Icons.checklist_rtl_rounded,
+                  label: "الحاضرون",
+                  color: AppColors.secondaryMain,
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -194,15 +194,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
       context: context,
       builder: (context) => DeleteConfirmationDialogContent(
         onConfirm: () async {
-          await FirebaseFunctions.deleteAbsenceFromSubcollection(
-            widget.selectedDay,
-            widget.magmo3aModel.id,
-            widget.date,
-          ).then((_) async {
-            await fixAttendanceCounts();
-          }).catchError((error) {
-            AppSnackBars.showError(context, "حدث خطأ: $error");
-          });
+          await fixAttendanceCounts();
         },
       ),
     );
@@ -310,21 +302,41 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
   }
 
   Future<void> fixAttendanceCounts() async {
-    runWithLoading(context, () async {
+    await runWithLoading(context, () async {
       try {
-        // Attendance adjustment logic...
+        debugPrint("🚀 Starting Attendance Rollback...");
+
+        List<Future> batchUpdates = [];
+
         for (var student in widget.absentStudent) {
-          student.countingAbsentDays
-              ?.removeWhere((dr) => dr.date == widget.date);
-          await FirebaseFunctions.updateStudentInCollection(
-              widget.magmo3aModel.grade ?? "", student.id, student);
+          if (student.countingAbsentDays != null) {
+            student.countingAbsentDays!
+                .removeWhere((dr) => dr.date == widget.date);
+
+            batchUpdates.add(FirebaseFunctions.updateStudentInCollection(
+                widget.magmo3aModel.grade ?? "", student.id, student));
+          }
         }
+
         for (var student in widget.attendStudent) {
-          student.countingAttendedDays
-              ?.removeWhere((dr) => dr.date == widget.date);
-          await FirebaseFunctions.updateStudentInCollection(
-              widget.magmo3aModel.grade ?? "", student.id, student);
+          if (student.countingAttendedDays != null) {
+            student.countingAttendedDays!
+                .removeWhere((dr) => dr.date == widget.date);
+
+            batchUpdates.add(FirebaseFunctions.updateStudentInCollection(
+                widget.magmo3aModel.grade ?? "", student.id, student));
+          }
         }
+
+        batchUpdates.add(FirebaseFunctions.deleteAbsenceFromSubcollection(
+            widget.selectedDay, // e.g., "Saturday"
+            widget.magmo3aModel.id,
+            widget.date // e.g., "12-10-2023"
+            ));
+
+        await Future.wait(batchUpdates);
+
+        debugPrint("✅ Rollback Complete!");
 
         if (mounted) {
           Navigator.pushAndRemoveUntil(
@@ -332,11 +344,15 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
             MaterialPageRoute(builder: (context) => const AbsentHomePage()),
             (route) => false,
           );
+
           AppSnackBars.showSuccess(
-              context, "تم حذف سجل الغياب وتحديث البيانات بنجاح");
+              context, "تم حذف سجل الغياب وتصحيح العدادات بنجاح");
         }
       } catch (e) {
-        debugPrint("Error fixing counts: $e");
+        debugPrint("❌ Error fixing counts: $e");
+        if (mounted) {
+          AppSnackBars.showError(context, "حدث خطأ أثناء الحذف: $e");
+        }
       }
     });
   }
