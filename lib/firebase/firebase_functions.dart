@@ -26,9 +26,11 @@ class FirebaseFunctions {
     await newDocRef.set(magmo3a);
   }
 
-  static Future<void> editMagmo3aInDay(String oldDay,
-      String oldGrade,
-      Magmo3amodel updatedMagmo3a,) async {
+  static Future<void> editMagmo3aInDay(
+    String oldDay,
+    String oldGrade,
+    Magmo3amodel updatedMagmo3a,
+  ) async {
     final newDay = updatedMagmo3a.days;
 
     // 🧩 1️⃣ Move document if the day changed
@@ -78,9 +80,10 @@ class FirebaseFunctions {
   }
 
   /// Deletes a `Magmo3aModel` document from a specific day's collection
-  static Future<void> deleteMagmo3aFromDay(
-      String day, String documentId) async {
-    await getDayCollection(day).doc(documentId).delete();
+  static Future<void> deleteMagmo3aFromDay(String day, String magmo3aId) async {
+    await getDayCollection(day).doc(magmo3aId).delete();
+    await deleteAbsencesSubCollection(day);
+
   }
 
   /// Retrieves all documents in a specific day's collection for the current user
@@ -103,7 +106,7 @@ class FirebaseFunctions {
   }
 
   /// Deletes all absence records in the "absences" subcollection under each `Magmo3a` document
-  static Future<void> deleteAbsencesSubcollection(String day) async {
+  static Future<void> deleteAbsencesSubCollection(String day) async {
     try {
       CollectionReference dayCollection =
           FirebaseFirestore.instance.collection(day);
@@ -210,75 +213,85 @@ class FirebaseFunctions {
     }
   }
 
-  static Future<void> resetGradeSubscriptionsAndAbsences(
-      String gradeName) async {
+// --- Firebase Functions ---
+
+  static Future<void> resetGradeData({
+    required String gradeName,
+    required List<String> daysList, // أضفنا قائمة الأيام هنا
+    required bool resetSubscriptions,
+    required bool resetAbsence,
+    required bool deleteExams,
+    required bool deleteGroups,
+    required bool deleteStudents,
+  }) async {
     final firestore = FirebaseFirestore.instance;
 
     try {
-      final docRef = firestore
-          .collection('constants')
-          .doc('grades_subscriptions')
-          .collection('grades')
-          .doc(gradeName);
-
-      final doc = await docRef.get();
-      if (!doc.exists) {
-        print("⚠️ Grade $gradeName does not exist.");
-        return;
+      // 1. مسح اشتراكات المرحلة (Grade Level)
+      if (resetSubscriptions) {
+        await firestore
+            .collection('constants')
+            .doc('grades_subscriptions')
+            .collection('grades')
+            .doc(gradeName)
+            .update({'subscriptions': []});
       }
 
-      // 🔹 1. Clear all grade-level subscriptions
-      await docRef.update({'subscriptions': []});
-      print("✅ Grade-level subscriptions for '$gradeName' cleared.");
-
-      // 🔹 2. Get all students in that grade
+      // 2. معالجة الطلاب (نفس المنطق السابق مع إضافة شرط الحذف النهائي)
       final allStudents = await getAllStudentsByGrade_future(gradeName);
+      const batchSize = 400;
 
-      print("📦 Found ${allStudents.length} students in grade $gradeName.");
-
-      // 🔹 3. Prepare batch updates for students
-      const batchSize = 400; // <= limit to avoid Firestore overload
       for (int i = 0; i < allStudents.length; i += batchSize) {
         final batch = firestore.batch();
-
         final chunk = allStudents.skip(i).take(batchSize);
+
         for (final student in chunk) {
           final studentRef = getSecondaryCollection(gradeName).doc(student.id);
 
-          batch.update(studentRef, {
-            'studentPaidSubscriptions': [],
-            'studentExamsGrades': [],
-            'absencesNumbers': [],
-            'countingAttendedDays': [],
-            'countingAbsentDays': [],
-            'notes': [],
-          });
+          if (deleteStudents) {
+            batch.delete(studentRef);
+          } else {
+            Map<String, dynamic> updates = {};
+            if (resetSubscriptions) updates['studentPaidSubscriptions'] = [];
+            if (resetAbsence) {
+              updates['absencesNumbers'] = [];
+              updates['countingAttendedDays'] = [];
+              updates['countingAbsentDays'] = [];
+            }
+            if (deleteExams) updates['studentExamsGrades'] = [];
+
+            if (updates.isNotEmpty) batch.update(studentRef, updates);
+          }
+        }
+        await batch.commit();
+      }
+
+      // 3. حذف الامتحانات
+      if (deleteExams) {
+        await firestore.collection('exams').doc(gradeName).delete();
+      }
+
+      for (String day in daysList) {
+        if (deleteGroups) {
+          final groupSnap = await firestore
+              .collection(day)
+              .where('grade', isEqualTo: gradeName)
+              .get();
+
+          final groupBatch = firestore.batch();
+          for (var doc in groupSnap.docs) {
+            groupBatch.delete(doc.reference);
+          }
+          await groupBatch.commit();
         }
 
-        await batch.commit();
-        print(
-            "✅ Updated ${chunk.length} students [${i + 1}-${i + chunk.length}]");
-        await Future.delayed(const Duration(milliseconds: 300)); // small delay
+        if (resetAbsence) {
+          await deleteAbsencesSubCollection(day);
+        }
       }
-
-      print(
-          "✅ All students in '$gradeName' had their subscriptions and absences reset.");
-
-      // 🔹 4. Delete all exams for this grade (safe delete)
-      final examsDocRef = firestore.collection('exams').doc(gradeName);
-
-      final examsDoc = await examsDocRef.get();
-      if (examsDoc.exists) {
-        await examsDocRef.delete();
-        print("✅ Exams for grade '$gradeName' deleted successfully.");
-      } else {
-        print("⚠️ No exams found for grade '$gradeName'.");
-      }
-
-      print("🎯 Completed reset for grade '$gradeName'.");
-    } catch (e, stack) {
-      print("❌ Error resetting grade '$gradeName': $e");
-      print(stack);
+    } catch (e) {
+      print("Error during reset: $e");
+      rethrow;
     }
   }
 
@@ -340,8 +353,6 @@ class FirebaseFunctions {
           toFirestore: (value, _) => value.toJson(),
         );
   }
-
-
 
   static Future<void> addGradeToList(String newGrade) async {
     try {
@@ -561,7 +572,6 @@ class FirebaseFunctions {
     });
   }
 
-
   //=============================== BigInvoices Functions ===============================
   static Future<void> createBigInvoiceCollection() async {
     // Get Firestore instance
@@ -607,8 +617,8 @@ class FirebaseFunctions {
     await invoicesCollection.doc(bigInvoice.date).set(bigInvoice.toJson());
   }
 
-  static Future<void> updateBigInvoice(String date,
-      DailyInvoice bigInvoice) async {
+  static Future<void> updateBigInvoice(
+      String date, DailyInvoice bigInvoice) async {
     // Reference to the Firestore collection
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     CollectionReference invoicesCollection =
@@ -740,8 +750,8 @@ class FirebaseFunctions {
 
       await docRef.set(bigInvoice.toJson());
     }
-
   }
+
 // 4. Update Invoice (by replacing it in invoices list)
   static Future<void> updateInvoiceInBigInvoices({
     required String date,
@@ -928,8 +938,10 @@ class FirebaseFunctions {
     });
   }
 
-  static Future<void> updateSubscriptionInGrade(String gradeName,
-      SubscriptionFee updatedSubscription,) async {
+  static Future<void> updateSubscriptionInGrade(
+    String gradeName,
+    SubscriptionFee updatedSubscription,
+  ) async {
     final docRef = FirebaseFirestore.instance
         .collection('constants')
         .doc('grades_subscriptions')
@@ -958,8 +970,8 @@ class FirebaseFunctions {
     });
   }
 
-  static Future<void> deleteSubscriptionFromGrade(String gradeName,
-      String subscriptionId) async {
+  static Future<void> deleteSubscriptionFromGrade(
+      String gradeName, String subscriptionId) async {
     final docRef = FirebaseFirestore.instance
         .collection('constants')
         .doc('grades_subscriptions')
@@ -1065,7 +1077,6 @@ class FirebaseFunctions {
   // =======================================================================
   // Absence Management Functions
   // =======================================================================
-
 
   /// Deletes an absence from the "absences" subcollection.
   static Future<void> deleteAbsenceFromSubcollection(
@@ -1202,4 +1213,3 @@ class FirebaseFunctions {
     }
   }
 }
-
