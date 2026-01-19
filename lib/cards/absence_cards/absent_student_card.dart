@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:student_management_system/Alert%20dialogs/Notify%20Absence.dart';
+import 'package:student_management_system/alert_dialogs/Notify%20Absence.dart';
 import 'package:student_management_system/cards/student/student_card_functions.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
 import 'package:student_management_system/models/Magmo3aModel.dart';
@@ -241,7 +241,7 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
             // Important: prevents Row from taking full width
             children: [
               Text(
-                g.days ?? "",
+                g.day ?? "",
                 style: AppTextStyles.customText(
                   fontSize: 13,
                   color: AppColors.white,

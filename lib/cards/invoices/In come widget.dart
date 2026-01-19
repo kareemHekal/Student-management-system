@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:student_management_system/alert_dialogs/DeleteIncomeBillDialog.dart';
+import 'package:student_management_system/alert_dialogs/verifiy_password.dart';
 import 'package:student_management_system/theme/text_style.dart'; // تأكد من المسار الصحيح
 import 'package:url_launcher/url_launcher_string.dart';
 
-import '../../Alert dialogs/DeleteIncomeBillDialog.dart';
-import '../../Alert dialogs/verifiy_password.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../models/Invoice.dart';
 import '../../models/subscription_fee.dart';

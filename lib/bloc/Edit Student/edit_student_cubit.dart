@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:student_management_system/alert_dialogs/edit_on_payment.dart';
 
-import '../../Alert dialogs/edit_on_payment.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
 import '../../models/Student_model.dart';

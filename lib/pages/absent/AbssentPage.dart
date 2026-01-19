@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:student_management_system/alert_dialogs/attendance_selection_dialog.dart';
 import 'package:student_management_system/models/Student_model.dart';
 
 import '../../BottomSheets/more_bottom_sheet_in_absent_page.dart';
@@ -59,7 +60,7 @@ class AbsentPage extends StatelessWidget {
 
           final selectedDate = DateTime.parse(cubit.selectedDateStr);
           final today = DateTime.now();
-          final afterTomorrow = today.add(const Duration(days: 2));
+          final afterTomorrow = today.add(const Duration(days: 3));
 
           return Scaffold(
             backgroundColor: const Color(0xffF8F9FE),
@@ -276,11 +277,35 @@ class AbsentPage extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10))),
             onPressed: () async {
-              Navigator.pop(context);
-              await runWithLoading(context, () async {
-                await cubit.handleIntent(AddStudentToPresent(
-                    student: student, realStudentId: student.id));
-              });
+              // ملاحظة: Navigator.pop(context) هنا قد تغلق الصفحة نفسها لو لم يكن هناك شيء قبلها
+              // Navigator.pop(context);
+
+              final rootContext = context;
+
+              await showDialog(
+                // أضف await هنا
+                context: context,
+                builder: (dialogContext) {
+                  return AttendanceSelectionDialog(
+                    studentGrade: student.grade ?? "",
+                    studentCurrentGroups: student.hisGroups ?? [],
+                    studentName: student.name ?? "",
+                    currentDate: selectedDateStr,
+                    onConfirm: (selectedMagmo3a) async {
+                      Future.microtask(() async {
+                        if (!rootContext.mounted) return;
+                        await runWithLoading(rootContext, () async {
+                          await cubit.handleIntent(AddStudentToPresent(
+                            student: student,
+                            secondaryRecord: selectedMagmo3a,
+                          ));
+                          Navigator.pop(context);
+                        });
+                      });
+                    },
+                  );
+                },
+              );
             },
             child: Text("تأكيد الحضور",
                 style: AppTextStyles.customText(
@@ -314,13 +339,6 @@ class AbsentPage extends StatelessWidget {
       isScrollControlled: true,
       builder: (context) => CustomBottomSheet(
         cubit: cubit,
-        absentStudent: cubit.absentStudents,
-        attendStudent: cubit.attendStudents,
-        date: cubit.selectedDateStr,
-        numberOfStudents: cubit.numberOfStudents ?? 0,
-        selectedDay: cubit.selectedDay,
-        magmo3aModel: cubit.magmo3aModel,
-        filteredStudentsList: cubit.filteredAbsentStudentsList,
       ),
     );
   }
@@ -372,7 +390,6 @@ class AbsentPage extends StatelessWidget {
             height: 100,
             decoration: BoxDecoration(
               color: AppColors.white,
-              // هذا اللون سيتم استبداله بألوان الـ Shimmer أعلاه
               borderRadius: BorderRadius.circular(20),
               border:
                   Border.all(color: AppColors.primaryMain.withOpacity(0.05)),

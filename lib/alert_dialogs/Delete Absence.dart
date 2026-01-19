@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../loadingFile/loading_alert/run_with_loading.dart';
 import '../../theme/colors_app.dart';
 import '../../theme/snack_bar.dart';
 import '../../theme/text_style.dart';
 
 class DeleteConfirmationDialogContent extends StatefulWidget {
-  final VoidCallback onConfirm;
+  final Future<void> Function() onConfirm;
 
   const DeleteConfirmationDialogContent({
     super.key,
@@ -21,16 +22,15 @@ class _DeleteConfirmationDialogContentState
     extends State<DeleteConfirmationDialogContent> {
   bool isProcessing = false;
 
-  void _handleDelete() {
+  Future<void> _handleDelete() async {
     setState(() {
       isProcessing = true;
     });
 
     try {
-      widget.onConfirm();
+      await widget.onConfirm();
 
       if (mounted) {
-        Navigator.pop(context); // Close dialog first
         AppSnackBars.showSuccess(context, "تم حذف الغياب بنجاح!");
       }
     } catch (e) {
@@ -50,9 +50,12 @@ class _DeleteConfirmationDialogContentState
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppColors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       titlePadding: EdgeInsets.zero,
-      // Standardized Header with Red/Absent color for Deletion context
+
+      // ===== Header =====
       title: Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
@@ -77,11 +80,12 @@ class _DeleteConfirmationDialogContentState
           ],
         ),
       ),
+
+      // ===== Content =====
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 10),
-          // Warning Icon
           Icon(
             Icons.warning_amber_rounded,
             size: 50,
@@ -108,10 +112,13 @@ class _DeleteConfirmationDialogContentState
           ),
         ],
       ),
+
+      // ===== Actions =====
       actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
       actions: [
         Row(
           children: [
+            // Cancel
             Expanded(
               child: TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -124,7 +131,10 @@ class _DeleteConfirmationDialogContentState
                 ),
               ),
             ),
+
             const SizedBox(width: 8),
+
+            // Delete
             Expanded(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -135,7 +145,14 @@ class _DeleteConfirmationDialogContentState
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                onPressed: isProcessing ? null : _handleDelete,
+                onPressed: isProcessing
+                    ? null
+                    : () async {
+                        await runWithLoading(
+                          context,
+                          () async => await _handleDelete(),
+                        );
+                      },
                 child: isProcessing
                     ? const SizedBox(
                         height: 20,

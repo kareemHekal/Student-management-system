@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:student_management_system/alert_dialogs/show_add_student_payment_dialog.dart';
 
-import '../../Alert dialogs/show_add_student_payment_dialog.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../home.dart';
 import '../../models/Magmo3aModel.dart';

@@ -35,7 +35,7 @@ class Magmo3aCubit extends Cubit<Magmo3aState> {
   TimeOfDay timeOfDay = TimeOfDay.now();
 
   void initializeFromExisting(Magmo3amodel existingMagmo3a) {
-    chosenDay = existingMagmo3a.days;
+    chosenDay = existingMagmo3a.day;
     selectedSecondary = existingMagmo3a.grade;
     timeOfDay = existingMagmo3a.time ?? TimeOfDay.now();
     emit(Magmo3aInitial());
@@ -65,7 +65,7 @@ class Magmo3aCubit extends Cubit<Magmo3aState> {
     emit(Magmo3aLoading());
 
     Magmo3amodel magmo3amodel = Magmo3amodel(
-      days: chosenDay!,
+      day: chosenDay!,
       time: timeOfDay,
       grade: selectedSecondary!,
     );

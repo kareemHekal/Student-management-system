@@ -177,7 +177,7 @@ class AbsenceGroupCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(18.0),
           child: Text(
-            translateDayToArabic(magmo3aModel.days ?? ""),
+            translateDayToArabic(magmo3aModel.day ?? ""),
             textAlign: TextAlign.center,
             style: AppTextStyles.customText(
               fontSize: 22,

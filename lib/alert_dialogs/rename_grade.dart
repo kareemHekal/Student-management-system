@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:student_management_system/theme/colors_app.dart';
-import 'package:student_management_system/theme/text_style.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
+import 'package:student_management_system/theme/text_style.dart';
 
 import '../firebase/firebase_functions.dart';
 import '../loadingFile/loading_alert/run_with_loading.dart';

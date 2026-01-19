@@ -31,7 +31,7 @@ class FirebaseFunctions {
     String oldGrade,
     Magmo3amodel updatedMagmo3a,
   ) async {
-    final newDay = updatedMagmo3a.days;
+    final newDay = updatedMagmo3a.day;
 
     // 🧩 1️⃣ Move document if the day changed
     if (newDay != oldDay) {
@@ -56,9 +56,7 @@ class FirebaseFunctions {
       final data = doc.data();
 
       // Make sure to handle both converter or raw JSON cases
-      final student = data is Studentmodel
-          ? data
-          : Studentmodel.fromJson(data as Map<String, dynamic>);
+      final student = data;
 
       bool updated = false;
 
@@ -1188,6 +1186,27 @@ class FirebaseFunctions {
     }
   }
 
+  static Future<AbsenceModel?> getAbsenceByDateOnce(
+      String day, String groupId, String date) async {
+    try {
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection(day)
+          .doc(groupId)
+          .collection('absences')
+          .doc(date)
+          .get();
+
+      if (docSnapshot.exists && docSnapshot.data() != null) {
+        return AbsenceModel.fromJson(
+            docSnapshot.data() as Map<String, dynamic>);
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching absence record once: $e");
+      return null;
+    }
+  }
   // =======================================================================
   // Student Management Functions
   // =======================================================================

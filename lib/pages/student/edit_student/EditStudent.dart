@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:loader_overlay/loader_overlay.dart';
+import 'package:student_management_system/alert_dialogs/RemoveFromGroupsListDialog.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
 
-import '../../../Alert dialogs/RemoveFromGroupsListDialog.dart';
 import '../../../BottomSheets/student_actions_bottom_sheet.dart';
 import '../../../bloc/Edit Student/edit_student_cubit.dart';
 import '../../../bloc/Edit Student/edit_student_state.dart';

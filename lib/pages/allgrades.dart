@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/alert_dialogs/delete_grade.dart';
+import 'package:student_management_system/alert_dialogs/rename_grade.dart';
 
-import '../Alert dialogs/delete_grade.dart';
-import '../Alert dialogs/rename_grade.dart';
 import '../cards/grade_card.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/grade_subscriptions_model.dart';

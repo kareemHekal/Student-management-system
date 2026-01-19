@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/alert_dialogs/add_edit_subscription_for_grade.dart';
+import 'package:student_management_system/alert_dialogs/delete_subscription.dart';
 
-import '../Alert dialogs/add_edit_subscription_for_grade.dart';
-import '../Alert dialogs/delete_subscription.dart';
 import '../models/subscription_fee.dart';
 import '../theme/colors_app.dart';
 import '../theme/text_style.dart'; // استيراد ملف الستايلات الموحد

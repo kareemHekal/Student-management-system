@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:loader_overlay/loader_overlay.dart';
+import 'package:student_management_system/alert_dialogs/RemoveFromGroupsListDialog.dart';
 
-import '../../../Alert dialogs/RemoveFromGroupsListDialog.dart';
 import '../../../bloc/AddStudent/add_student_cubit.dart';
 import '../../../bloc/AddStudent/add_student_state.dart';
 import '../../../cards/magmo3at/groupSmallCard.dart';
@@ -12,12 +12,8 @@ import '../../../firebase/firebase_functions.dart';
 import '../../../models/grade_subscriptions_model.dart';
 import '../../../models/student_paid_subscription.dart';
 import '../../../theme/colors_app.dart';
-// يجب أن يكون هذا الـ import متاحاً (تم افتراض أنه موجود في ملف 'theme/text_style.dart' الأصلي)
 import '../../../theme/text_style.dart';
 import 'Pick Groups Page.dart';
-// تم إزالة import 'package:google_fonts/google_fonts.dart'; لأننا نستخدم AppTextStyles
-
-// --- الثوابت والأنماط المشتركة (Consts & Styles) -------------------------
 
 const double _kSectionPadding = 10.0; // مسافة موحدة بين الأقسام
 const double _kDividerThickness = 4;
@@ -25,10 +21,9 @@ const double _kDividerThickness = 4;
 // --- الشاشة الرئيسية (AddStudentScreen) --------------------------------
 
 class AddStudentScreen extends StatefulWidget {
-  final String?
-      level; // تم تغيير اسم المتغير من level إلى grade للتوافق مع شاشة التعديل
+  final String? grade;
 
-  const AddStudentScreen({this.level, super.key});
+  const AddStudentScreen({this.grade, super.key});
 
   @override
   State<AddStudentScreen> createState() => _AddStudentScreenState();
@@ -300,7 +295,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChoosedaysToAttend(level: widget.level),
+            builder: (context) => ChoosedaysToAttend(level: widget.grade),
           ),
         ).then((result) {
           if (result != null) {
@@ -518,7 +513,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   Widget _buildPaymentsSection(BuildContext context) {
     final cubit = StudentCubit.get(context);
     return StreamBuilder<GradeSubscriptionsModel?>(
-      stream: FirebaseFunctions.getGradeSubscriptionsStream(widget.level ?? ""),
+      stream: FirebaseFunctions.getGradeSubscriptionsStream(widget.grade ?? ""),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -631,7 +626,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
             onPressed: () async {
               // التحقق من صحة النموذج قبل الإضافة
               if (_formKey.currentState!.validate()) {
-                await cubit.addStudent(context, widget.level);
+                await cubit.addStudent(context, widget.grade);
               }
             },
             child: Text("إضافة الطالب",

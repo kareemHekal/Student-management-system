@@ -153,15 +153,15 @@ class AddMagmo3a extends StatelessWidget {
                                     } else {
                                       final updatedMagmo3a = Magmo3amodel(
                                         id: existingMagmo3a!.id,
-                                        days: cubit.chosenDay,
+                                        day: cubit.chosenDay,
                                         // Logic remains English
                                         grade: cubit.selectedSecondary,
                                         time: cubit.timeOfDay,
                                       );
 
                                       await FirebaseFunctions.editMagmo3aInDay(
-                                  oldDay ?? existingMagmo3a!.days!,
-                                  existingMagmo3a!.grade!,
+                                        oldDay ?? existingMagmo3a!.day!,
+                                        existingMagmo3a!.grade!,
                                   updatedMagmo3a,
                                 );
 

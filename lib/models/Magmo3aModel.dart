@@ -1,43 +1,58 @@
 import 'package:flutter/material.dart';
 
 class Magmo3amodel {
-  String? days; // Days the group meets (e.g., "Monday, Wednesday")
-  String? grade; // Grade level associated with the group
-  TimeOfDay? time; // Time the group meets
-  String id; // Unique identifier for the group
+  String? day;
+  String? grade;
+  TimeOfDay time;
+  String id;
 
-  // Constructor
   Magmo3amodel({
     this.id = "",
-    this.grade,
-    this.days,
-    this.time,
+    required this.grade,
+    required this.day,
+    required this.time,
   });
 
-  /// Factory method to create a `Magmo3amodel` instance from a JSON object.
   factory Magmo3amodel.fromJson(Map<String, dynamic> json) {
     return Magmo3amodel(
-      days: json["days"], // Expecting a string, e.g., "Monday, Wednesday"
-      id: json['id'] ?? "", // Default to an empty string if null
+      day: json["days"],
+      id: json['id'] ?? "",
       grade: json["grade"],
+      // Logic to handle the nested time map safely
       time: json["time"] != null
           ? TimeOfDay(
-        hour: json["time"]["hour"] ?? 0, // Default to 0 if null
-        minute: json["time"]["minute"] ?? 0, // Default to 0 if null
-      )
-          : null, // Default to null if `time` is not provided
+              hour: json["time"]["hour"] ?? 0,
+              minute: json["time"]["minute"] ?? 0,
+            )
+          : const TimeOfDay(hour: 0, minute: 0), // Fallback if null in DB
     );
   }
 
-  /// Converts the `Magmo3amodel` instance to a JSON object.
   Map<String, dynamic> toJson() {
     return {
-      "days": days, // Days as a string, e.g., "Monday, Wednesday"
-      "id": id, // Group ID
-      "grade": grade, // Grade level
-      "time": time != null
-          ? {"hour": time?.hour, "minute": time?.minute} // Time as an object
-          : null, // Default to null if `time` is not set
+      "days": day,
+      "id": id,
+      "grade": grade,
+      // Removed null checks since 'time' is required
+      "time": {
+        "hour": time.hour,
+        "minute": time.minute,
+      },
     };
+  }
+
+  // Recommended: Add a copyWith to make state management easier
+  Magmo3amodel copyWith({
+    String? days,
+    String? grade,
+    TimeOfDay? time,
+    String? id,
+  }) {
+    return Magmo3amodel(
+      day: days ?? this.day,
+      grade: grade ?? this.grade,
+      time: time ?? this.time,
+      id: id ?? this.id,
+    );
   }
 }

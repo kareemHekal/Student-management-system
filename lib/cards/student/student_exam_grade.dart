@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/alert_dialogs/delete_student_exam_grade.dart';
+import 'package:student_management_system/alert_dialogs/edit_student_exam_grade.dart';
 
-import '../../Alert dialogs/delete_student_exam_grade.dart';
-import '../../Alert dialogs/edit_student_exam_grade.dart';
 import '../../firebase/exams_functions.dart';
 import '../../models/exam_model.dart';
 import '../../models/mini_exam.dart';

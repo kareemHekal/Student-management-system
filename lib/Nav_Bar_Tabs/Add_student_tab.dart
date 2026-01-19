@@ -69,7 +69,7 @@ class _AddStudentTabState extends State<AddStudentTab> {
                 tabs: grades!.map((g) => Tab(text: g)).toList(),
               ),
             ),
-            Expanded(child: AddStudentScreen(level: grade)),
+            Expanded(child: AddStudentScreen(grade: grade)),
           ],
         ),
       ),

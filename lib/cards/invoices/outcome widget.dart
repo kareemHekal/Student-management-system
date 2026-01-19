@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:student_management_system/alert_dialogs/verifiy_password.dart';
 import 'package:student_management_system/theme/text_style.dart'; // تأكد من صحة المسار
 
-import '../../Alert dialogs/verifiy_password.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../models/payment.dart';
 import '../../theme/colors_app.dart';

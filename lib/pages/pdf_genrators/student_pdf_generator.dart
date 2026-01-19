@@ -111,7 +111,7 @@ Future<Uint8List> generateFullStudentPdf({
         if (student.hisGroups != null && student.hisGroups!.isNotEmpty) {
           for (var group in student.hisGroups!) {
             content.add(localizedText(
-                'الصف: ${group.grade ?? "-"} - الأيام: ${group.days ?? "-"}',
+                'الصف: ${group.grade ?? "-"} - الأيام: ${group.day ?? "-"}',
                 ttf));
           }
         } else {

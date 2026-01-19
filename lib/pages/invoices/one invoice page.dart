@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/alert_dialogs/DeleteOutcomeBillDialog.dart';
+import 'package:student_management_system/alert_dialogs/verifiy_password.dart';
 
-import '../../Alert dialogs/DeleteOutcomeBillDialog.dart';
-import '../../Alert dialogs/verifiy_password.dart';
 import '../../cards/invoices/In come widget.dart';
 import '../../cards/invoices/outcome widget.dart';
 import '../../firebase/firebase_functions.dart';

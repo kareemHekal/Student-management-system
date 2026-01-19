@@ -188,7 +188,7 @@ class Magmo3aWidget extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(18.0),
           child: Text(
-            translateDayToArabic(magmo3aModel.days ?? ""),
+            translateDayToArabic(magmo3aModel.day ?? ""),
             textAlign: TextAlign.center,
             style: AppTextStyles.customText(
               fontSize: 22,
@@ -281,7 +281,7 @@ class Magmo3aWidget extends StatelessWidget {
             onPressed: () {
               Navigator.pop(context);
               FirebaseFunctions.deleteMagmo3aFromDay(
-                  magmo3aModel.days ?? "", magmo3aModel.id);
+                  magmo3aModel.day ?? "", magmo3aModel.id);
             },
             child: Text(
               "تأكيد الحذف",
@@ -302,7 +302,7 @@ class Magmo3aWidget extends StatelessWidget {
       ),
       builder: (_) => AddMagmo3a(
         existingMagmo3a: magmo3aModel,
-        oldDay: magmo3aModel.days,
+        oldDay: magmo3aModel.day,
       ),
     );
   }

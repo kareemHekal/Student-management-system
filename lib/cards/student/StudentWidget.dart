@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:student_management_system/alert_dialogs/Notify%20Absence.dart';
 
-import '../../Alert dialogs/Notify Absence.dart';
 import '../../bloc/Edit Student/edit_student_cubit.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../models/Student_model.dart';
@@ -206,7 +206,7 @@ class StudentWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                g.days ?? "",
+                g.day ?? "",
                 style: AppTextStyles.customText(
                     fontSize: 13,
                     color: AppColors.white,

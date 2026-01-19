@@ -86,7 +86,7 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         child: Text(
-          translateDayToArabic(magmo3aModel?.days ?? ""),
+          translateDayToArabic(magmo3aModel?.day ?? ""),
           style: AppTextStyles.customText(
             fontSize: 18,
             color: AppColors.primaryDark,

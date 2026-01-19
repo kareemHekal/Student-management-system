@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/alert_dialogs/add_edit_exam.dart';
+import 'package:student_management_system/alert_dialogs/delete_exam.dart';
 
-import '../Alert dialogs/add_edit_exam.dart';
-import '../Alert dialogs/delete_exam.dart';
 import '../models/exam_model.dart';
 import '../pages/exam_grades_checker.dart';
 import '../theme/colors_app.dart';

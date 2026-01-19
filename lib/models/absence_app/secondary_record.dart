@@ -1,34 +1,26 @@
 import 'package:flutter/material.dart';
 
-import 'secondary_record.dart';
-
-class DayRecord {
+class SecondaryRecord {
   final String date;
   final String day;
-  final TimeOfDay time;
   final String magmo3aId;
-  final SecondaryRecord? secondary;
+  final TimeOfDay time; // Required, no '?'
 
-  DayRecord({
-    required this.magmo3aId,
+  SecondaryRecord({
     required this.date,
     required this.day,
-    required this.time, // Required in constructor
-    this.secondary,
+    required this.magmo3aId,
+    required this.time,
   });
 
-  factory DayRecord.fromJson(Map<String, dynamic> json) {
-    return DayRecord(
-      magmo3aId: json['magmo3aId'] ?? '',
+  factory SecondaryRecord.fromJson(Map<String, dynamic> json) {
+    return SecondaryRecord(
       date: json['date'] ?? '',
+      magmo3aId: json['magmo3aId'] ?? '',
       day: json['day'] ?? '',
-      // If time is null in JSON, we provide a default TimeOfDay
       time: json['time'] != null
           ? _parseTime(json['time'])
           : const TimeOfDay(hour: 0, minute: 0),
-      secondary: json['secondary'] != null
-          ? SecondaryRecord.fromJson(json['secondary'])
-          : null,
     );
   }
 
@@ -37,8 +29,7 @@ class DayRecord {
       'date': date,
       'magmo3aId': magmo3aId,
       'day': day,
-      'time': '${time.hour}:${time.minute}', // No null check needed
-      'secondary': secondary?.toJson(),
+      'time': '${time.hour}:${time.minute}',
     };
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/alert_dialogs/add_exam_degree.dart';
 
-import '../Alert dialogs/add_exam_degree.dart';
 import '../cards/student/student_exam_grade.dart';
 import '../models/Student_model.dart';
 import '../models/student_exam_grade.dart';

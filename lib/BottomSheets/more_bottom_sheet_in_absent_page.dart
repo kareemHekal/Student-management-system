@@ -4,14 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:student_management_system/alert_dialogs/Delete%20Absence.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
+import 'package:student_management_system/models/absence_app/day_record.dart';
 import 'package:student_management_system/pages/absent/students_attending_page.dart';
 import 'package:student_management_system/pages/absent/view_model/cubit.dart';
 
-import '../../Alert dialogs/Delete Absence.dart';
 import '../../absent_home_screen.dart';
 import '../../firebase/firebase_functions.dart';
-import '../../loadingFile/loading_alert/run_with_loading.dart';
-import '../../models/Magmo3aModel.dart';
 import '../../models/Student_model.dart';
 import '../../theme/colors_app.dart';
 import '../../theme/snack_bar.dart';
@@ -19,24 +19,10 @@ import '../../theme/text_style.dart';
 
 class CustomBottomSheet extends StatefulWidget {
   final AbsentCubit cubit;
-  final List<Studentmodel> filteredStudentsList;
-  final String selectedDay;
-  final Magmo3amodel magmo3aModel;
-  final String date;
-  final int numberOfStudents;
-  final List<Studentmodel> absentStudent;
-  final List<Studentmodel> attendStudent;
 
   const CustomBottomSheet({
     Key? key,
     required this.cubit,
-    required this.filteredStudentsList,
-    required this.date,
-    required this.numberOfStudents,
-    required this.absentStudent,
-    required this.attendStudent,
-    required this.magmo3aModel,
-    required this.selectedDay,
   }) : super(key: key);
 
   @override
@@ -84,11 +70,9 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
                 label: "طباعة",
                 color: AppColors.primaryMain,
                 onPressed: () async {
-                  if (widget.filteredStudentsList.isNotEmpty) {
+                  await runWithLoading(context, () async {
                     await _generatePdf(context);
-                  } else {
-                    _showNoStudentsDialog();
-                  }
+                  });
                 },
               ),
               _buildModernActionButton(
@@ -167,28 +151,6 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
     );
   }
 
-  void _showNoStudentsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: _buildDialogHeader(
-            Icons.warning_amber_rounded, "تنبيه", AppColors.statusLate),
-        content: Text(
-          "لا يوجد طلاب غائبين للتصدير.",
-          style: AppTextStyles.customText(fontSize: 16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("موافق",
-                style: AppTextStyles.customText(color: AppColors.primaryMain)),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showDeleteAbsenceDialog() {
     showDialog(
       context: context,
@@ -233,36 +195,77 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
 
   Future<void> _generatePdf(BuildContext context) async {
     final pdf = pw.Document();
-    // Font loading logic stays the same...
+
+    // Load Arabic font
     final fontData = await rootBundle.load("fonts/NotoKufiArabic-Regular.ttf");
     final pw.Font font = pw.Font.ttf(fontData);
+
+    // Separate the lists (Assuming these are available in your widget/state)
+    // If you are calling this from the Cubit, use cubit.attendStudents and cubit.absentStudents
+    final attended = widget.cubit.attendStudents;
+    final absent = widget.cubit.absentStudents;
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        margin: const pw.EdgeInsets.all(32),
         build: (pw.Context context) => [
-          pw.Header(
-            level: 0,
-            child: pw.Center(
-              child: pw.Text("تقرير الغياب - ${widget.magmo3aModel.grade}",
-                  style: pw.TextStyle(
-                      font: font,
-                      fontSize: 24,
-                      fontWeight: pw.FontWeight.bold)),
-            ),
+          // --- Report Header ---
+          pw.Center(
+            child: pw.Text(
+                "تقرير الحضور والغياب - ${widget.cubit.magmo3aModel.grade}",
+                style: pw.TextStyle(
+                    font: font, fontSize: 22, fontWeight: pw.FontWeight.bold)),
           ),
-          pw.Padding(padding: const pw.EdgeInsets.symmetric(vertical: 10)),
-          pw.Text("التاريخ: ${widget.date} | اليوم: ${widget.selectedDay}",
-              style: pw.TextStyle(font: font, fontSize: 14)),
+          pw.SizedBox(height: 10),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text("التاريخ: ${widget.cubit.selectedDateStr}",
+                  style: pw.TextStyle(font: font, fontSize: 12)),
+              pw.Text("اليوم: ${widget.cubit.selectedDay}",
+                  style: pw.TextStyle(font: font, fontSize: 12)),
+            ],
+          ),
+          pw.Divider(thickness: 1),
+          pw.SizedBox(height: 15),
+
+          // --- Attending Students Section ---
+          _buildSectionHeader(
+              "قائمة الحضور (${attended.length})", PdfColors.green900, font),
+          pw.SizedBox(height: 10),
+          attended.isEmpty
+              ? pw.Text("لا يوجد طلاب حاضرون",
+                  style: pw.TextStyle(font: font, fontSize: 10))
+              : pw.Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: attended
+                      .map((s) =>
+                          _buildPdfStudentCard(s, font, PdfColors.green50))
+                      .toList(),
+                ),
+
+          pw.SizedBox(height: 20),
           pw.Divider(),
-          pw.GridView(
-            crossAxisCount: 2,
-            childAspectRatio: 0.6,
-            children: widget.filteredStudentsList
-                .map((student) => _buildPdfStudentCard(student, font))
-                .toList(),
-          ),
+          pw.SizedBox(height: 20),
+
+          // --- Absent Students Section ---
+          _buildSectionHeader(
+              "قائمة الغياب (${absent.length})", PdfColors.red900, font),
+          pw.SizedBox(height: 10),
+          absent.isEmpty
+              ? pw.Text("لا يوجد طلاب غائبون",
+                  style: pw.TextStyle(font: font, fontSize: 10))
+              : pw.Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: absent
+                      .map(
+                          (s) => _buildPdfStudentCard(s, font, PdfColors.red50))
+                      .toList(),
+                ),
         ],
       ),
     );
@@ -271,14 +274,32 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
         onLayout: (PdfPageFormat format) async => pdf.save());
   }
 
-  pw.Widget _buildPdfStudentCard(Studentmodel student, pw.Font font) {
-    String note = _buildNotesForDate(student, widget.date);
+// Helper to build Section Headers
+  pw.Widget _buildSectionHeader(String title, PdfColor color, pw.Font font) {
     return pw.Container(
-      margin: const pw.EdgeInsets.all(5),
-      padding: const pw.EdgeInsets.all(10),
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(5),
+      decoration: pw.BoxDecoration(color: color),
+      child: pw.Text(title,
+          style: pw.TextStyle(
+              font: font,
+              fontSize: 14,
+              color: PdfColors.white,
+              fontWeight: pw.FontWeight.bold)),
+    );
+  }
+
+// Enhanced Student Card for PDF
+  pw.Widget _buildPdfStudentCard(
+      Studentmodel student, pw.Font font, PdfColor bgColor) {
+    String note = _buildNotesForDate(student, widget.cubit.selectedDateStr);
+    return pw.Container(
+      width: 240, // Fixed width helps the Wrap layout stay organized
+      padding: const pw.EdgeInsets.all(8),
       decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.grey300),
-        borderRadius: pw.BorderRadius.circular(8),
+        color: bgColor,
+        border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
+        borderRadius: pw.BorderRadius.circular(4),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -286,74 +307,139 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
           pw.Text("الاسم: ${student.name}",
               style: pw.TextStyle(
                   font: font, fontSize: 10, fontWeight: pw.FontWeight.bold)),
-          pw.Text("الموبايل: ${student.phoneNumber}",
-              style: pw.TextStyle(font: font, fontSize: 9)),
-          pw.Text("الأب: ${student.fatherPhone}",
-              style: pw.TextStyle(font: font, fontSize: 9)),
-          pw.Text("الأم: ${student.motherPhone}",
-              style: pw.TextStyle(font: font, fontSize: 9)),
-          pw.Divider(thickness: 0.5),
-          pw.Text("الملاحظة: $note",
-              style: pw.TextStyle(
-                  font: font, fontSize: 9, color: PdfColors.red900)),
+          pw.SizedBox(height: 2),
+          pw.Text("رقم الطالب: ${student.phoneNumber}",
+              style: pw.TextStyle(font: font, fontSize: 8)),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text("الأب: ${student.fatherPhone}",
+                  style: pw.TextStyle(font: font, fontSize: 8)),
+              pw.Text("الأم: ${student.motherPhone}",
+                  style: pw.TextStyle(font: font, fontSize: 8)),
+            ],
+          ),
+          if (note.isNotEmpty) ...[
+            pw.Divider(thickness: 0.3),
+            pw.Text("ملاحظة: $note",
+                style: pw.TextStyle(
+                    font: font, fontSize: 8, color: PdfColors.red700)),
+          ],
         ],
       ),
     );
   }
-
   Future<void> fixAttendanceCounts() async {
-    await runWithLoading(context, () async {
-      try {
-        debugPrint("🚀 Starting Attendance Rollback...");
+    try {
+      debugPrint("🚀 Starting Attendance Rollback...");
 
-        List<Future> batchUpdates = [];
+      List<Future> batchUpdates = [];
 
-        for (var student in widget.absentStudent) {
-          if (student.countingAbsentDays != null) {
-            student.countingAbsentDays!
-                .removeWhere((dr) => dr.date == widget.date);
+      // 1. معالجة الطلاب الحاضرين (Attend Students)
+      // دول اللي ممكن يكون فيهم Secondary (ضيوف)
+      for (var student in widget.cubit.attendStudents) {
+        if (student.countingAttendedDays != null) {
+          // البحث عن سجل اليوم الحالي
+          // نستخدم try/catch أو firstWhere orElse للبحث بأمان
 
-            batchUpdates.add(FirebaseFunctions.updateStudentInCollection(
-                widget.magmo3aModel.grade ?? "", student.id, student));
+          DayRecord? recordToDelete;
+          try {
+            recordToDelete = student.countingAttendedDays!.firstWhere(
+              (dr) => dr.date == widget.cubit.selectedDateStr,
+              // بنبحث بتاريخ الكيوبت (المجموعة الحالية)
+            );
+          } catch (e) {
+            recordToDelete = null;
           }
-        }
 
-        for (var student in widget.attendStudent) {
-          if (student.countingAttendedDays != null) {
-            student.countingAttendedDays!
-                .removeWhere((dr) => dr.date == widget.date);
+          if (recordToDelete != null) {
+            // --- هل الطالب ده ضيف؟ (ليه Secondary) ---
+            if (recordToDelete.secondary != null) {
+              final secRecord = recordToDelete.secondary!;
 
+              // أ. روح هات سجل غياب المجموعة الأصلية بتاعته
+              final secAbsenceModel =
+                  await FirebaseFunctions.getAbsenceByDateOnce(
+                secRecord.day,
+                secRecord.magmo3aId,
+                secRecord.date,
+              );
+
+              // ب. لو السجل موجود، رجع الطالب ده غياب فيه
+              if (secAbsenceModel != null) {
+                if (!secAbsenceModel.absentStudentIds.contains(student.id)) {
+                  secAbsenceModel.absentStudentIds.add(student.id);
+                  // وتأكد إنه مش في الحضور هناك
+                  secAbsenceModel.attendStudentIds.remove(student.id);
+
+                  // ج. ضيف للطالب سجل غياب في مجموعته الأصلية (عشان عداد الغياب يظبط)
+                  student.countingAbsentDays ??= [];
+                  student.countingAbsentDays!.add(DayRecord(
+                      magmo3aId: secRecord.magmo3aId,
+                      date: secRecord.date,
+                      day: secRecord.day,
+                      time: secRecord.time,
+                      secondary: null));
+                  batchUpdates
+                      .add(FirebaseFunctions.updateAbsenceByDateInSubcollection(
+                    secRecord.day,
+                    secRecord.magmo3aId,
+                    secRecord.date,
+                    secAbsenceModel,
+                  ));
+                }
+              }
+            }
+
+            // د. احذف سجل الحضور من الطالب
+            student.countingAttendedDays!.remove(recordToDelete);
+
+            // هـ. ضيف الطالب للباتش عشان يتعمل update
             batchUpdates.add(FirebaseFunctions.updateStudentInCollection(
-                widget.magmo3aModel.grade ?? "", student.id, student));
+                widget.cubit.magmo3aModel.grade ?? "", student.id, student));
           }
-        }
-
-        batchUpdates.add(FirebaseFunctions.deleteAbsenceFromSubcollection(
-            widget.selectedDay, // e.g., "Saturday"
-            widget.magmo3aModel.id,
-            widget.date // e.g., "12-10-2023"
-            ));
-
-        await Future.wait(batchUpdates);
-
-        debugPrint("✅ Rollback Complete!");
-
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const AbsentHomePage()),
-            (route) => false,
-          );
-
-          AppSnackBars.showSuccess(
-              context, "تم حذف سجل الغياب وتصحيح العدادات بنجاح");
-        }
-      } catch (e) {
-        debugPrint("❌ Error fixing counts: $e");
-        if (mounted) {
-          AppSnackBars.showError(context, "حدث خطأ أثناء الحذف: $e");
         }
       }
-    });
+
+      // 2. معالجة الطلاب الغائبين (Absent Students)
+      // دول طلاب المجموعة الأصليين اللي اتسجلوا غياب، هنشيل الغياب عنهم بس
+      for (var student in widget.cubit.absentStudents) {
+        if (student.countingAbsentDays != null) {
+          // احذف سجل الغياب اللي بيطابق تاريخ اليوم
+          student.countingAbsentDays!
+              .removeWhere((dr) => dr.date == widget.cubit.selectedDateStr);
+
+          batchUpdates.add(FirebaseFunctions.updateStudentInCollection(
+              widget.cubit.magmo3aModel.grade ?? "", student.id, student));
+        }
+      }
+
+      // 3. حذف وثيقة غياب المجموعة الحالية نهائياً
+      batchUpdates.add(FirebaseFunctions.deleteAbsenceFromSubcollection(
+          widget.cubit.selectedDay,
+          widget.cubit.magmo3aModel.id,
+          widget.cubit.selectedDateStr));
+
+      // 4. تنفيذ الكل
+      await Future.wait(batchUpdates);
+
+      debugPrint("✅ Rollback Complete!");
+
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const AbsentHomePage()),
+          (route) => false,
+        );
+
+        AppSnackBars.showSuccess(
+            context, "تم حذف سجل الغياب وتصحيح العدادات بنجاح");
+      }
+    } catch (e) {
+      debugPrint("❌ Error fixing counts: $e");
+      if (mounted) {
+        AppSnackBars.showError(context, "حدث خطأ أثناء الحذف: $e");
+      }
+    }
   }
 }

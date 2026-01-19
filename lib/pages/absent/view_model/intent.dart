@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_management_system/models/Student_model.dart';
+import 'package:student_management_system/models/absence_app/secondary_record.dart';
 
 sealed class AbsentIntent {}
 
@@ -9,11 +10,11 @@ class StartTakingAttendance extends AbsentIntent {}
 
 class AddStudentToPresent extends AbsentIntent {
   final Studentmodel student;
-  final String realStudentId;
+  final SecondaryRecord? secondaryRecord;
 
   AddStudentToPresent({
+    required this.secondaryRecord,
     required this.student,
-    required this.realStudentId,
   });
 }
 
@@ -32,5 +33,7 @@ class SearchStudent extends AbsentIntent {
 class RestoreStudentToAbsent extends AbsentIntent {
   final Studentmodel student;
 
-  RestoreStudentToAbsent(this.student);
+  RestoreStudentToAbsent({
+    required this.student,
+  });
 }
