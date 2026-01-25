@@ -1,4 +1,4 @@
-# fatma_elorbany
+# student mangment system
 
 A new Flutter project.
 
