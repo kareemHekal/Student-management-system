@@ -3,7 +3,6 @@ import 'package:student_management_system/BottomSheets/student_chosen_pdf.dart';
 
 import '../cards/student/StudentWidget.dart';
 import '../firebase/firebase_functions.dart';
-import '../loadingFile/loadingWidget.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Student_model.dart';
 import '../theme/colors_app.dart';
@@ -163,11 +162,8 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const Center(
-                            child: DiscreteCircle(
-                              color: AppColors.primaryMain,
-                              size: 30,
-                              secondCircleColor: AppColors.secondaryMain,
-                              thirdCircleColor: AppColors.secondaryMain,
+                            child: CircularProgressIndicator(
+                              color: AppColors.secondaryMain,
                             ),
                           );
                         }
@@ -220,7 +216,6 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
                             itemBuilder: (context, index) {
                               return StudentWidget(
                                 IsComingFromGroup: true,
-                                grade: filteredStudents[index].grade,
                                 studentModel: filteredStudents[index],
                               );
                             },

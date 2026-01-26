@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../models/Magmo3aModel.dart';
 import '../../theme/colors_app.dart';
 import '../../theme/text_style.dart';
@@ -14,57 +13,72 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get screen width for relative scaling
+    final double screenWidth = MediaQuery.of(context).size.width;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Padding(
         padding: const EdgeInsets.all(6),
-        child: Container(
-          height: 100,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
-              colors: [
-                AppColors.primaryMain,
-                AppColors.secondaryMain,
-              ],
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryMain.withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 5),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Container(
+              // Using minHeight instead of fixed height for responsiveness
+              constraints: const BoxConstraints(minHeight: 100),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: const LinearGradient(
+                  colors: [
+                    AppColors.primaryMain,
+                    AppColors.secondaryMain,
+                  ],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryMain.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // ===== Decorative circles =====
-              Positioned(
-                top: -20,
-                left: -20,
-                child: _circle(60, 0.08),
-              ),
-              Positioned(
-                bottom: -18,
-                right: 30,
-                child: _circle(45, 0.22),
-              ),
-
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                child: Row(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
                   children: [
-                    _buildDayBadge(),
-                    const SizedBox(width: 14),
-                    Expanded(child: _buildInfoSection()),
+                    // ===== Responsive Decorative circles =====
+                    Positioned(
+                      top: -screenWidth * 0.05,
+                      left: -screenWidth * 0.05,
+                      child: _circle(screenWidth * 0.15, 0.08),
+                    ),
+                    Positioned(
+                      bottom: -screenWidth * 0.04,
+                      right: screenWidth * 0.08,
+                      child: _circle(screenWidth * 0.12, 0.22),
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          _buildDayBadge(screenWidth),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: _buildInfoSection(screenWidth),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -72,8 +86,12 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
 
   // ================= UI =================
 
-  Widget _buildDayBadge() {
+  Widget _buildDayBadge(double screenWidth) {
     return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.035,
+        vertical: 8,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -83,32 +101,33 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        child: Text(
-          translateDayToArabic(magmo3aModel?.day ?? ""),
-          style: AppTextStyles.customText(
-            fontSize: 18,
-            color: AppColors.primaryDark,
-            fontWeight: FontWeight.bold,
-          ),
+      child: Text(
+        translateDayToArabic(magmo3aModel?.day ?? ""),
+        style: AppTextStyles.customText(
+          // Adjust font size based on screen width
+          fontSize: screenWidth < 360 ? 15 : 18,
+          color: AppColors.primaryDark,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  Widget _buildInfoSection() {
+  Widget _buildInfoSection(double screenWidth) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         _infoRow(
+          screenWidth: screenWidth,
           icon: Icons.school,
           label: "الصف",
           value: magmo3aModel?.grade ?? "",
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         _infoRow(
+          screenWidth: screenWidth,
           icon: Icons.access_time,
           label: "الوقت",
           value: magmo3aModel?.time != null
@@ -120,41 +139,46 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
   }
 
   Widget _infoRow({
+    required double screenWidth,
     required IconData icon,
     required String label,
     required String value,
   }) {
+    double responsiveFontSize = screenWidth < 360 ? 13 : 15;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Icon(
           icon,
-          size: 17,
+          size: screenWidth < 360 ? 15 : 17,
           color: AppColors.secondaryMain,
         ),
         const SizedBox(width: 6),
-        RichText(
-          textDirection: TextDirection.rtl,
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: "$label :  ",
-                style: AppTextStyles.customText(
-                  fontSize: 15,
-                  color: AppColors.secondaryMain,
-                  fontWeight: FontWeight.bold,
+        Flexible(
+          child: RichText(
+            textDirection: TextDirection.rtl,
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: "$label :  ",
+                  style: AppTextStyles.customText(
+                    fontSize: responsiveFontSize,
+                    color: AppColors.secondaryMain,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              TextSpan(
-                text: value,
-                style: AppTextStyles.customText(
-                  fontSize: 15,
-                  color: AppColors.white,
-                  // تم تغييره للون الأبيض ليتناسب مع الخلفية الملونة
-                  fontWeight: FontWeight.bold,
+                TextSpan(
+                  text: value,
+                  style: AppTextStyles.customText(
+                    fontSize: responsiveFontSize,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

@@ -4,7 +4,7 @@ import 'payment.dart';
 class DailyInvoice {
   final String date; // Change from DateTime to String
   final String day;
-  final List<Invoice> invoices;/// الدواخل
+  final List<Invoice> invoices; // الدواخل
   final List<Payment> payments; // الخوارج
 
   DailyInvoice({

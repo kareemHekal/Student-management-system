@@ -158,12 +158,14 @@ class _GroupsTabState extends State<GroupsTab> {
                 onPressed: () {
                   showModalBottomSheet(
                     context: context,
-                    isScrollControlled: true,
+                    isScrollControlled: true, // مهم جداً عشان الشيت ياخد راحته
+                    backgroundColor: Colors.transparent, // اختياري لشكل أشيك
                     builder: (context) => Padding(
                       padding: EdgeInsets.only(
                         bottom: MediaQuery.of(context).viewInsets.bottom,
                       ),
-                      child: AddMagmo3a(),
+                      child:
+                          const AddMagmo3a(), // تأكد إن AddMagmo3a جواها SingleChildScrollView
                     ),
                   );
                 },

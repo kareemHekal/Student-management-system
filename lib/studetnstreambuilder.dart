@@ -191,7 +191,6 @@ class _StudentStreamBuilderState extends State<StudentStreamBuilder> {
                               final student = _filteredStudents[index];
                               return StudentWidget(
                                 studentModel: student,
-                                grade: widget.grade,
                                 IsComingFromGroup: false,
                               );
                             },

@@ -176,7 +176,7 @@ class _OneInivoicePageState extends State<OneInivoicePage> {
                                           widget.invoice.payments.remove(
                                               widget.invoice.payments[index]);
                                           await FirebaseFunctions
-                                              .updateBigInvoice(
+                                              .updateDailyInvoice(
                                             widget.invoice.date,
                                             widget.invoice,
                                           );

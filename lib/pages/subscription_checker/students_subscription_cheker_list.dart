@@ -46,7 +46,6 @@ class StudentResultListPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 return StudentWidget(
                   studentModel: students[index],
-                  grade: grade,
                   IsComingFromGroup: false, // As requested
                 );
               },

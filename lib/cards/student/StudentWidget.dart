@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:student_management_system/alert_dialogs/Notify%20Absence.dart';
+import 'package:student_management_system/alert_dialogs/add_out_come.dart';
+import 'package:student_management_system/alert_dialogs/delete_student_with_settlement.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 
 import '../../bloc/Edit Student/edit_student_cubit.dart';
 import '../../firebase/firebase_functions.dart';
@@ -13,12 +16,10 @@ import 'student_card_functions.dart'; // Import the helper
 class StudentWidget extends StatelessWidget {
   final Studentmodel studentModel;
   final bool IsComingFromGroup;
-  final String? grade;
 
   const StudentWidget({
     required this.studentModel,
     required this.IsComingFromGroup,
-    required this.grade,
     super.key,
   });
 
@@ -193,7 +194,7 @@ class StudentWidget extends StatelessWidget {
       runSpacing: 6,
       children: days.map((g) {
         final time = (g.time != null)
-            ? StudentActionsHelper.formatTime12Hour(g.time!)
+            ? StudentActionsHelper.formatTime12Hour(g.time)
             : "—";
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -244,38 +245,16 @@ class StudentWidget extends StatelessWidget {
   }
 
   void _deleteDialog(BuildContext context) {
+    final DateTime now = DateTime.now();
+
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("حذف الطالب",
-            style: AppTextStyles.customText(
-                fontSize: 18,
-                color: AppColors.statusAbsent,
-                fontWeight: FontWeight.bold)),
-        content: Text("هل انت متأكد من حذف الطالب؟",
-            style: AppTextStyles.customText(
-                fontSize: 15, color: AppColors.textPrimary)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("إلغاء",
-                  style: AppTextStyles.customText(
-                      color: AppColors.textSecondary))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.statusAbsent,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10))),
-            onPressed: () {
-              FirebaseFunctions.deleteStudentFromHisCollection(
-                  studentModel.grade ?? "", studentModel.id);
-              Navigator.pop(context);
-            },
-            child: Text("حذف",
-                style: AppTextStyles.customText(color: AppColors.white)),
-          )
-        ],
+      barrierDismissible: false, // User must interact with the dialog
+      builder: (_) => DeleteStudentWithSettlementDialog(
+        student: studentModel, // Ensure studentModel is accessible here
+        date:
+            "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}",
+        day: _getDayName(now.weekday),
       ),
     );
   }
@@ -286,8 +265,7 @@ class StudentWidget extends StatelessWidget {
         MaterialPageRoute(
             builder: (_) => BlocProvider(
                 create: (_) => StudentEditCubit(student: studentModel),
-                child:
-                    EditStudentScreen(grade: grade, student: studentModel))));
+                child: EditStudentScreen(student: studentModel))));
   }
 
   void _sendDialog(BuildContext context) {
@@ -319,5 +297,26 @@ class StudentWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getDayName(int weekday) {
+    switch (weekday) {
+      case DateTime.monday:
+        return "Monday";
+      case DateTime.tuesday:
+        return "Tuesday";
+      case DateTime.wednesday:
+        return "Wednesday";
+      case DateTime.thursday:
+        return "Thursday";
+      case DateTime.friday:
+        return "Friday";
+      case DateTime.saturday:
+        return "Saturday";
+      case DateTime.sunday:
+        return "Sunday";
+      default:
+        return "";
+    }
   }
 }

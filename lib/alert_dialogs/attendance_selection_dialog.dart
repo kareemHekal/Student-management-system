@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_management_system/cards/magmo3at/magmo3a_for_display_widget.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
-import 'package:student_management_system/loadingFile/loadingWidget.dart';
 import 'package:student_management_system/models/Magmo3aModel.dart';
 import 'package:student_management_system/models/absence_app/secondary_record.dart';
 import 'package:student_management_system/theme/colors_app.dart';
@@ -227,11 +226,10 @@ class _AttendanceSelectionDialogState extends State<AttendanceSelectionDialog>
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: DiscreteCircle(
-                  color: AppColors.primaryMain,
-                  size: 30,
-                  secondCircleColor: AppColors.secondaryMain,
-                  thirdCircleColor: AppColors.primaryDark));
+            child: CircularProgressIndicator(
+              color: AppColors.secondaryMain,
+            ),
+          );
         }
         var allGroups = snapshot.data ?? [];
         var filteredGroups = allGroups

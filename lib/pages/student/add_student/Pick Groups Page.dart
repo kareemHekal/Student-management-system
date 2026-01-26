@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../cards/magmo3at/magmo3a_for_display_widget.dart';
 import '../../../firebase/firebase_functions.dart';
-import '../../../loadingFile/loadingWidget.dart';
 import '../../../models/Magmo3aModel.dart';
 import '../../../theme/colors_app.dart';
 
@@ -112,11 +111,8 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
-                        child: DiscreteCircle(
-                          color: AppColors.primaryMain,
-                          size: 30,
-                          secondCircleColor: AppColors.secondaryMain,
-                          thirdCircleColor: AppColors.secondaryMain,
+                        child: CircularProgressIndicator(
+                          color: AppColors.secondaryMain,
                         ),
                       );
                     }

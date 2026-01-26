@@ -146,11 +146,11 @@ class _EditPaidDialogState extends State<EditPaidDialog> {
                   final allPaid = widget.paidAmount + newAmount;
                   final description = descriptionController.text.trim();
 
+                  // Input Validation Logic
                   setState(() {
                     if (newAmount <= 0) {
                       _errorText = 'من فضلك أدخل مبلغاً صالحاً';
                     } else if (allPaid > widget.fullPrice + 0.01) {
-                      // Adding small delta for double precision
                       _errorText = 'المبلغ يتجاوز المتبقي ($remainingAmount)';
                     } else {
                       _errorText = null;
@@ -158,12 +158,24 @@ class _EditPaidDialogState extends State<EditPaidDialog> {
                   });
 
                   if (_errorText == null) {
+                    // Run the operation with loading
                     await runWithLoading(context, () async {
-                      await widget.onSave(newAmount, allPaid, description);
-                      if (context.mounted) {
-                        AppSnackBars.showSuccess(
-                            context, "تم تحديث مبلغ الدفع بنجاح ✅");
-                        Navigator.pop(context);
+                      try {
+                        // Call the parent logic (which we cleaned up in Step 1)
+                        await widget.onSave(newAmount, allPaid, description);
+
+                        // Success Handling
+                        if (context.mounted) {
+                          Navigator.pop(context); // Close dialog first
+                          AppSnackBars.showSuccess(
+                              context, "تم تحديث مبلغ الدفع بنجاح ✅");
+                        }
+                      } catch (e) {
+                        // Error Handling
+                        if (context.mounted) {
+                          // Don't pop, just show error so user can try again
+                          AppSnackBars.showError(context, "حدث خطأ: $e");
+                        }
                       }
                     });
                   }

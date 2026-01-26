@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 
 import '../../BottomSheets/add_magmo3a.dart';
 import '../../models/Magmo3aModel.dart';
@@ -232,7 +233,8 @@ class Magmo3aWidget extends StatelessWidget {
   void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
+        // استخدم dialogContext هنا
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
@@ -264,7 +266,8 @@ class Magmo3aWidget extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            // استخدام dialogContext لضمان إغلاق الدايالوج الصحيح
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text(
               "إلغاء",
               style: AppTextStyles.customText(
@@ -278,10 +281,28 @@ class Magmo3aWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-            onPressed: () {
-              Navigator.pop(context);
-              FirebaseFunctions.deleteMagmo3aFromDay(
-                  magmo3aModel.day ?? "", magmo3aModel.id);
+            onPressed: () async {
+              // حفظ المرجع للـ Navigator الخاص بالدايالوج
+              final navigator = Navigator.of(dialogContext);
+
+              await runWithLoading(
+                dialogContext, // نستخدم context الدايالوج للتحميل
+                () async {
+                  await FirebaseFunctions.deleteMagmo3aFromDay(
+                    magmo3aId: magmo3aModel.id,
+                    day: magmo3aModel.day ?? "",
+                    grade: magmo3aModel.grade ?? "",
+                  );
+                },
+              );
+
+              // تأخير بسيط لضمان انتهاء أنيميشن الـ Loading
+              await Future.delayed(const Duration(milliseconds: 100));
+
+              // التأكد أن الدايالوج لا يزال موجوداً قبل الإغلاق
+              if (dialogContext.mounted) {
+                navigator.pop();
+              }
             },
             child: Text(
               "تأكيد الحذف",

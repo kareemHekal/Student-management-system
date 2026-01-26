@@ -1,8 +1,13 @@
+import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
 import 'package:flutter/material.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
+import 'package:student_management_system/models/Student_model.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
 
 import '../firebase/firebase_functions.dart';
 import '../studetnstreambuilder.dart';
 import '../theme/colors_app.dart';
+import 'student/edit_student/EditStudent.dart';
 
 class AllStudentsTab extends StatefulWidget {
   const AllStudentsTab({super.key});
@@ -12,6 +17,9 @@ class AllStudentsTab extends StatefulWidget {
 }
 
 class _AllStudentsTabState extends State<AllStudentsTab> {
+  MobileScannerController _scannerController = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+  );
   String? grade;
   bool isLoading = true;
   List<String>? grades;
@@ -55,6 +63,75 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
           child: Scaffold(
             appBar: AppBar(
               centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.qr_code_scanner,
+                      color: AppColors.secondaryMain, size: 28),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AiBarcodeScanner(
+                          sheetTitle: "بحث شامل عن طالب",
+                          controller: MobileScannerController(
+                            detectionSpeed: DetectionSpeed.noDuplicates,
+                          ),
+                          onDetect: (BarcodeCapture capture) async {
+                            final String? scannedId =
+                                capture.barcodes.first.rawValue;
+                            if (scannedId == null) return;
+
+                            await _scannerController.stop();
+
+                            try {
+                              await runWithLoading(context, () async {
+                                final List<String> grades =
+                                    await FirebaseFunctions.getGradesList();
+
+                                Studentmodel? foundStudent;
+
+                                for (String grade in grades) {
+                                  final studentsInGrade =
+                                      await FirebaseFunctions
+                                          .getAllStudentsByGrade_future(grade);
+
+                                  try {
+                                    foundStudent = studentsInGrade
+                                        .firstWhere((s) => s.id == scannedId);
+                                    break;
+                                  } catch (e) {
+                                    continue;
+                                  }
+                                }
+
+                                if (foundStudent != null) {
+                                  if (!context.mounted) return;
+
+                                  Future.delayed(Duration.zero, () {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              EditStudentScreen(
+                                                  student: foundStudent!)),
+                                    );
+                                  });
+                                } else {
+                                  AppSnackBars.showError(context,
+                                      "عذراً، هذا الطالب غير مسجل في أي صف");
+                                  // رجع شغل الكاميرا لو ملقناهوش
+                                  await _scannerController.start();
+                                }
+                              });
+                            } catch (e) {
+                              debugPrint("❌ Error: $e");
+                              await _scannerController.start();
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                )
+              ],
               leading: IconButton(
                 onPressed: () {
                   Navigator.pushNamedAndRemoveUntil(

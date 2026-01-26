@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:student_management_system/alert_dialogs/attendance_selection_dialog.dart';
+import 'package:student_management_system/alert_dialogs/student_payment_bottom_sheet.dart';
 import 'package:student_management_system/models/Student_model.dart';
 
 import '../../BottomSheets/more_bottom_sheet_in_absent_page.dart';
@@ -277,9 +278,6 @@ class AbsentPage extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10))),
             onPressed: () async {
-              // ملاحظة: Navigator.pop(context) هنا قد تغلق الصفحة نفسها لو لم يكن هناك شيء قبلها
-              // Navigator.pop(context);
-
               final rootContext = context;
 
               await showDialog(
@@ -292,7 +290,7 @@ class AbsentPage extends StatelessWidget {
                     studentName: student.name ?? "",
                     currentDate: selectedDateStr,
                     onConfirm: (selectedMagmo3a) async {
-                      Future.microtask(() async {
+                      await Future.microtask(() async {
                         if (!rootContext.mounted) return;
                         await runWithLoading(rootContext, () async {
                           await cubit.handleIntent(AddStudentToPresent(
@@ -302,6 +300,15 @@ class AbsentPage extends StatelessWidget {
                           Navigator.pop(context);
                         });
                       });
+                      if (context.mounted) {
+                        await showModalBottomSheet(
+                          context: rootContext,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) =>
+                              StudentPaymentBottomSheet(student: student),
+                        );
+                      }
                     },
                   );
                 },

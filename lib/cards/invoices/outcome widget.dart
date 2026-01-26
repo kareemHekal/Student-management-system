@@ -146,8 +146,10 @@ class _PaymentWidgetState extends State<PaymentWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        // important for multi-line
         children: [
+          // Label
           Text(
             label,
             style: AppTextStyles.customText(
@@ -156,20 +158,20 @@ class _PaymentWidgetState extends State<PaymentWidget> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          Flexible(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Text(
-                  value,
-                  textAlign: TextAlign.end,
-                  style: AppTextStyles.customText(
-                    color: valueColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
+
+          const SizedBox(width: 8),
+
+          // Value (takes remaining space and wraps)
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              softWrap: true,
+              overflow: TextOverflow.visible,
+              style: AppTextStyles.customText(
+                color: valueColor,
+                fontSize: 16,
+                fontWeight: FontWeight.normal,
               ),
             ),
           ),

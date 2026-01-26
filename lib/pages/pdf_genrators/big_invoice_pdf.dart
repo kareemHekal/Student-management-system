@@ -302,4 +302,119 @@ class InvoicePdfGenerator {
       ),
     );
   }
+
+  // ==========================================
+  // 📄 تقرير الأسبوع
+  // ==========================================
+  static Future<void> createWeeklyInvoicePDF(List<DailyInvoice> weeklyInvoices,
+      String weekTitle, BuildContext context) async {
+    final pdf = pw.Document();
+
+    // تحميل الخط العربي
+    final fontData = await rootBundle.load('fonts/NotoKufiArabic-Regular.ttf');
+    final ttf = pw.Font.ttf(fontData);
+
+    // تجميع كل الفواتير والمصروفات الخاصة بالأسبوع للحسابات
+    List<Invoice> allWeeklyInvoices = [];
+    double totalWeekOut = 0;
+
+    for (var day in weeklyInvoices) {
+      allWeeklyInvoices.addAll(day.invoices);
+      totalWeekOut += day.payments.fold(0, (sum, p) => sum + p.amount);
+    }
+
+    // جلب أسماء الاشتراكات
+    final subscriptionNames =
+        await _fetchAllSubscriptionNames(allWeeklyInvoices);
+    double totalWeekInc =
+        allWeeklyInvoices.fold(0, (sum, item) => sum + item.amount);
+
+    pdf.addPage(
+      pw.MultiPage(
+        theme: pw.ThemeData.withFont(base: ttf),
+        textDirection: pw.TextDirection.rtl,
+        build: (context) => [
+          // العنوان الرئيسي
+          pw.Center(
+              child: pw.Text('تقرير الحسابات الأسبوعي',
+                  style: pw.TextStyle(
+                      font: ttf,
+                      fontSize: 18,
+                      fontWeight: pw.FontWeight.bold))),
+          pw.Center(
+              child: pw.Text(weekTitle,
+                  style: pw.TextStyle(font: ttf, fontSize: 14))),
+          pw.SizedBox(height: 20),
+
+          // صندوق الملخص (إيراد - مصروف - صافي)
+          _buildSummaryBox(
+              ttf,
+              "",
+              "${totalWeekInc.toStringAsFixed(2)} ج.م",
+              "${totalWeekOut.toStringAsFixed(2)} ج.م",
+              "${(totalWeekInc - totalWeekOut).toStringAsFixed(2)} ج.م"),
+          pw.SizedBox(height: 20),
+
+          // جدول ملخص الأيام في الأسبوع
+          pw.Text('ملخص أيام الأسبوع:',
+              style: pw.TextStyle(font: ttf, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 10),
+          pw.TableHelper.fromTextArray(
+            headers: ['اليوم', 'التاريخ', 'الإيراد', 'المصروف', 'الصافي'],
+            data: weeklyInvoices.map((day) {
+              double dInc =
+                  day.invoices.fold(0, (sum, item) => sum + item.amount);
+              double dOut =
+                  day.payments.fold(0, (sum, item) => sum + item.amount);
+              return [
+                day.day, // اسم اليوم (السبت، الأحد..)
+                day.date,
+                dInc.toStringAsFixed(0),
+                dOut.toStringAsFixed(0),
+                (dInc - dOut).toStringAsFixed(0)
+              ];
+            }).toList(),
+            headerStyle: pw.TextStyle(
+                font: ttf,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.white),
+            headerDecoration:
+                const pw.BoxDecoration(color: PdfColors.blueGrey700),
+            cellStyle: pw.TextStyle(font: ttf, fontSize: 10),
+            cellAlignment: pw.Alignment.center,
+          ),
+
+          pw.SizedBox(height: 25),
+
+          // تفاصيل الإيرادات
+          pw.Text('تفاصيل فواتير الأسبوع:',
+              style: pw.TextStyle(
+                  font: ttf,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.green900)),
+          pw.Divider(color: PdfColors.green900),
+          ...allWeeklyInvoices.map((inv) => _buildInvoiceItem(
+              inv, ttf, subscriptionNames[inv.id] ?? "اشتراك")),
+
+          pw.SizedBox(height: 20),
+
+          // تفاصيل المصروفات
+          if (totalWeekOut > 0) ...[
+            pw.Text('تفاصيل مصروفات الأسبوع:',
+                style: pw.TextStyle(
+                    font: ttf,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.red900)),
+            pw.Divider(color: PdfColors.red900),
+            ...weeklyInvoices
+                .expand((day) => day.payments)
+                .map((p) => _buildPaymentItem(p, ttf)),
+          ],
+        ],
+      ),
+    );
+
+    // عرض معاينة الطباعة أو الحفظ
+    await Printing.layoutPdf(onLayout: (_) async => pdf.save());
+  }
 }

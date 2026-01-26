@@ -18,7 +18,7 @@ import '../../../models/grade_subscriptions_model.dart';
 import '../../../models/student_paid_subscription.dart';
 import '../../../theme/colors_app.dart';
 import '../../../theme/text_style.dart';
-import '../../all_absent_numbers.dart';
+import '../all_absent_numbers.dart';
 import '../add_student/Pick Groups Page.dart';
 
 // --- الثوابت والأنماط المشتركة (Consts & Styles) -------------------------
@@ -31,10 +31,8 @@ const double _kDividerThickness = 4;
 
 class EditStudentScreen extends StatefulWidget {
   final Studentmodel student;
-  final String? grade;
 
-  const EditStudentScreen(
-      {required this.student, required this.grade, super.key});
+  const EditStudentScreen({required this.student, super.key});
 
   @override
   State<EditStudentScreen> createState() => _EditStudentScreenState();
@@ -358,7 +356,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ChoosedaysToAttend(level: widget.grade),
+            builder: (context) =>
+                ChoosedaysToAttend(level: widget.student.grade),
           ),
         ).then((result) {
           if (result != null) {
@@ -572,7 +571,8 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
   Widget _buildPaymentsSection(BuildContext context) {
     final cubit = StudentEditCubit.get(context);
     return StreamBuilder<GradeSubscriptionsModel?>(
-      stream: FirebaseFunctions.getGradeSubscriptionsStream(widget.grade ?? ""),
+      stream: FirebaseFunctions.getGradeSubscriptionsStream(
+          widget.student.grade ?? ""),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -657,16 +657,40 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
 
   // 10. بناء قسم الحضور والغياب
   Widget _buildAbsencePresenceSection(BuildContext context) {
-    // تم إزالة الـ Padding الخارجي
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    // دالة داخلية لتصفية الأيام المستقبلية
+    int _getPastDaysCount(List<dynamic>? days) {
+      if (days == null) return 0;
+      return days.where((day) {
+        try {
+          // نفترض أن day يحتوي على حقل date نصي بصيغة yyyy-MM-dd
+          DateTime recordDate = DateTime.parse(day.date);
+          return !recordDate.isAfter(today);
+        } catch (e) {
+          return true; // في حال الخطأ نعرضه للاحتياط
+        }
+      }).length;
+    }
+
+    // حساب الأعداد الحقيقية (الماضي + اليوم فقط)
+    int attendedCount = _getPastDaysCount(widget.student.countingAttendedDays);
+    int absentCount = _getPastDaysCount(widget.student.countingAbsentDays);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildCountInfo(
-            "أيام الحضور", widget.student.countingAttendedDays?.length,
-            color: AppColors.statusPresent),
+          "أيام الحضور",
+          attendedCount, // الرقم المصفى
+          color: AppColors.statusPresent,
+        ),
         _buildCountInfo(
-            "أيام الغياب", widget.student.countingAbsentDays?.length,
-            color: AppColors.statusAbsent),
+          "أيام الغياب",
+          absentCount, // الرقم المصفى
+          color: AppColors.statusAbsent,
+        ),
         _buildCalendarButton(context),
       ],
     );
@@ -763,7 +787,7 @@ class _EditStudentScreenState extends State<EditStudentScreen> {
               elevation: 5,
             ),
             onPressed: () async {
-              await cubit.EditStudent(context, widget.grade);
+              await cubit.EditStudent(context, widget.student.grade);
             },
             child: Text("تعديل وحفظ البيانات",
                 style: AppTextStyles.customText(

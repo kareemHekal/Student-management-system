@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/models/daily_invoice.dart';
-import 'package:student_management_system/pages/invoices/weekly_invoices_page.dart';
+import 'package:student_management_system/pages/invoices/daily_invoices_page.dart'; // Ensure path is correct
 import 'package:student_management_system/pages/pdf_genrators/big_invoice_pdf.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/text_style.dart';
 
-class MonthlyInvoiceCard extends StatelessWidget {
-  final String monthKey;
-  final List<DailyInvoice> weeklyInvoices;
+class WeeklyInvoiceCard extends StatelessWidget {
+  final String weekTitle; // Example: "الأسبوع 1 (2025-11)"
+  final List<DailyInvoice> dailyInvoices;
 
-  const MonthlyInvoiceCard({
-    required this.monthKey,
-    required this.weeklyInvoices,
+  const WeeklyInvoiceCard({
+    required this.weekTitle,
+    required this.dailyInvoices,
     super.key,
   });
 
-  // دائرة زخرفية للخلفية (للحفاظ على نفس الثيم)
+  // Maintains the same theme circles
   Widget _buildCircle(double size, double opacity) {
     return Container(
       width: size,
@@ -28,39 +28,13 @@ class MonthlyInvoiceCard extends StatelessWidget {
     );
   }
 
-  String _formatMonthAr(String key) {
-    try {
-      List<String> parts = key.split('-');
-      String year = parts[0];
-      String month = parts[1];
-
-      Map<String, String> monthsAr = {
-        '01': 'يناير',
-        '02': 'فبراير',
-        '03': 'مارس',
-        '04': 'أبريل',
-        '05': 'مايو',
-        '06': 'يونيو',
-        '07': 'يوليو',
-        '08': 'أغسطس',
-        '09': 'سبتمبر',
-        '10': 'أكتوبر',
-        '11': 'نوفمبر',
-        '12': 'ديسمبر',
-      };
-
-      return "${monthsAr[month]} ($month) $year";
-    } catch (e) {
-      return key;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     double totalIncome = 0;
     double totalOutcome = 0;
 
-    for (var daily in weeklyInvoices) {
+    // Calculate totals for the specific week
+    for (var daily in dailyInvoices) {
       for (var inv in daily.invoices) {
         totalIncome += inv.amount;
       }
@@ -76,7 +50,6 @@ class MonthlyInvoiceCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         child: Container(
-          // التعديل المطلوب في اللون والتدرج والظلال هنا
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             gradient: const LinearGradient(
@@ -97,42 +70,28 @@ class MonthlyInvoiceCard extends StatelessWidget {
             ],
           ),
           child: ClipRRect(
-            // لمنع الدوائر من الخروج عن حدود الكارت
             borderRadius: BorderRadius.circular(22),
             child: Stack(
               children: [
-                // دوائر زخرفية لتعطي نفس روح الكارت اليومي
+                Positioned(top: -10, right: -10, child: _buildCircle(60, 0.17)),
                 Positioned(
-                  top: -10,
-                  right: -10,
-                  child: _buildCircle(60, 0.17),
-                ),
-                Positioned(
-                  bottom: -40,
-                  left: -40,
-                  child: _buildCircle(100, 0.1),
-                ),
-
+                    bottom: -40, left: -40, child: _buildCircle(100, 0.1)),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        spacing: 15,
                         children: [
-                          Row(
-                            children: [
-                              const SizedBox(width: 8),
-                              Text(
-                                "تقرير شهر: ${_formatMonthAr(monthKey)}",
-                                style: AppTextStyles.customText(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                            ],
+                          Text(
+                            weekTitle,
+                            style: AppTextStyles.customText(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.white,
+                            ),
                           ),
+                          Spacer(),
                           Container(
                             width: 40,
                             height: 40,
@@ -151,9 +110,9 @@ class MonthlyInvoiceCard extends StatelessWidget {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => WeeklyReportsPage(
-                                      monthTitle: monthKey,
-                                      weeklyInvoices: weeklyInvoices,
+                                    builder: (context) => dailyInvoicesPage(
+                                      monthTitle: weekTitle,
+                                      invoices: dailyInvoices,
                                     ),
                                   ),
                                 );
@@ -177,8 +136,8 @@ class MonthlyInvoiceCard extends StatelessWidget {
                               onPressed: () {
                                 runWithLoading(context, () async {
                                   await InvoicePdfGenerator
-                                      .createMonthlyInvoicePDF(weeklyInvoices,
-                                          _formatMonthAr(monthKey), context);
+                                      .createWeeklyInvoicePDF(
+                                          dailyInvoices, weekTitle, context);
                                 });
                               },
                             ),
@@ -191,16 +150,15 @@ class MonthlyInvoiceCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildSummaryItem(
-                              "صافي الشهر",
-                              totalNet,
-                              totalNet >= 0
-                                  ? AppColors.white
-                                  : AppColors.statusAbsent),
+                            "صافي الأسبوع",
+                            totalNet,
+                            totalNet >= 0 ? AppColors.white : Colors.redAccent,
+                          ),
                           _buildVerticalDivider(),
-                          _buildSummaryItem("إجمالي الإيراد", totalIncome,
+                          _buildSummaryItem("إيراد الأسبوع", totalIncome,
                               AppColors.secondaryMain),
                           _buildVerticalDivider(),
-                          _buildSummaryItem("إجمالي المصروف", totalOutcome,
+                          _buildSummaryItem("مصروف الأسبوع", totalOutcome,
                               const Color(0xFFFFCDD2)),
                         ],
                       ),
