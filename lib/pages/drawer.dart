@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:student_management_system/alert_dialogs/ResetAbscenceMonthDialog.dart';
 import 'package:student_management_system/alert_dialogs/Reset_Grade_student_subscriptions.dart';
 import 'package:student_management_system/alert_dialogs/add_out_come.dart';
 import 'package:student_management_system/alert_dialogs/change_password.dart';
 import 'package:student_management_system/alert_dialogs/verifiy_password.dart';
-
-import '../constants.dart';
+import 'package:student_management_system/firebase/auth_services.dart';
+import 'package:student_management_system/provider.dart';
 import '../theme/colors_app.dart';
 import '../theme/text_style.dart';
 import 'allgrades.dart';
@@ -133,6 +134,11 @@ class _CustomDrawerState extends State<CustomDrawer> {
               builder: (_) => ResetGradeAndStudentSubscriptionsDialog(),
             ),
           ),
+          _drawerTile(
+            icon: Icons.logout_rounded,
+            title: "تسجيل الخروج",
+            onTap: () => _handleLogout(context),
+          ),
           const SizedBox(height: 14),
         ],
       ),
@@ -140,24 +146,99 @@ class _CustomDrawerState extends State<CustomDrawer> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final teacher =
+        Provider.of<TeacherProvider>(context, listen: false).teacher;
+
+    // منطق حساب الأيام المتبقية
+    int daysLeft = 0;
+    if (teacher?.subscriptionEndTime != null) {
+      daysLeft = teacher!.subscriptionEndTime.difference(DateTime.now()).inDays;
+    }
+
     return Container(
-      color: Colors.transparent,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         children: [
-          Image.asset(
-            "assets/images/logo.png",
-            height: 110,
-            width: 110,
-            fit: BoxFit.cover,
-          ),
-          Text(
-            Constants.teacherName,
-            style: GoogleFonts.caveat(
-              fontWeight: FontWeight.bold,
-              fontSize: 50,
-              color: AppColors.secondaryMain,
+          // اللوجو مع تأثير بسيط
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Image.asset(
+              "assets/images/logo.png",
+              height: 100,
+              width: 100,
+              fit: BoxFit.contain,
             ),
           ),
+          const SizedBox(height: 10),
+          // اسم المدرس
+          Text(
+            teacher?.name ?? "مدير النظام",
+            style: GoogleFonts.amiri(
+              fontWeight: FontWeight.bold,
+              fontSize: 28,
+              color: AppColors.primaryDark,
+            ),
+          ),
+          const SizedBox(height: 15),
+          // عرض مدة الاشتراك
+          if (teacher?.subscriptionEndTime != null)
+            Container(
+              // حددنا عرض أقصى للـ Container عشان يجبر اللي جواه يلف وينزل سطر جديد
+              constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.8),
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+              decoration: BoxDecoration(
+                color: daysLeft > 7
+                    ? AppColors.primaryDark.withOpacity(0.1)
+                    : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: daysLeft > 7 ? AppColors.primaryDark : Colors.red,
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                // بيخلي الصف على قد المحتوى
+                crossAxisAlignment: CrossAxisAlignment.center,
+                // بيسنتر الأيقونة مع النص
+                children: [
+                  Icon(
+                    Icons.timer_outlined,
+                    size: 16,
+                    color: daysLeft > 7 ? AppColors.primaryDark : Colors.red,
+                  ),
+                  const SizedBox(width: 8),
+                  // الحل السحري هنا: الـ Flexible بيجبر النص يلتزم بالمساحة المتبقية وينزل لتحت
+                  Flexible(
+                    child: Text(
+                      daysLeft > 0
+                          ? "متبقي $daysLeft يوم على انتهاء الاشتراك"
+                          : "الاشتراك منتهي",
+                      textAlign: TextAlign.start,
+                      softWrap: true,
+                      style: GoogleFonts.cairo(
+                        fontSize: 14,
+                        height: 1.2,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            daysLeft > 7 ? AppColors.primaryDark : Colors.red,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -175,6 +256,38 @@ class _CustomDrawerState extends State<CustomDrawer> {
               ? const Color(0xffd63a3a)
               : AppColors.textOnDark.withOpacity(0.7),
         ),
+      ),
+    );
+  }
+
+  void _handleLogout(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("تسجيل الخروج",
+            style: AppTextStyles.customText(fontWeight: FontWeight.bold)),
+        content: Text("هل أنت متأكد أنك تريد تسجيل الخروج؟",
+            style: AppTextStyles.customText()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("إلغاء",
+                style:
+                    AppTextStyles.customText(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.statusAbsent),
+            onPressed: () async {
+              await AuthService().signOut();
+              Provider.of<TeacherProvider>(context, listen: false).logout();
+              Navigator.pushNamedAndRemoveUntil(
+                  context, '/login', (route) => false);
+            },
+            child: Text("خروج",
+                style: AppTextStyles.customText(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }

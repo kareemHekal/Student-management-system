@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:student_management_system/firebase/firebase_functions.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
 
 import '../loadingFile/loading_alert/run_with_loading.dart';
@@ -120,36 +121,19 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 onPressed: () async {
+                  // 1. UI Validation
                   if (!(_formKey.currentState?.validate() ?? false)) return;
 
-                  await runWithLoading(context, () async {
-                    final firestore = FirebaseFirestore.instance;
-                    final docRef =
-                        firestore.collection('big_invoices').doc(widget.date);
-                    final docSnapshot = await docRef.get();
+                  // 2. Start Loading and call the logic
+                await runWithLoading(context, () async {
+                  await FirebaseFunctions.addPaymentToFirestore(
+                    date: widget.date,
+                    day: widget.day,
+                    amountText: totalAmountController.text,
+                    description: descriptionController.text,
+                  );
 
-                    final newPayment = Payment(
-                      amount:
-                          double.tryParse(totalAmountController.text) ?? 0.0,
-                      description: descriptionController.text.trim(),
-                      dateTime: DateTime.now(),
-                    );
-
-                    if (docSnapshot.exists) {
-                      final data = docSnapshot.data() as Map<String, dynamic>;
-                      final bigInvoice = DailyInvoice.fromJson(data);
-                      bigInvoice.payments.add(newPayment);
-                      await docRef.update(bigInvoice.toJson());
-                    } else {
-                      final bigInvoice = DailyInvoice(
-                        date: widget.date,
-                        day: widget.day,
-                        invoices: [],
-                        payments: [newPayment],
-                      );
-                      await docRef.set(bigInvoice.toJson());
-                    }
-
+                    // 3. Post-logic UI steps
                     if (context.mounted) {
                       AppSnackBars.showSuccess(
                           context, "تم تسجيل المصروف بنجاح ✅");

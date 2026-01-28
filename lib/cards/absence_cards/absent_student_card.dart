@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:student_management_system/alert_dialogs/Notify%20Absence.dart';
 import 'package:student_management_system/cards/student/student_card_functions.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
 import 'package:student_management_system/models/Magmo3aModel.dart';
 import 'package:student_management_system/models/Student_model.dart';
+import 'package:student_management_system/provider.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/text_style.dart';
 
@@ -272,6 +274,9 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
   }
 
   void _showWhatsAppDialog(BuildContext context) {
+    final teacher =
+        Provider.of<TeacherProvider>(context, listen: false).teacher;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -279,17 +284,20 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
         content: SelectRecipientDialogContent(
           sendMessageToFather: () =>
               StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                  teacher: teacher?.name ?? "",
                   studentName: widget.studentModel.name!,
                   parentRole: 'father',
                   phoneNumber: widget.studentModel.fatherPhone ?? ""),
           sendMessageToMother: () =>
               StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                  teacher: teacher?.name ?? "",
                   studentName: widget.studentModel.name!,
                   parentRole: 'mother',
                   phoneNumber: widget.studentModel.motherPhone ?? ""),
           sendMessageToStudent: () =>
               StudentActionsHelper.sendWhatsAppAbsenceMessage(
                   studentName: widget.studentModel.name!,
+                  teacher: teacher?.name ?? "",
                   parentRole: 'student',
                   phoneNumber: widget.studentModel.phoneNumber ?? ""),
         ),
@@ -317,8 +325,7 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
               widget.studentModel.notes ??= [];
               widget.studentModel.notes!.add({dateKey: _noteController.text});
               FirebaseFunctions.updateStudentInCollection(widget.selectedDate,
-                  widget.magmo3aModel.id,
-                  widget.studentModel);
+                  widget.magmo3aModel.id, widget.studentModel);
               Navigator.pop(context);
             },
             child: const Text("حفظ"),

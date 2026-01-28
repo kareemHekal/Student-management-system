@@ -32,11 +32,11 @@ class _HomescreenState extends State<Homescreen> {
         height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.bottomLeft,
+            begin: Alignment.topRight,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.primaryMain, // فوق شمال
-              AppColors.secondaryMain, // تحت يمين
+              AppColors.secondaryMain, // فوق شمال
+              AppColors.primaryDark, // تحت يمين
             ],
           ),
         ),

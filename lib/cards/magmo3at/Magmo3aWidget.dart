@@ -145,29 +145,34 @@ class Magmo3aWidget extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: AppColors.secondaryMain), // الأيقونة أول
         const SizedBox(width: 6),
-        RichText(
-          textDirection: TextDirection.rtl,
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: "$label: ",
-                style: AppTextStyles.customText(
-                  fontSize: 16,
-                  color: AppColors.secondaryMain, // لون الـ label
-                  fontWeight: FontWeight.bold,
+        Flexible(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: "$label: ",
+                  style: AppTextStyles.customText(
+                    fontSize: 16,
+                    color: AppColors.secondaryMain,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              TextSpan(
-                text: value,
-                style: AppTextStyles.customText(
-                  fontSize: 16,
-                  color: AppColors.textOnDark, // لون الـ value
-                  fontWeight: FontWeight.bold,
+                TextSpan(
+                  text: value,
+                  style: AppTextStyles.customText(
+                    fontSize: 16,
+                    color: AppColors.textOnDark,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            softWrap: true,
+            textDirection: TextDirection.rtl,
           ),
-        ),
+        )
       ],
     );
   }

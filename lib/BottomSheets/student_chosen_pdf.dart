@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/pages/pdf_genrators/detaild_students_pdf.dart';
+import 'package:student_management_system/provider.dart';
 
 import '../models/Student_model.dart';
 import '../theme/colors_app.dart';
@@ -35,8 +37,13 @@ class StudentChosenPdf {
                 icon: Icons.qr_code_rounded,
                 label: 'qr codes',
                 onPressed: () async {
+                  final teacher =
+                      Provider.of<TeacherProvider>(context, listen: false)
+                          .teacher;
+
                   await runWithLoading(context, () async {
-                    await StudentsPdfGenerator.generateQrCodesPdf(students);
+                    await StudentsPdfGenerator.generateQrCodesPdf(
+                        students, teacher?.name ?? "");
                   });
                 },
               ),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:student_management_system/home.dart';
 
-import '../../cards/absence_cards/group_card.dart'; // Ensure this uses your premium style
+import 'cards/magmo3at/group_card.dart'; // Ensure this uses your premium style
 import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
 import '../../theme/colors_app.dart';

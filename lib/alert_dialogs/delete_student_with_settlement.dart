@@ -119,35 +119,17 @@ class _DeleteStudentWithSettlementDialogState
       ],
     );
   }
-
   Future<void> _handleFinalDelete() async {
     if (!_formKey.currentState!.validate()) return;
 
     await runWithLoading(context, () async {
-      final double amount = double.tryParse(amountController.text) ?? 0.0;
-      final firestore = FirebaseFirestore.instance;
-
-      // 1. Record the Expense (even if 0)
-      final docRef = firestore.collection('big_invoices').doc(widget.date);
-      final newPayment = Payment(
-        amount: amount,
-        description: reasonController.text.trim(),
-        dateTime: DateTime.now(),
+      // 1. Call the logic function we created earlier
+      await FirebaseFunctions.addPaymentToFirestore(
+        date: widget.date,
+        day: widget.day,
+        amountText: amountController.text,
+        description: reasonController.text,
       );
-
-      final docSnapshot = await docRef.get();
-      if (docSnapshot.exists) {
-        final bigInvoice = DailyInvoice.fromJson(docSnapshot.data()!);
-        bigInvoice.payments.add(newPayment);
-        await docRef.update(bigInvoice.toJson());
-      } else {
-        await docRef.set(DailyInvoice(
-          date: widget.date,
-          day: widget.day,
-          invoices: [],
-          payments: [newPayment],
-        ).toJson());
-      }
 
       // 2. Delete the Student
       await FirebaseFunctions.deleteStudentFromHisCollection(

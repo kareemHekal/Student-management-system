@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:student_management_system/cards/invoices/monthly_invoice_card.dart';
+import 'package:student_management_system/firebase/firebase_functions.dart';
 import 'package:student_management_system/home.dart';
 import 'package:student_management_system/models/daily_invoice.dart';
 import 'package:student_management_system/theme/colors_app.dart';
@@ -26,12 +27,16 @@ class _MonthlyReportsPageState extends State<MonthlyReportsPage> {
 
   Future<void> _fetchAndGroupInvoices() async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('big_invoices').get();
+      // 1️⃣ استدعاء الدالة الجاهزة من الـ Functions
+      // ملحوظة: بما أنها Stream، هنستخدم .first عشان نجيب أول نسخة من البيانات ونقفل
+      final snapshot = await FirebaseFunctions.getAllBigInvoices().first;
+
       Map<String, List<DailyInvoice>> tempGroups = {};
 
       for (var doc in snapshot.docs) {
-        DailyInvoice invoice = DailyInvoice.fromJson(doc.data());
+        // التأكد من تحويل البيانات لـ Map قبل تمريرها لـ FromJson
+        DailyInvoice invoice =
+            DailyInvoice.fromJson(doc.data() as Map<String, dynamic>);
         List<String> parts = invoice.date.split('-');
 
         if (parts.length >= 2) {
@@ -48,10 +53,10 @@ class _MonthlyReportsPageState extends State<MonthlyReportsPage> {
         isLoading = false;
       });
     } catch (e) {
+      print("Error fetching invoices: $e");
       setState(() => isLoading = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

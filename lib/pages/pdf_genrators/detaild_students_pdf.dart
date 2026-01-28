@@ -2,7 +2,6 @@ import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:student_management_system/constants.dart';
 import 'package:student_management_system/models/absence_app/day_record.dart';
 
 import '../../models/Student_model.dart';
@@ -157,7 +156,8 @@ class StudentsPdfGenerator {
     return last.date;
   }
 
-  static Future<void> generateQrCodesPdf(List<Studentmodel> students) async {
+  static Future<void> generateQrCodesPdf(
+      List<Studentmodel> students, String teacherName) async {
     final pdf = pw.Document();
 
     // تحميل الخط العربي - تأكد من المسار الصحيح في pubspec.yaml
@@ -293,7 +293,7 @@ class StudentsPdfGenerator {
                                             pw.SizedBox(height: 8),
 
                                             pw.Text(
-                                              Constants.teacherName,
+                                              teacherName,
                                               style: pw.TextStyle(
                                                 fontSize: 7,
                                                 color: PdfColors.grey700,

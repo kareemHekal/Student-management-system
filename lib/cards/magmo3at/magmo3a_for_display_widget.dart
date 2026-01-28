@@ -156,15 +156,13 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Flexible(
-          child: RichText(
-            textDirection: TextDirection.rtl,
-            overflow: TextOverflow.ellipsis,
-            text: TextSpan(
+          child: Text.rich(
+            TextSpan(
               children: [
                 TextSpan(
-                  text: "$label :  ",
+                  text: "$label: ",
                   style: AppTextStyles.customText(
-                    fontSize: responsiveFontSize,
+                    fontSize: 16,
                     color: AppColors.secondaryMain,
                     fontWeight: FontWeight.bold,
                   ),
@@ -172,13 +170,17 @@ class Magmo3aWidgetWithoutSlidable extends StatelessWidget {
                 TextSpan(
                   text: value,
                   style: AppTextStyles.customText(
-                    fontSize: responsiveFontSize,
-                    color: AppColors.white,
+                    fontSize: 16,
+                    color: AppColors.textOnDark,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            softWrap: true,
+            textDirection: TextDirection.rtl,
           ),
         ),
       ],

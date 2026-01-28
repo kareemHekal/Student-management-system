@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:student_management_system/constants.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class StudentActionsHelper {
@@ -24,9 +23,9 @@ class StudentActionsHelper {
     required String studentName,
     required String parentRole,
     required String phoneNumber,
+    required String teacher,
   }) async {
     String message;
-    final String teacher = Constants.teacherName;
 
     if (parentRole == 'father') {
       message =

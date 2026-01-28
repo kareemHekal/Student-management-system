@@ -161,27 +161,6 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
       ),
     );
   }
-
-  Widget _buildDialogHeader(IconData icon, String title, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.white),
-          const SizedBox(width: 12),
-          Text(title,
-              style: AppTextStyles.customText(
-                  color: AppColors.white, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-
   // --- PDF & Logic Methods ---
 
   String _buildNotesForDate(Studentmodel student, String dateKey) {

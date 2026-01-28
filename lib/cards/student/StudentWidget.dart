@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:student_management_system/alert_dialogs/Notify%20Absence.dart';
 import 'package:student_management_system/alert_dialogs/add_out_come.dart';
 import 'package:student_management_system/alert_dialogs/delete_student_with_settlement.dart';
 import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
+import 'package:student_management_system/provider.dart';
 
 import '../../bloc/Edit Student/edit_student_cubit.dart';
 import '../../firebase/firebase_functions.dart';
@@ -269,6 +271,8 @@ class StudentWidget extends StatelessWidget {
   }
 
   void _sendDialog(BuildContext context) {
+    final teacher =
+        Provider.of<TeacherProvider>(context, listen: false).teacher;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -281,17 +285,20 @@ class StudentWidget extends StatelessWidget {
         content: SelectRecipientDialogContent(
           sendMessageToFather: () =>
               StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                  teacher: teacher?.name ?? "",
                   studentName: studentModel.name!,
                   parentRole: 'father',
                   phoneNumber: studentModel.fatherPhone ?? ""),
           sendMessageToMother: () =>
               StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                  teacher: teacher?.name ?? "",
                   studentName: studentModel.name!,
                   parentRole: 'mother',
                   phoneNumber: studentModel.motherPhone ?? ""),
           sendMessageToStudent: () =>
               StudentActionsHelper.sendWhatsAppAbsenceMessage(
                   studentName: studentModel.name!,
+                  teacher: teacher?.name ?? "",
                   parentRole: 'student',
                   phoneNumber: studentModel.phoneNumber ?? ""),
         ),
