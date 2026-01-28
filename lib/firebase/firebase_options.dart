@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -33,10 +30,7 @@ class DefaultFirebaseOptions {
           'you can reconfigure this by running the FlutterFire CLI again.',
         );
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -49,20 +43,40 @@ class DefaultFirebaseOptions {
     }
   }
 
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyB28_7ZBukEcJgkBtbn16e5YLiolK5uR9Q',
+    appId: '1:596818659834:web:7f0b9b035608f2906c7c43',
+    messagingSenderId: '596818659834',
+    projectId: 'student-management-syste-54e39',
+    authDomain: 'student-management-syste-54e39.firebaseapp.com',
+    storageBucket: 'student-management-syste-54e39.firebasestorage.app',
+    measurementId: 'G-RK4HRWX9JQ',
+  );
+
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBoXZieABjPLTPSKgrnl_3afLJRmZjoU_8',
-    appId: '1:364869292760:android:e15ecdb4959f427efabdad',
-    messagingSenderId: '364869292760',
-    projectId: 'fatma-elorbany',
-    storageBucket: 'fatma-elorbany.firebasestorage.app',
+    apiKey: 'AIzaSyCyw7L6B0s6SM3KZb1_vYeXFFAbQYQnXyU',
+    appId: '1:596818659834:android:36f4123b0ac70c306c7c43',
+    messagingSenderId: '596818659834',
+    projectId: 'student-management-syste-54e39',
+    storageBucket: 'student-management-syste-54e39.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDiDfhkJPwviJnzPfToFIWP5dhCnUOShPs',
-    appId: '1:364869292760:ios:13f19fa49ba93319fabdad',
-    messagingSenderId: '364869292760',
-    projectId: 'fatma-elorbany',
-    storageBucket: 'fatma-elorbany.firebasestorage.app',
+    apiKey: 'AIzaSyBxyl1drmskko11uAKRqykZIEUzNRx91pc',
+    appId: '1:596818659834:ios:41c951f4ca7218c16c7c43',
+    messagingSenderId: '596818659834',
+    projectId: 'student-management-syste-54e39',
+    storageBucket: 'student-management-syste-54e39.firebasestorage.app',
     iosBundleId: 'com.example.fatmaElorbany',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyB28_7ZBukEcJgkBtbn16e5YLiolK5uR9Q',
+    appId: '1:596818659834:web:07b1d338c3a6f52a6c7c43',
+    messagingSenderId: '596818659834',
+    projectId: 'student-management-syste-54e39',
+    authDomain: 'student-management-syste-54e39.firebaseapp.com',
+    storageBucket: 'student-management-syste-54e39.firebasestorage.app',
+    measurementId: 'G-BVP3VJB69P',
   );
 }

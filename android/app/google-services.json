@@ -1,40 +1,21 @@
 {
   "project_info": {
-    "project_number": "364869292760",
-    "project_id": "fatma-elorbany",
-    "storage_bucket": "fatma-elorbany.firebasestorage.app"
+    "project_number": "596818659834",
+    "project_id": "student-management-syste-54e39",
+    "storage_bucket": "student-management-syste-54e39.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:364869292760:android:e15ecdb4959f427efabdad",
+        "mobilesdk_app_id": "1:596818659834:android:36f4123b0ac70c306c7c43",
         "android_client_info": {
-          "package_name": "com.example.fatma_elorbany"
+          "package_name": "com.example.student_management_system"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBoXZieABjPLTPSKgrnl_3afLJRmZjoU_8"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:364869292760:android:9d22cbff83f5b479fabdad",
-        "android_client_info": {
-          "package_name": "com.example.fatma_elorbany_absent"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBoXZieABjPLTPSKgrnl_3afLJRmZjoU_8"
+          "current_key": "AIzaSyCyw7L6B0s6SM3KZb1_vYeXFFAbQYQnXyU"
         }
       ],
       "services": {
