@@ -4,6 +4,7 @@ class Subscription {
   final String description;
   final int durationInDays; // أفضل من String عشان الحسابات
   final double price;
+  final int totalStudents;
 
   Subscription({
     required this.id,
@@ -11,7 +12,7 @@ class Subscription {
     required this.description,
     required this.durationInDays,
     required this.price,
-  });
+      required this.totalStudents});
 
   factory Subscription.fromJson(Map<String, dynamic> json, String docId) {
     return Subscription(
@@ -19,6 +20,7 @@ class Subscription {
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       durationInDays: json['durationInDays'] ?? 30,
+      totalStudents: json['totalStudents'] ?? 0,
       price: (json['price'] ?? 0).toDouble(),
     );
   }
@@ -28,6 +30,7 @@ class Subscription {
       'name': name,
       'description': description,
       'durationInDays': durationInDays,
+      'totalStudents': totalStudents,
       'price': price,
     };
   }

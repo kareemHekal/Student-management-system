@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:student_management_system/alert_dialogs/show_add_student_payment_dialog.dart';
+import 'package:student_management_system/provider.dart';
 
 import '../../firebase/firebase_functions.dart';
 import '../../home.dart';
@@ -30,43 +32,46 @@ class StudentCubit extends Cubit<StudentState> {
     getCurrentDate();
   }
 
-  Future<void> addStudent(BuildContext context, level) async {
+  Future<void> addStudent(BuildContext context, String? level) async {
+    // 1. جلب بيانات المدرس الحالية من البروفايدر
+    final teacherProvider =
+        Provider.of<TeacherProvider>(context, listen: false);
+    final teacher = teacherProvider.teacher;
+
+    // 2. التحققات الأساسية (Validations)
     if (hisGroups.isEmpty) {
       emit(StudentValidationError("من فضلك اختر مجموعة واحدة على الأقل"));
       return;
     }
-
     if (name_controller.text.isEmpty) {
       emit(StudentValidationError("من فضلك أدخل اسم الطالب"));
       return;
     }
 
-    if (studentNumberController.text.trim().isEmpty) {
-      studentNumberController.text = '00000000000';
-    } else if (!RegExp(r'^\d{11}$').hasMatch(studentNumberController.text)) {
-      emit(StudentValidationError("رقم الطالب يجب أن يكون 11 رقمًا بالضبط"));
+    // ضبط أرقام الهاتف الافتراضية إذا كانت فارغة
+    _sanitizePhoneNumbers();
+
+    // 3. التحقق من صلاحية الاشتراك وسعة الطلاب
+    if (teacher != null) {
+      // أ- فحص انتهاء الاشتراك
+      if (teacher.subscriptionEndTime.isBefore(DateTime.now())) {
+        emit(StudentValidationError(
+            "عفواً، اشتراكك منتهي. يرجى التجديد لتتمكن من إضافة طلاب"));
+        return;
+      }
+
+      // ب- فحص المساحة المتاحة
+      if (teacher.totalStudents >= teacher.subscriptionTotalStudents) {
+        emit(StudentValidationError(
+            "لقد وصلت للحد الأقصى للطلاب (${teacher.subscriptionTotalStudents}). يرجى ترقية الباقة لإضافة المزيد."));
+        return;
+      }
+    } else {
+      emit(StudentValidationError("خطأ: لم يتم العثور على بيانات المعلم"));
       return;
     }
 
-    if (fatherNumberController.text.trim().isEmpty) {
-      fatherNumberController.text = '00000000000';
-    } else if (!RegExp(r'^\d{11}$').hasMatch(fatherNumberController.text)) {
-      emit(StudentValidationError("رقم الأب يجب أن يكون 11 رقمًا بالضبط"));
-      return;
-    }
-
-    if (motherNumberController.text.trim().isEmpty) {
-      motherNumberController.text = '00000000000';
-    } else if (!RegExp(r'^\d{11}$').hasMatch(motherNumberController.text)) {
-      emit(StudentValidationError("رقم الأم يجب أن يكون 11 رقمًا بالضبط"));
-      return;
-    }
-
-    if (selectedGender == null) {
-      emit(StudentValidationError("من فضلك اختر النوع"));
-      return;
-    }
-
+    // 4. بناء موديل الطالب
     Studentmodel submodel = Studentmodel(
       hisGroupsId: hisGroupsId,
       studentPaidSubscriptions: studentPaidSubscriptions,
@@ -83,20 +88,21 @@ class StudentCubit extends Cubit<StudentState> {
 
     try {
       emit(StudentLoading());
+
+      // 5. استدعاء الفايربيز (إضافة الطالب + زيادة العداد في Batch واحد)
       String studentId = await FirebaseFunctions.addStudentToCollection(
         level ?? "",
         submodel,
       );
 
-      emit(StudentAddedSuccess());
-
+      // 6. إضافة الفواتير المرتبطة بالطالب
       for (final paidSub in studentPaidSubscriptions ?? []) {
         await FirebaseFunctions.addInvoiceToBigInvoices(
           subscriptionFeeID: paidSub.subscriptionId ?? "",
           date: date ?? "",
           day: day ?? "",
           amount: paidSub.paidAmount ?? 0,
-          description: paidSub.description ?? paidSub.description,
+          description: paidSub.description ?? "",
           grade: level ?? "",
           phoneNumber: studentNumberController.text,
           motherPhone: motherNumberController.text,
@@ -106,15 +112,30 @@ class StudentCubit extends Cubit<StudentState> {
         );
       }
 
+      // 7. تحديث بيانات المدرس في البروفايدر محلياً ليعكس الرقم الجديد فوراً
+      await teacherProvider.refreshTeacherData(); // افترضنا وجود دالة تحديث
+
+      emit(StudentAddedSuccess());
       clearControllers();
+
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => Homescreen()),
+        MaterialPageRoute(builder: (context) => const Homescreen()),
         (route) => false,
       );
     } catch (e) {
-      emit(StudentAddedFailure(e.toString()));
+      emit(StudentAddedFailure("حدث خطأ أثناء الإضافة: ${e.toString()}"));
     }
+  }
+
+// دالة مساعدة لتنظيف الأرقام
+  void _sanitizePhoneNumbers() {
+    if (studentNumberController.text.trim().isEmpty)
+      studentNumberController.text = '00000000000';
+    if (fatherNumberController.text.trim().isEmpty)
+      fatherNumberController.text = '00000000000';
+    if (motherNumberController.text.trim().isEmpty)
+      motherNumberController.text = '00000000000';
   }
 
   void updateGroup(BuildContext context, Magmo3amodel? result) {

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:student_management_system/models/absence_app/absence_model.dart';
+import 'package:student_management_system/models/admin/teacher.dart';
 
 import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
@@ -1175,5 +1176,11 @@ class FirebaseFunctions {
     return await getSecondaryCollection(grade)
         .where("hisGroupsId", arrayContains: groupId)
         .get();
+  }
+
+  static Future<Teacher?> getTeacherById(String id) async {
+    var doc =
+        await FirebaseFirestore.instance.collection('teachers').doc(id).get();
+    return doc.exists ? Teacher.fromJson(doc.data()!, doc.id) : null;
   }
 }

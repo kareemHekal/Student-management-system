@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:student_management_system/home.dart';
 
-import 'cards/magmo3at/group_card.dart'; // Ensure this uses your premium style
 import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
 import '../../theme/colors_app.dart';
 import '../../theme/text_style.dart';
+import 'cards/magmo3at/group_card.dart'; // Ensure this uses your premium style
 
 class AbsentHomePage extends StatefulWidget {
   const AbsentHomePage({super.key});
@@ -98,7 +98,7 @@ class _AbsentHomePageState extends State<AbsentHomePage> {
           });
         },
         headerProps: EasyHeaderProps(
-            monthPickerType: MonthPickerType.switcher,
+            monthPickerType: MonthPickerType.dropDown,
             dateFormatter: DateFormatter.fullDateDayAsStrMY()),
         dayProps: EasyDayProps(
           dayStructure: DayStructure.dayStrDayNum,

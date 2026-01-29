@@ -25,7 +25,7 @@ class StudentChosenPdf {
             children: [
               _ActionItem(
                 icon: Icons.list_alt,
-                label: 'مدفوعات الطلاب ',
+                label: 'بيانات الطلاب ',
                 onPressed: () async {
                   await runWithLoading(context, () async {
                     await StudentsPdfGenerator.generateStudentsDetailsPdf(

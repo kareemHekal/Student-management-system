@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="student_management_system"
+        android:label="Studenizer"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
 
