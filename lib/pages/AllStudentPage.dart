@@ -28,16 +28,19 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       await fetchGrades();
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     });
   }
 
   Future<void> fetchGrades() async {
     List<String> fetchedGrades = await FirebaseFunctions.getGradesList();
+
+    if (!mounted) return;
+
     setState(() {
       grades = fetchedGrades;
       if (fetchedGrades.isEmpty) {

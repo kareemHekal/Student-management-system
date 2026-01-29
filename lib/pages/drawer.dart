@@ -6,12 +6,13 @@ import 'package:student_management_system/alert_dialogs/Reset_Grade_student_subs
 import 'package:student_management_system/alert_dialogs/add_out_come.dart';
 import 'package:student_management_system/alert_dialogs/change_password.dart';
 import 'package:student_management_system/alert_dialogs/verifiy_password.dart';
-import 'package:student_management_system/firebase/auth_services.dart';
 import 'package:student_management_system/provider.dart';
+
 import '../theme/colors_app.dart';
 import '../theme/text_style.dart';
 import 'allgrades.dart';
 import 'invoices/monthly_invoices_page.dart';
+import 'profile.dart';
 import 'subscription_checker/PaymentCheckPage.dart';
 
 class CustomDrawer extends StatefulWidget {
@@ -135,9 +136,17 @@ class _CustomDrawerState extends State<CustomDrawer> {
             ),
           ),
           _drawerTile(
-            icon: Icons.logout_rounded,
-            title: "تسجيل الخروج",
-            onTap: () => _handleLogout(context),
+            icon: Icons.person_3,
+            title: " الصفحه الشخصية",
+            onTap: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TeacherProfilePage(),
+                ),
+                (route) => false,
+              );
+            },
           ),
           const SizedBox(height: 14),
         ],
@@ -256,38 +265,6 @@ class _CustomDrawerState extends State<CustomDrawer> {
               ? const Color(0xffd63a3a)
               : AppColors.textOnDark.withOpacity(0.7),
         ),
-      ),
-    );
-  }
-
-  void _handleLogout(BuildContext context) async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("تسجيل الخروج",
-            style: AppTextStyles.customText(fontWeight: FontWeight.bold)),
-        content: Text("هل أنت متأكد أنك تريد تسجيل الخروج؟",
-            style: AppTextStyles.customText()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("إلغاء",
-                style:
-                    AppTextStyles.customText(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.statusAbsent),
-            onPressed: () async {
-              await AuthService().signOut();
-              Provider.of<TeacherProvider>(context, listen: false).logout();
-              Navigator.pushNamedAndRemoveUntil(
-                  context, '/login', (route) => false);
-            },
-            child: Text("خروج",
-                style: AppTextStyles.customText(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }

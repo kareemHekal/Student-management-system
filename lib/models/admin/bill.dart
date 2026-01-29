@@ -4,7 +4,12 @@ class Bill {
   final String teacherId;
   final double billAmount;
   final DateTime paidAt;
-  final DateTime expiryDate; // تاريخ انتهاء الفاتورة دي
+  final DateTime expiryDate;
+  final String subscriptionName;
+  final int subscriptionDurationInDays;
+  final String subscriptionDescription;
+
+  // تاريخ انتهاء الفاتورة دي
 
   Bill({
     required this.id,
@@ -13,10 +18,16 @@ class Bill {
     required this.billAmount,
     required this.paidAt,
     required this.expiryDate,
+    required this.subscriptionName,
+    required this.subscriptionDescription,
+    required this.subscriptionDurationInDays,
   });
 
   factory Bill.fromJson(Map<String, dynamic> json, String docId) {
     return Bill(
+      subscriptionDurationInDays: json['subscriptionDurationInDays'] ?? 0,
+      subscriptionName: json['subscriptionName'] ?? '',
+      subscriptionDescription: json['subscriptionDescription'] ?? '',
       id: docId,
       subscriptionId: json['subscriptionId'] ?? '',
       teacherId: json['teacherId'] ?? '',
@@ -28,7 +39,10 @@ class Bill {
 
   Map<String, dynamic> toJson() {
     return {
+      'subscriptionName': subscriptionName,
+      'subscriptionDescription': subscriptionDescription,
       'subscriptionId': subscriptionId,
+      'subscriptionDurationInDays': subscriptionDurationInDays,
       'teacherId': teacherId,
       'billAmount': billAmount,
       'paidAt': paidAt.toIso8601String(),

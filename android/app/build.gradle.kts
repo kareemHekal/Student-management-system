@@ -6,6 +6,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -35,8 +36,16 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // التعديل هنا يا كريم
+            isMinifyEnabled = true  // ده بيصغر حجم الـ APK وبيصعب سرقة الكود
+            isShrinkResources = true // ده بيشيل أي صور أو ملفات ملهاش لازمة
+
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+
+            // خلي بالك: لما تيجي ترفع للمتجر حقيقي، هتحتاج تغير debug لـ release هنا
             signingConfig = signingConfigs.getByName("debug")
         }
     }
