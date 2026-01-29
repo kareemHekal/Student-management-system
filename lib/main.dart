@@ -24,9 +24,15 @@ import 'provider.dart';
 void main() async {
   Bloc.observer = MyBlocObserver();
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } else {
+    Firebase.app();
+  }
+  // ------------------
 
   FlutterError.onError = (errorDetails) {
     FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
@@ -105,11 +111,13 @@ class AuthGate extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()));
         }
 
-        if (!snapshot.hasData) {
+        // استخدام ?. للتأكد من وجود المستخدم قبل الوصول لـ uid
+        final user = snapshot.data;
+
+        if (user == null) {
           return LoginScreen();
         }
 
-        // جلب بيانات الإصدار وبيانات المدرس معاً في طلب واحد
         return FutureBuilder(
           future: Future.wait([
             FirebaseFirestore.instance
@@ -118,7 +126,7 @@ class AuthGate extends StatelessWidget {
                 .get(),
             FirebaseFirestore.instance
                 .collection('teachers')
-                .doc(snapshot.data!.uid)
+                .doc(user.uid) // شلنا الـ ! واستخدمنا الـ user المؤمن
                 .get(),
           ]),
           builder: (context, AsyncSnapshot<List<dynamic>> combinedSnapshot) {
@@ -127,42 +135,58 @@ class AuthGate extends StatelessWidget {
                   body: Center(child: CircularProgressIndicator()));
             }
 
-            // التأكد من وصول البيانات
-            if (!combinedSnapshot.hasData || combinedSnapshot.hasError) {
+            // التحقق من وجود البيانات ومن عدم حدوث خطأ
+            if (!combinedSnapshot.hasData ||
+                combinedSnapshot.hasError ||
+                combinedSnapshot.data == null ||
+                combinedSnapshot.data!.length < 2) {
               return LoginScreen();
             }
 
-            final versionDoc = combinedSnapshot.data![0] as DocumentSnapshot;
-            final teacherDoc = combinedSnapshot.data![1] as DocumentSnapshot;
+            // الوصول للبيانات بشكل آمن
+            final versionDoc = combinedSnapshot.data?[0] as DocumentSnapshot?;
+            final teacherDoc = combinedSnapshot.data?[1] as DocumentSnapshot?;
 
-            // 1. أولاً: فحص الإصدار (Force Update)
-            String minVersion = versionDoc.exists
-                ? (versionDoc['min_version'] ?? "1.0.0")
-                : "1.0.0";
-            String downloadUrl =
-                versionDoc.exists ? (versionDoc['download_url'] ?? "") : "";
+            // لو ملفات الداتا مش موجودة أصلاً في الداتابيز
+            if (versionDoc == null || teacherDoc == null) {
+              return LoginScreen();
+            }
+
+            // 1. فحص الإصدار (Force Update)
+            String minVersion = "1.0.0";
+            String downloadUrl = "";
+
+            if (versionDoc.exists) {
+              final vData = versionDoc.data() as Map<String, dynamic>?;
+              minVersion = vData?['min_version'] ?? "1.0.0";
+              downloadUrl = vData?['download_url'] ?? "";
+            }
 
             if (AppConstants.currentAppVersion != minVersion) {
               return UpdateRequiredScreen(updateUrl: downloadUrl);
             }
 
-            // 2. ثانياً: فحص بيانات المدرس والاشتراك
+            // 2. فحص بيانات المدرس والاشتراك
             if (teacherDoc.exists) {
-              Teacher teacher = Teacher.fromJson(
-                  teacherDoc.data() as Map<String, dynamic>, teacherDoc.id);
+              final tData = teacherDoc.data() as Map<String, dynamic>?;
 
-              // تحديث الـ Provider
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Provider.of<TeacherProvider>(context, listen: false)
-                    .setTeacher(teacher);
-              });
+              if (tData != null) {
+                Teacher teacher = Teacher.fromJson(tData, teacherDoc.id);
 
-              // فحص الصلاحية (الوقت) والحالة
-              if (teacher.subscriptionEndTime.isAfter(DateTime.now()) &&
-                  teacher.isActive) {
-                return const Homescreen();
-              } else {
-                return const SubscriptionExpiredScreen();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  // حماية إضافية للـ Provider
+                  if (context.mounted) {
+                    Provider.of<TeacherProvider>(context, listen: false)
+                        .setTeacher(teacher);
+                  }
+                });
+
+                if (teacher.subscriptionEndTime.isAfter(DateTime.now()) &&
+                    teacher.isActive) {
+                  return const Homescreen();
+                } else {
+                  return const SubscriptionExpiredScreen();
+                }
               }
             }
 
