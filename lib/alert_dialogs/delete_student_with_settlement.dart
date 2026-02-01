@@ -1,10 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
 import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/models/Student_model.dart';
-import 'package:student_management_system/models/daily_invoice.dart';
-import 'package:student_management_system/models/payment.dart';
+import 'package:student_management_system/provider.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
 import 'package:student_management_system/theme/text_style.dart';
@@ -41,6 +40,7 @@ class _DeleteStudentWithSettlementDialogState
 
   @override
   Widget build(BuildContext context) {
+    final teacherProvider = Provider.of<TeacherProvider>(context);
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Container(
@@ -112,16 +112,20 @@ class _DeleteStudentWithSettlementDialogState
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
-          onPressed: _handleFinalDelete,
+          onPressed: () async {
+            await _handleFinalDelete();
+            await teacherProvider.refreshTeacherData();
+          },
           child: Text("تأكيد الحذف النهائي",
               style: AppTextStyles.customText(color: Colors.white)),
         ),
       ],
     );
   }
+
   Future<void> _handleFinalDelete() async {
     if (!_formKey.currentState!.validate()) return;
-
+    print("🥔🥔🥔🥔🥔🥔🥔🥔🥔");
     await runWithLoading(context, () async {
       // 1. Call the logic function we created earlier
       await FirebaseFunctions.addPaymentToFirestore(

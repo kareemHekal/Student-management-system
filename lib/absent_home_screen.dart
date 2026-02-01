@@ -7,7 +7,7 @@ import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
 import '../../theme/colors_app.dart';
 import '../../theme/text_style.dart';
-import 'cards/magmo3at/group_card.dart'; // Ensure this uses your premium style
+import 'cards/magmo3at/absence_group_card.dart'; // Ensure this uses your premium style
 
 class AbsentHomePage extends StatefulWidget {
   const AbsentHomePage({super.key});

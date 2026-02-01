@@ -59,135 +59,172 @@ class AddMagmo3a extends StatelessWidget {
               .firstOrNull;
 
           return Container(
-            // Fix: clipBehavior ensures the header doesn't show white corners underneath
-            clipBehavior: Clip.antiAlias,
-            decoration: const BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
+              // Fix: clipBehavior ensures the header doesn't show white corners underneath
+              clipBehavior: Clip.antiAlias,
+              decoration: const BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(25),
+                  topRight: Radius.circular(25),
+                ),
               ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
                 // --- Header ---
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+                  clipBehavior: Clip.antiAlias,
                   decoration: const BoxDecoration(
-                    color: AppColors.primaryMain,
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      // زيادة الاستدارة لمظهر أنعم
+                      topRight: Radius.circular(30),
+                    ),
                   ),
-                  child: Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        existingMagmo3a == null
-                            ? Icons.group_add_rounded
-                            : Icons.edit_calendar_rounded,
-                        color: AppColors.white,
+                      // 1. مقبض السحب العلوي (Drag Handle)
+                      Container(
+                        margin: const EdgeInsets.only(top: 12, bottom: 8),
+                        width: 45,
+                        height: 4.5,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        existingMagmo3a == null
-                            ? "إضافة مجموعة جديدة"
-                            : "تعديل بيانات المجموعة",
-                        style: AppTextStyles.customText(
-                          color: AppColors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+
+                      // 2. الهيدر الفعلي (Title Section)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
+                        child: Row(
+                          children: [
+                            // أيقونة مميزة داخل خلفية دائرية خفيفة
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryMain.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                existingMagmo3a == null
+                                    ? Icons.group_add_rounded
+                                    : Icons.edit_calendar_rounded,
+                                color: AppColors.primaryMain,
+                                size: 26,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            // العنوان
+                            Expanded(
+                              child: Text(
+                                existingMagmo3a == null
+                                    ? "إضافة مجموعة جديدة"
+                                    : "تعديل بيانات المجموعة",
+                                style: AppTextStyles.customText(
+                                  color: AppColors.textPrimary,
+                                  // غيّرته للداكن ليتماشى مع الخلفية البيضاء
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // --- Content ---
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              _buildDropdownField(
+                                context,
+                                label: "يوم المحاضرة",
+                                hint: "اختر اليوم",
+                                items: dayMapping.keys.toList(),
+                                // Show Arabic Days
+                                selectedValue: currentArabicDay,
+                                onChanged: (arabicValue) {
+                                  // Convert back to English for logic
+                                  String englishDay = dayMapping[arabicValue]!;
+                                  cubit.selectDay(englishDay);
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                              _buildTimePickerField(context, cubit),
+                              const SizedBox(height: 20),
+                              existingMagmo3a != null
+                                  ? const SizedBox.shrink()
+                                  : _buildDropdownField(
+                                      context,
+                                      label: "المرحلة الدراسية",
+                                      hint: "اختر المرحلة",
+                                      items: cubit.secondaries,
+                                      selectedValue: cubit.selectedSecondary,
+                                      onChanged: (value) =>
+                                          cubit.selectSecondary(value),
+                                    ),
+                              const SizedBox(height: 35),
+                              state is Magmo3aLoading
+                                  ? const CircularProgressIndicator()
+                                  : SizedBox(
+                                      width: double.infinity,
+                                      height: 55,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              AppColors.primaryMain,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(15),
+                                          ),
+                                        ),
+                                        onPressed: () async {
+                                          if (existingMagmo3a == null) {
+                                            cubit.addMagmo3a();
+                                          } else {
+                                            final updatedMagmo3a = Magmo3amodel(
+                                              id: existingMagmo3a!.id,
+                                              day: cubit.chosenDay,
+                                              // Logic remains English
+                                              grade: cubit.selectedSecondary,
+                                              time: cubit.timeOfDay,
+                                            );
+
+                                            await FirebaseFunctions
+                                          .editMagmo3aInDay(
+                                        oldDay ?? existingMagmo3a!.day!,
+                                        existingMagmo3a!.grade!,
+                                        updatedMagmo3a,
+                                      );
+
+                                            if (context.mounted) {
+                                              Navigator.pop(context);
+                                              AppSnackBars.showSuccess(context,
+                                                  'تم التعديل بنجاح ✅');
+                                            }
+                                          }
+                                        },
+                                        child: Text(
+                                          existingMagmo3a == null
+                                              ? "إضافة"
+                                              : "تعديل",
+                                          style: AppTextStyles.customText(
+                                            color: AppColors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-
-                // --- Content ---
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        _buildDropdownField(
-                          context,
-                          label: "يوم المحاضرة",
-                          hint: "اختر اليوم",
-                          items: dayMapping.keys.toList(),
-                          // Show Arabic Days
-                          selectedValue: currentArabicDay,
-                          onChanged: (arabicValue) {
-                            // Convert back to English for logic
-                            String englishDay = dayMapping[arabicValue]!;
-                            cubit.selectDay(englishDay);
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        _buildTimePickerField(context, cubit),
-                        const SizedBox(height: 20),
-                        existingMagmo3a != null
-                            ? const SizedBox.shrink()
-                            : _buildDropdownField(
-                                context,
-                                label: "المرحلة الدراسية",
-                                hint: "اختر المرحلة",
-                                items: cubit.secondaries,
-                                selectedValue: cubit.selectedSecondary,
-                                onChanged: (value) =>
-                                    cubit.selectSecondary(value),
-                              ),
-                        const SizedBox(height: 35),
-                        state is Magmo3aLoading
-                            ? const CircularProgressIndicator()
-                            : SizedBox(
-                                width: double.infinity,
-                                height: 55,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryMain,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                  ),
-                                  onPressed: () async {
-                                    if (existingMagmo3a == null) {
-                                      cubit.addMagmo3a();
-                                    } else {
-                                      final updatedMagmo3a = Magmo3amodel(
-                                        id: existingMagmo3a!.id,
-                                        day: cubit.chosenDay,
-                                        // Logic remains English
-                                        grade: cubit.selectedSecondary,
-                                        time: cubit.timeOfDay,
-                                      );
-
-                                      await FirebaseFunctions.editMagmo3aInDay(
-                                        oldDay ?? existingMagmo3a!.day!,
-                                        existingMagmo3a!.grade!,
-                                  updatedMagmo3a,
-                                );
-
-                                      if (context.mounted) {
-                                        Navigator.pop(context);
-                                        AppSnackBars.showSuccess(
-                                            context, 'تم التعديل بنجاح ✅');
-                                      }
-                                    }
-                                  },
-                                  child: Text(
-                                    existingMagmo3a == null ? "إضافة" : "تعديل",
-                                    style: AppTextStyles.customText(
-                                      color: AppColors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
+                )
+              ]));
         },
       ),
     );

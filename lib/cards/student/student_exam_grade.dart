@@ -7,7 +7,7 @@ import '../../models/exam_model.dart';
 import '../../models/mini_exam.dart';
 import '../../models/student_exam_grade.dart';
 import '../../theme/colors_app.dart';
-import '../../theme/text_style.dart'; // استيراد كلاس الستايلات الموحد
+import '../../theme/text_style.dart';
 
 class StudentExamCard extends StatefulWidget {
   final String gradeName;
@@ -97,10 +97,7 @@ class _StudentExamCardState extends State<StudentExamCard> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             gradient: const LinearGradient(
-              colors: [
-                AppColors.primaryMain,
-                AppColors.secondaryMain,
-              ],
+              colors: [AppColors.primaryMain, AppColors.secondaryMain],
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
             ),
@@ -113,105 +110,135 @@ class _StudentExamCardState extends State<StudentExamCard> {
               ),
             ],
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                bottom: -10,
-                left: -20,
-                child: Center(
-                  child: _CardHelpers.buildCircle(120, 0.1),
-                ),
-              ),
-              Positioned(
-                top: -10,
-                right: -10,
-                child: _CardHelpers.buildCircle(80, 0.15),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context, ratio),
-                    const Divider(color: AppColors.white, thickness: 0.5),
-                    const SizedBox(height: 8),
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AppColors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'درجة الطالب: ${widget.examGrade.studentGrade}',
-                            style: AppTextStyles.customText(
-                              fontSize: 16,
-                              color: AppColors.white,
-                              fontWeight: FontWeight.w500,
+          child: ClipRRect(
+            // حماية الزوايا والدوائر الخلفية
+            borderRadius: BorderRadius.circular(22),
+            child: Stack(
+              children: [
+                Positioned(
+                    bottom: -10,
+                    left: -20,
+                    child: _CardHelpers.buildCircle(120, 0.1)),
+                Positioned(
+                    top: -10,
+                    right: -10,
+                    child: _CardHelpers.buildCircle(80, 0.15)),
+                Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildHeader(context),
+                      const Divider(
+                          color: AppColors.white, thickness: 0.5, height: 25),
+
+                      // حاوية الدرجات الملونة
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.white.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Row(
+                          children: [
+                            // درجة الطالب
+                            Expanded(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  'درجة الطالب: ${widget.examGrade.studentGrade}',
+                                  style: AppTextStyles.customText(
+                                    fontSize: 16,
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                          Text(
-                            'الدرجة الكاملة: ${miniExam!.fullGrade.toStringAsFixed(0)}',
-                            style: AppTextStyles.customText(
-                              fontSize: 16,
-                              color: AppColors.white,
-                              fontWeight: FontWeight.bold,
+                            const SizedBox(width: 8),
+                            // فاصل صغير
+                            Container(
+                                width: 1,
+                                height: 20,
+                                color: AppColors.white.withOpacity(0.3)),
+                            const SizedBox(width: 8),
+                            // الدرجة الكاملة
+                            Expanded(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'من: ${miniExam!.fullGrade.toStringAsFixed(0)}',
+                                  style: AppTextStyles.customText(
+                                    fontSize: 16,
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildProgressAndNotes(ratio),
-                  ],
+                      const SizedBox(height: 16),
+                      _buildProgressAndNotes(ratio),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, double ratio) {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // حماية أسماء الامتحانات الطويلة من التصادم مع الأزرار
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                exam!.name,
-                style: AppTextStyles.customText(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.white,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  exam!.name,
+                  style: AppTextStyles.customText(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.white,
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                miniExam!.miniExamName,
-                style: AppTextStyles.customText(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.white.withOpacity(0.8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  miniExam!.miniExamName,
+                  style: AppTextStyles.customText(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.white.withOpacity(0.85),
+                  ),
                 ),
               ),
             ],
           ),
         ),
+        const SizedBox(width: 12),
+        // أزرار التحكم
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             _CardHelpers.buildActionCircle(
               icon: Icons.edit,
-              tooltip: 'تعديل الدرجة أو الملاحظة',
+              tooltip: 'تعديل',
               circleColor: AppColors.white.withOpacity(0.15),
               iconColor: AppColors.white,
               onPressed: () async {
@@ -229,7 +256,7 @@ class _StudentExamCardState extends State<StudentExamCard> {
             const SizedBox(width: 8),
             _CardHelpers.buildActionCircle(
               icon: Icons.delete_forever,
-              tooltip: 'حذف هذا الامتحان من سجل الطالب',
+              tooltip: 'حذف',
               circleColor: AppColors.statusAbsent,
               iconColor: AppColors.white,
               onPressed: () {
@@ -261,39 +288,47 @@ class _StudentExamCardState extends State<StudentExamCard> {
     }
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 50,
-              height: 50,
-              child: CircularProgressIndicator(
+        // مؤشر النسبة الدائري بحجم ثابت
+        SizedBox(
+          width: 50,
+          height: 50,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CircularProgressIndicator(
                 value: ratio,
-                backgroundColor: AppColors.white.withOpacity(0.3),
+                backgroundColor: AppColors.white.withOpacity(0.2),
                 valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                strokeWidth: 8,
+                strokeWidth: 6,
               ),
-            ),
-            Text(
-              '${(ratio * 100).toInt()}%',
-              style: AppTextStyles.customText(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: AppColors.white,
+              FittedBox(
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Text(
+                    '${(ratio * 100).toInt()}%',
+                    style: AppTextStyles.customText(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.white,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(width: 24),
+        const SizedBox(width: 16),
+        // الملاحظات بمرونة كاملة
         Expanded(
           child: Text(
             widget.examGrade.description.isEmpty
                 ? 'لا يوجد ملاحظات'
                 : widget.examGrade.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: AppTextStyles.customText(
-              fontSize: 16,
+              fontSize: 14,
               color: AppColors.white.withOpacity(0.9),
             ).copyWith(fontStyle: FontStyle.italic),
           ),
@@ -323,8 +358,8 @@ class _CardHelpers {
     String? tooltip,
   }) {
     return Container(
-      width: 40,
-      height: 40,
+      width: 38,
+      height: 38,
       decoration: BoxDecoration(
         color: circleColor,
         shape: BoxShape.circle,
@@ -332,11 +367,7 @@ class _CardHelpers {
       child: IconButton(
         padding: EdgeInsets.zero,
         tooltip: tooltip,
-        icon: Icon(
-          icon,
-          color: iconColor,
-          size: 20,
-        ),
+        icon: Icon(icon, color: iconColor, size: 18),
         onPressed: onPressed,
       ),
     );

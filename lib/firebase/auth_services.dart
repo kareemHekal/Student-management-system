@@ -1,5 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:student_management_system/models/admin/teacher.dart';
 
 class AuthService {
@@ -10,19 +10,35 @@ class AuthService {
   Future<UserCredential?> registerTeacher(
       String email, String password, String name, String phone) async {
     try {
+      // 1. إنشاء الحساب في Firebase Auth
       UserCredential res = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
 
-      // إنشاء نسخة المدرس في Firestore بقيم افتراضية (غير مفعل)
-      await _db.collection('teachers').doc(res.user!.uid).set({
-        'name': name,
-        'phoneNumber': phone,
-        'createdAt': DateTime.now().toIso8601String(),
-        'isActive': false, // لا يفتح إلا بموافقتك
-        'totalStudents': 0,
-        'subscriptionTotalStudents': 0,
-        'subscriptionEndTime': DateTime.now().toIso8601String(), // ينتهي الآن
-      });
+      // 2. إنشاء كائن (Object) من المدرس بالقيم الابتدائية "الخام"
+      // نستخدم الموديل نفسه لضمان توافق الحقول
+      Teacher newTeacher = Teacher(
+        id: res.user!.uid,
+        // المعرف القادم من Auth
+        name: name,
+        phoneNumber: phone,
+        createdAt: DateTime.now(),
+        isActive: false,
+        // لا يفتح إلا بموافقتك
+        subscriptionEndTime: DateTime.now(),
+        // ينتهي فوراً (يحتاج تفعيل)
+        baseStudentLimit: 0,
+        // ليمت صفر حتى يحدد الأدمن باقة
+        currentStudentCount: 0,
+        activeBoosts: [], // لستة فارغة في البداية
+      );
+
+      // 3. رفع البيانات باستخدام toJson() لضمان عدم نسيان أي حقل
+      // وتجنب كتابة الكيز (Keys) يدوياً
+      await _db
+          .collection('teachers')
+          .doc(res.user!.uid)
+          .set(newTeacher.toJson());
+
       return res;
     } catch (e) {
       rethrow;

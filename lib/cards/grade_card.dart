@@ -45,7 +45,6 @@ class _CardHelpers {
   }
 }
 // --- End Card Helpers ---
-
 class GradeActionCard extends StatelessWidget {
   final String gradeName;
   final VoidCallback onRename;
@@ -65,7 +64,7 @@ class GradeActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color defaultActionColor = AppColors.white;
-    const int defaultActionAlpha = 51; // 0.20 opacity
+    const int defaultActionAlpha = 51;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -75,10 +74,7 @@ class GradeActionCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
           gradient: const LinearGradient(
-            colors: [
-              AppColors.primaryMain,
-              AppColors.secondaryMain,
-            ],
+            colors: [AppColors.primaryMain, AppColors.secondaryMain],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -93,27 +89,25 @@ class GradeActionCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // لجعل الكرت مرن مع المحتوى
           children: [
             // 1. HEADER (School Icon + Grade Name)
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              // توسيط الأيقونة مع النص
               children: [
                 Icon(
                   Icons.school,
                   size: 30,
                   color: AppColors.white.withAlpha(204),
                 ),
-                const SizedBox(width: 16),
-
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     gradeName,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: true,
-                    // تم التعديل هنا لاستخدام الكلاس الخاص بك
+                    // إزالة maxLines للسماح للنص بالتمدد إذا كان الخط كبيراً
                     style: AppTextStyles.customText(
-                      fontSize: 20,
+                      fontSize: 18, // تصغير بسيط لضمان المساحة
                       fontWeight: FontWeight.bold,
                       color: AppColors.white,
                     ),
@@ -122,37 +116,50 @@ class GradeActionCard extends StatelessWidget {
               ],
             ),
 
-            const Divider(color: AppColors.white, thickness: 0.5, height: 25),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(color: AppColors.white, thickness: 0.5, height: 1),
+            ),
 
-            // 2. ACTIONS ROW
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildActionItem(
-                  icon: Icons.delete_forever,
-                  label: 'حذف',
-                  onPressed: onDelete,
-                  color: AppColors.statusAbsent,
-                ),
-                _buildActionItem(
-                  icon: Icons.edit,
-                  label: 'تعديل',
-                  onPressed: onRename,
-                  color: defaultActionColor.withAlpha(defaultActionAlpha),
-                ),
-                _buildActionItem(
-                  icon: Icons.assignment,
-                  label: 'الامتحانات',
-                  onPressed: onNavigateToExams,
-                  color: defaultActionColor.withAlpha(defaultActionAlpha),
-                ),
-                _buildActionItem(
-                  icon: Icons.monetization_on,
-                  label: 'الاشتراكات',
-                  onPressed: onNavigateToSubscriptions,
-                  color: defaultActionColor.withAlpha(defaultActionAlpha),
-                ),
-              ],
+            // 2. ACTIONS ROW (استخدام Wrap بدل Row)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Wrap(
+                  alignment: WrapAlignment.spaceAround, // توزيع متساوي
+                  runSpacing: 15, // مسافة عمودية في حال نزل الأزرار لسطر جديد
+                  spacing: 10, // مسافة أفقية بين الأزرار
+                  children: [
+                    _buildActionItem(
+                      constraints,
+                      icon: Icons.delete_forever,
+                      label: 'حذف',
+                      onPressed: onDelete,
+                      color: AppColors.statusAbsent,
+                    ),
+                    _buildActionItem(
+                      constraints,
+                      icon: Icons.edit,
+                      label: 'تعديل',
+                      onPressed: onRename,
+                      color: defaultActionColor.withAlpha(defaultActionAlpha),
+                    ),
+                    _buildActionItem(
+                      constraints,
+                      icon: Icons.assignment,
+                      label: 'الامتحانات',
+                      onPressed: onNavigateToExams,
+                      color: defaultActionColor.withAlpha(defaultActionAlpha),
+                    ),
+                    _buildActionItem(
+                      constraints,
+                      icon: Icons.monetization_on,
+                      label: 'الاشتراكات',
+                      onPressed: onNavigateToSubscriptions,
+                      color: defaultActionColor.withAlpha(defaultActionAlpha),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -160,31 +167,47 @@ class GradeActionCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionItem({
+  Widget _buildActionItem(
+    BoxConstraints constraints, {
     required IconData icon,
     required String label,
     required VoidCallback onPressed,
     required Color color,
   }) {
-    return Column(
-      children: [
-        _CardHelpers.buildActionCircle(
-          icon: icon,
-          tooltip: label,
-          circleColor: color,
-          iconColor: AppColors.textOnDark,
-          onPressed: onPressed,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTextStyles.customText(
-            fontSize: 12,
-            color: AppColors.white.withAlpha(204),
-            fontWeight: FontWeight.bold,
+    // حساب عرض العنصر الواحد ليكون تقريباً ربع العرض المتاح في الحالة الطبيعية
+    // ولكن مع حد أدنى لضمان عدم ضغط النصوص
+    double itemWidth = (constraints.maxWidth - 30) / 4;
+    if (itemWidth < 70) itemWidth = 75; // الحد الأدنى لعرض الزر
+
+    return SizedBox(
+      width: itemWidth,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _CardHelpers.buildActionCircle(
+            icon: icon,
+            tooltip: label,
+            circleColor: color,
+            iconColor: AppColors.textOnDark,
+            onPressed: onPressed,
           ),
-        ),
-      ],
+          const SizedBox(height: 6),
+          // استخدام FittedBox هنا يضمن أن الكلمة الطويلة (مثل الاشتراكات)
+          // لن تخرج عن حدود الزر بل سيصغر حجمها قليلاً
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.customText(
+                fontSize: 11, // حجم خط مناسب للتجاوب
+                color: AppColors.white.withAlpha(204),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

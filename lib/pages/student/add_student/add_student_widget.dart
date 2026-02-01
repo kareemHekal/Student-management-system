@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:student_management_system/alert_dialogs/RemoveFromGroupsListDialog.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
 
 import '../../../bloc/AddStudent/add_student_cubit.dart';
 import '../../../bloc/AddStudent/add_student_state.dart';
@@ -86,19 +87,13 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
       context.loaderOverlay.hide();
     }
     if (state is StudentAddedSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnackBar('تم إضافة الطالب بنجاح!', AppColors.statusPresent),
-      );
-      // بعد الإضافة الناجحة، قد تحتاج إلى مسح الحقول أو العودة
+      AppSnackBars.showSuccess(context, 'تم إضافة الطالب بنجاح!');
     }
     if (state is StudentUpdated) {
-      // هذه الحالة قد تكون موجودة في cubit الإضافة لتحديث الـ UI مثل قائمة المجموعات
       setState(() {});
     }
     if (state is StudentAddedFailure) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnackBar(state.errorMessage, AppColors.statusAbsent),
-      );
+      AppSnackBars.showError(context, state.errorMessage);
     }
     if (state is StudentValidationError) {
       ScaffoldMessenger.of(context).showSnackBar(

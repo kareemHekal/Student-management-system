@@ -22,6 +22,7 @@ class _ResetGradeAndStudentSubscriptionsDialogState
   bool deleteExams = false;
   bool deleteGroups = false;
   bool deleteStudents = false;
+  bool deleteInvoices = false;
 
   List<String> allGrades = [];
   List<String> selectedGrades = [];
@@ -106,6 +107,16 @@ class _ResetGradeAndStudentSubscriptionsDialogState
                 value: deleteStudents,
                 color: Colors.red[700]!,
                 onChanged: (v) => setState(() => deleteStudents = v!),
+              ),
+              const Divider(height: 32, thickness: 1),
+              _buildOption(
+                title: 'حذف جميع الفواتير نهائياً',
+                subtitle:
+                    'تحذير: سيتم مسح بيانات كل الفواتير بالكامل من قاعدة البيانات.',
+                icon: Icons.folder_off_rounded,
+                value: deleteInvoices,
+                color: Colors.red[700]!,
+                onChanged: (v) => setState(() => deleteInvoices = v!),
               ),
             ],
           ),
@@ -277,7 +288,8 @@ class _ResetGradeAndStudentSubscriptionsDialogState
         resetAbsence ||
         deleteExams ||
         deleteGroups ||
-        deleteStudents;
+        deleteStudents ||
+        deleteInvoices;
 
     return [
       Row(
@@ -307,9 +319,10 @@ class _ResetGradeAndStudentSubscriptionsDialogState
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              onPressed: (selectedGrades.isEmpty || !isAnythingSelected)
-                  ? null
-                  : () => _handleConfirm(context),
+              onPressed: ((!selectedGrades.isEmpty && isAnythingSelected) ||
+                      deleteInvoices)
+                  ? () => _handleConfirm(context)
+                  : null,
               child: Text(
                 'بدء التنفيذ',
                 style: AppTextStyles.customText(
@@ -323,7 +336,6 @@ class _ResetGradeAndStudentSubscriptionsDialogState
       ),
     ];
   }
-
   void _handleConfirm(BuildContext context) {
     final parentContext = context;
     showVerifyPasswordDialog(
@@ -331,24 +343,43 @@ class _ResetGradeAndStudentSubscriptionsDialogState
       onVerified: () async {
         await runWithLoading(parentContext, () async {
           try {
-            for (final grade in selectedGrades) {
+            // إذا كان المستخدم اختار حذف الفواتير فقط بدون اختيار مراحل
+            if (deleteInvoices && selectedGrades.isEmpty) {
               await FirebaseFunctions.resetGradeData(
-                daysList: [
-                  "Saturday",
-                  "Sunday",
-                  "Monday",
-                  "Tuesday",
-                  "Wednesday",
-                  "Thursday",
-                  "Friday"
-                ],
-                gradeName: grade,
-                resetSubscriptions: resetSubs,
-                resetAbsence: resetAbsence,
-                deleteExams: deleteExams,
-                deleteGroups: deleteGroups,
-                deleteStudents: deleteStudents,
+                daysList: [],
+                gradeName: "",
+                // نرسل اسم مرحلة فارغ
+                resetSubscriptions: false,
+                resetAbsence: false,
+                deleteExams: false,
+                deleteGroups: false,
+                deleteInvoices: true,
+                deleteStudents: false,
               );
+            } else {
+              // الحالة الطبيعية: تنفيذ العمليات لكل مرحلة مختارة
+              for (final grade in selectedGrades) {
+                await FirebaseFunctions.resetGradeData(
+                  daysList: [
+                    "Saturday",
+                    "Sunday",
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday"
+                  ],
+                  gradeName: grade,
+                  resetSubscriptions: resetSubs,
+                  resetAbsence: resetAbsence,
+                  deleteExams: deleteExams,
+                  deleteGroups: deleteGroups,
+                  deleteInvoices: deleteInvoices,
+                  deleteStudents: deleteStudents,
+                );
+                // بعد أول لفة، نوقف حذف الفواتير عشان ميتكررش الطلب للفيربيز
+                deleteInvoices = false;
+              }
             }
 
             if (parentContext.mounted) {

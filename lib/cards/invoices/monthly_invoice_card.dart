@@ -16,7 +16,6 @@ class MonthlyInvoiceCard extends StatelessWidget {
     super.key,
   });
 
-  // دائرة زخرفية للخلفية (للحفاظ على نفس الثيم)
   Widget _buildCircle(double size, double opacity) {
     return Container(
       width: size,
@@ -76,14 +75,10 @@ class MonthlyInvoiceCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         child: Container(
-          // التعديل المطلوب في اللون والتدرج والظلال هنا
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             gradient: const LinearGradient(
-              colors: [
-                AppColors.primaryMain,
-                AppColors.secondaryMain,
-              ],
+              colors: [AppColors.primaryMain, AppColors.secondaryMain],
               begin: Alignment.topRight,
               end: Alignment.topLeft,
             ),
@@ -97,33 +92,25 @@ class MonthlyInvoiceCard extends StatelessWidget {
             ],
           ),
           child: ClipRRect(
-            // لمنع الدوائر من الخروج عن حدود الكارت
             borderRadius: BorderRadius.circular(22),
             child: Stack(
               children: [
-                // دوائر زخرفية لتعطي نفس روح الكارت اليومي
+                Positioned(top: -10, right: -10, child: _buildCircle(60, 0.17)),
                 Positioned(
-                  top: -10,
-                  right: -10,
-                  child: _buildCircle(60, 0.17),
-                ),
-                Positioned(
-                  bottom: -40,
-                  left: -40,
-                  child: _buildCircle(100, 0.1),
-                ),
-
+                    bottom: -40, left: -40, child: _buildCircle(100, 0.1)),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      // --- الصف العلوي: العنوان والأزرار ---
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const SizedBox(width: 8),
-                              Text(
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
                                 "تقرير شهر: ${_formatMonthAr(monthKey)}",
                                 style: AppTextStyles.customText(
                                   fontSize: 18,
@@ -131,24 +118,16 @@ class MonthlyInvoiceCard extends StatelessWidget {
                                   color: AppColors.white,
                                 ),
                               ),
-                            ],
-                          ),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.white.withOpacity(0.15),
-                              shape: BoxShape.circle,
                             ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: const Icon(
-                                Icons.arrow_forward_ios,
-                                size: 18,
-                                color: AppColors.white,
-                              ),
-                              onPressed: () {
-                                Navigator.push(
+                          ),
+                          const SizedBox(width: 8),
+                          // أزرار الأكشن
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildHeaderButton(
+                                icon: Icons.arrow_forward_ios,
+                                onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => WeeklyReportsPage(
@@ -156,37 +135,28 @@ class MonthlyInvoiceCard extends StatelessWidget {
                                       weeklyInvoices: weeklyInvoices,
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                          ),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.white.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: const Icon(
-                                Icons.print,
-                                size: 18,
-                                color: AppColors.white,
+                                ),
                               ),
-                              onPressed: () {
-                                runWithLoading(context, () async {
-                                  await InvoicePdfGenerator
-                                      .createMonthlyInvoicePDF(weeklyInvoices,
-                                          _formatMonthAr(monthKey), context);
-                                });
-                              },
-                            ),
+                              const SizedBox(width: 8),
+                              _buildHeaderButton(
+                                icon: Icons.print,
+                                onTap: () {
+                                  runWithLoading(context, () async {
+                                    await InvoicePdfGenerator
+                                        .createMonthlyInvoicePDF(weeklyInvoices,
+                                            _formatMonthAr(monthKey), context);
+                                  });
+                                },
+                              ),
+                            ],
                           ),
                         ],
                       ),
+
                       const Divider(
                           color: AppColors.white, height: 25, thickness: 0.5),
+
+                      // --- الصف السفلي: ملخص الأرقام الشهري ---
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -215,6 +185,23 @@ class MonthlyInvoiceCard extends StatelessWidget {
     );
   }
 
+  Widget _buildHeaderButton(
+      {required IconData icon, required VoidCallback onTap}) {
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: AppColors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        icon: Icon(icon, size: 16, color: AppColors.white),
+        onPressed: onTap,
+      ),
+    );
+  }
+
   Widget _buildVerticalDivider() {
     return Container(
       height: 35,
@@ -226,22 +213,31 @@ class MonthlyInvoiceCard extends StatelessWidget {
   Widget _buildSummaryItem(String label, double amount, Color color) {
     return Expanded(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.customText(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.white.withOpacity(0.9),
+          // حماية النص الثابت (Label)
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: AppTextStyles.customText(
+                fontSize: 12, // تصغير بسيط للمساحة
+                fontWeight: FontWeight.w600,
+                color: AppColors.white.withOpacity(0.9),
+              ),
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            "${amount.toStringAsFixed(0)} ج.م",
-            style: AppTextStyles.customText(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: color,
+          // حماية الرقم (Amount)
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              "${amount.toStringAsFixed(0)} ج.م",
+              style: AppTextStyles.customText(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],

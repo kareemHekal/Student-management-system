@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:student_management_system/alert_dialogs/delete_grade.dart';
 import 'package:student_management_system/alert_dialogs/rename_grade.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
+import 'package:student_management_system/theme/text_style.dart';
 
 import '../cards/grade_card.dart';
 import '../firebase/firebase_functions.dart';
@@ -106,54 +109,151 @@ class _AllgradesState extends State<Allgrades> {
   }
 
 
-
   void showAddGradeDialog(BuildContext context) {
-    TextEditingController gradeController = TextEditingController();
+    final TextEditingController gradeController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("إضافة صف جديد"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("من فضلك أدخل اسم الصف الجديد."),
-              TextFormField(
-                controller: gradeController,
-                decoration: const InputDecoration(
-                  labelText: "اسم الصف",
-                  hintText: "أدخل اسم الصف",
-                ),
+          backgroundColor: AppColors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          titlePadding: EdgeInsets.zero,
+          title: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: AppColors.primaryMain,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("إلغاء"),
             ),
-            TextButton(
-              onPressed: () async {
-                String newGrade = gradeController.text.trim();
-                if (newGrade.isNotEmpty) {
-                  await FirebaseFunctions.addGradeToList(newGrade);
-                  await FirebaseFunctions.createGradeSubscriptionDoc(
-                      GradeSubscriptionsModel(
-                          gradeName: newGrade, subscriptions: []));
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("تمت إضافة الصف بنجاح")),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("من فضلك أدخل اسم الصف")),
-                  );
-                }
-              },
-              child: const Text("حفظ"),
+            child: Row(
+              children: [
+                const Icon(Icons.school_rounded, color: AppColors.white),
+                const SizedBox(width: 12),
+                Text(
+                  'إضافة صف جديد',
+                  style: AppTextStyles.customText(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+                Text(
+                  "من فضلك أدخل اسم الصف الدراسي الجديد ليتم اعتماده في النظام.",
+                  style: AppTextStyles.customText(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: gradeController,
+                  style: AppTextStyles.customText(fontSize: 16),
+                  decoration: InputDecoration(
+                    labelText: 'اسم الصف',
+                    hintText: 'مثل: الصف الأول الثانوي',
+                    prefixIcon: const Icon(Icons.edit_calendar_rounded,
+                        color: AppColors.primaryMain),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide(color: Colors.grey[200]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: BorderSide(color: Colors.grey[200]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: const BorderSide(
+                          color: AppColors.primaryMain, width: 1.5),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'من فضلك أدخل اسم الصف';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'إلغاء',
+                      style: AppTextStyles.customText(
+                          color: AppColors.textSecondary),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryMain,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () async {
+                      if (!formKey.currentState!.validate()) return;
+                      String newGrade = gradeController.text.trim();
+                      await runWithLoading(context, () async {
+                        try {
+                          await FirebaseFunctions.addGradeToList(newGrade);
+                          await FirebaseFunctions.createGradeSubscriptionDoc(
+                            GradeSubscriptionsModel(
+                              gradeName: newGrade,
+                              subscriptions: [],
+                            ),
+                          );
+
+                          if (context.mounted) {
+                            Navigator.pop(context); // إغلاق الـ Dialog
+                            AppSnackBars.showSuccess(
+                                context, "تمت إضافة الصف $newGrade بنجاح");
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppSnackBars.showError(
+                                context, "حدث خطأ أثناء الإضافة");
+                          }
+                        }
+                      });
+                    },
+                    child: Text(
+                      'حفظ الصف',
+                      style: AppTextStyles.customText(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         );

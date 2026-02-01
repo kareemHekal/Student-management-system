@@ -9,7 +9,7 @@ class AppTextStyles {
     Color color = AppColors.textPrimary,
     FontWeight fontWeight = FontWeight.normal,
   }) {
-    return GoogleFonts.mada(
+    return GoogleFonts.cairo(
       fontSize: fontSize,
       color: color,
       fontWeight: fontWeight,

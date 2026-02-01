@@ -36,9 +36,11 @@ class FirebaseFunctions {
     await newDocRef.set(magmo3a);
   }
 
-  static Future<void> editMagmo3aInDay(String oldDay,
-      String oldGrade,
-      Magmo3amodel updatedMagmo3a,) async {
+  static Future<void> editMagmo3aInDay(
+    String oldDay,
+    String oldGrade,
+    Magmo3amodel updatedMagmo3a,
+  ) async {
     final newDay = updatedMagmo3a.day;
 
     // 🧩 1️⃣ Move document if the day changed
@@ -200,6 +202,7 @@ class FirebaseFunctions {
           toFirestore: (value, _) => value.toJson(),
         );
   }
+
   // =============================== Student Functions ===============================
 
   // =============================== Student Management ===============================
@@ -254,12 +257,27 @@ class FirebaseFunctions {
     required bool deleteExams,
     required bool deleteGroups,
     required bool deleteStudents,
+    required bool deleteInvoices,
   }) async {
     final firestore = FirebaseFirestore.instance;
 
     try {
+      if (deleteInvoices) {
+        final invoicesSnap =
+            await firestore.doc(_teacherPath).collection('big_invoices').get();
+
+        final invoiceBatch = firestore.batch();
+        for (var doc in invoicesSnap.docs) {
+          invoiceBatch.delete(doc.reference);
+        }
+        await invoiceBatch.commit();
+
+        // نغير القيمة لـ false عشان ميتكررش الحذف مع كل مرحلة لو مختار أكتر من مرحلة
+        deleteInvoices = false;
+      }
+
       // 1. مسح اشتراكات المرحلة - المسار الجديد داخل ثابت المدرس
-      if (resetSubscriptions) {
+      if (resetSubscriptions && gradeName.isNotEmpty) {
         await firestore
             .doc(_teacherPath)
             .collection('constants')
@@ -269,59 +287,61 @@ class FirebaseFunctions {
             .update({'subscriptions': []});
       }
 
-      // 2. معالجة الطلاب
-      final allStudents = await getAllStudentsByGrade_future(gradeName);
-      const batchSize = 400;
+      // --- 3. معالجة الطلاب (فقط إذا تم اختيار مرحلة) ---
+      if (gradeName.isNotEmpty) {
+        final allStudents = await getAllStudentsByGrade_future(gradeName);
+        const batchSize = 400;
 
-      for (int i = 0; i < allStudents.length; i += batchSize) {
-        final batch = firestore.batch();
-        final chunk = allStudents.skip(i).take(batchSize);
+        for (int i = 0; i < allStudents.length; i += batchSize) {
+          final batch = firestore.batch();
+          final chunk = allStudents.skip(i).take(batchSize);
 
-        for (final student in chunk) {
-          final studentRef = getSecondaryCollection(gradeName).doc(student.id);
+          for (final student in chunk) {
+            final studentRef =
+                getSecondaryCollection(gradeName).doc(student.id);
 
-          if (deleteStudents) {
-            batch.delete(studentRef);
-          } else {
-            Map<String, dynamic> updates = {};
-            if (resetSubscriptions) updates['studentPaidSubscriptions'] = [];
-            if (resetAbsence) {
-              updates['absencesNumbers'] = [];
-              updates['countingAttendedDays'] = [];
-              updates['countingAbsentDays'] = [];
+            if (deleteStudents) {
+              batch.delete(studentRef);
+            } else {
+              Map<String, dynamic> updates = {};
+              if (resetSubscriptions) updates['studentPaidSubscriptions'] = [];
+              if (resetAbsence) {
+                updates['absencesNumbers'] = [];
+                updates['countingAttendedDays'] = [];
+                updates['countingAbsentDays'] = [];
+              }
+              if (deleteExams) updates['studentExamsGrades'] = [];
+
+              if (updates.isNotEmpty) batch.update(studentRef, updates);
             }
-            if (deleteExams) updates['studentExamsGrades'] = [];
-
-            if (updates.isNotEmpty) batch.update(studentRef, updates);
           }
+          await batch.commit();
         }
-        await batch.commit();
-      }
-
-      // 3. حذف الامتحانات من مسار المدرس
-      if (deleteExams) {
-        await firestore
-            .doc(_teacherPath)
-            .collection('exams')
-            .doc(gradeName)
-            .delete();
-      }
-
-      for (String day in daysList) {
-        if (deleteGroups) {
-          final groupSnap = await getDayCollection(day)
-              .where('grade', isEqualTo: gradeName)
-              .get();
-
-          final groupBatch = firestore.batch();
-          for (var doc in groupSnap.docs) {
-            groupBatch.delete(doc.reference);
-          }
-          await groupBatch.commit();
+        // 3. حذف الامتحانات من مسار المدرس
+        if (deleteExams) {
+          await firestore
+              .doc(_teacherPath)
+              .collection('exams')
+              .doc(gradeName)
+              .delete();
         }
 
-        if (resetAbsence) {
-          await deleteAbsencesSubCollection(day);
+        for (String day in daysList) {
+          if (deleteGroups) {
+            final groupSnap = await getDayCollection(day)
+                .where('grade', isEqualTo: gradeName)
+                .get();
+
+            final groupBatch = firestore.batch();
+            for (var doc in groupSnap.docs) {
+              groupBatch.delete(doc.reference);
+            }
+            await groupBatch.commit();
+          }
+
+          if (resetAbsence) {
+            await deleteAbsencesSubCollection(day);
+          }
         }
       }
     } catch (e) {
@@ -346,7 +366,7 @@ class FirebaseFunctions {
 
     batch.set(newDocRef, studentModel);
     batch.update(teacherDoc, {
-      'totalStudents': FieldValue.increment(1), // بيزود العداد 1
+      'currentStudentCount': FieldValue.increment(1), // بيزود العداد 1
     });
 
     await batch.commit();
@@ -364,8 +384,47 @@ class FirebaseFunctions {
 
     batch.delete(studentDoc);
     batch.update(teacherDoc, {
-      'totalStudents': FieldValue.increment(-1), // بينقص العداد 1
+      'currentStudentCount': FieldValue.increment(-1), // بينقص العداد 1
     });
+
+    await batch.commit();
+  }
+
+  static Future<void> moveStudentToNewGrade({
+    required Studentmodel student,
+    required String oldGrade,
+    required String newGrade,
+  }) async {
+    final firestore = FirebaseFirestore.instance;
+    final teacherDoc = firestore.doc(_teacherPath);
+
+    // 1. تجهيز بيانات الطالب الجديدة (تغيير الصف وتصفير السجلات)
+    student.grade = newGrade;
+    student.hisGroups = [];
+    student.hisGroupsId = [];
+    student.absencesNumbers = [];
+    student.studentPaidSubscriptions = [];
+    student.studentExamsGrades = [];
+    student.countingAttendedDays = [];
+    student.countingAbsentDays = [];
+    student.notes = [];
+    student.note = "";
+
+    WriteBatch batch = firestore.batch();
+
+    // 2. مرجع المكان القديم (حذف)
+    DocumentReference oldDocRef =
+        getSecondaryCollection(oldGrade).doc(student.id);
+    batch.delete(oldDocRef);
+
+    // 3. مرجع المكان الجديد (إضافة) - سنعطيه ID جديد تلقائي
+    DocumentReference<Studentmodel> newDocRef =
+        getSecondaryCollection(newGrade).doc();
+    student.id = newDocRef.id; // تحديث الـ ID داخل الموديل
+    batch.set(newDocRef, student);
+
+    // ملحوظة: العداد (StudentCount) لن يتغير لأننا حذفنا 1 وأضفنا 1
+    // فلا داعي لتحديث teacherDoc إلا لو كنت تريد التأكد تماماً
 
     await batch.commit();
   }
@@ -929,6 +988,7 @@ class FirebaseFunctions {
     }
     return studentInvoices;
   }
+
   //  ................===============     subscriptions   ==============........................
 // =============================== Subscriptions (Sub-collections) ===============================
 
@@ -981,8 +1041,10 @@ class FirebaseFunctions {
     });
   }
 
-  static Future<void> updateSubscriptionInGrade(String gradeName,
-      SubscriptionFee updatedSubscription,) async {
+  static Future<void> updateSubscriptionInGrade(
+    String gradeName,
+    SubscriptionFee updatedSubscription,
+  ) async {
     final docRef = FirebaseFirestore.instance
         .doc(_teacherPath)
         .collection('constants')
@@ -1117,10 +1179,12 @@ class FirebaseFunctions {
     }
   }
 
-  static Future<void> updateAbsenceByDateInSubcollection(String day,
-      String magmo3aId,
-      String absenceDate,
-      AbsenceModel updatedAbsence,) async {
+  static Future<void> updateAbsenceByDateInSubcollection(
+    String day,
+    String magmo3aId,
+    String absenceDate,
+    AbsenceModel updatedAbsence,
+  ) async {
     try {
       DocumentReference magmo3aDocRef = getDayCollection(day).doc(magmo3aId);
 

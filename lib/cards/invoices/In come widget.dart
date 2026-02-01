@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:student_management_system/alert_dialogs/DeleteIncomeBillDialog.dart';
 import 'package:student_management_system/alert_dialogs/verifiy_password.dart';
-import 'package:student_management_system/theme/text_style.dart'; // تأكد من المسار الصحيح
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
+import 'package:student_management_system/theme/text_style.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../firebase/firebase_functions.dart';
@@ -100,6 +102,7 @@ class _InComeWidgetState extends State<InComeWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12),
       child: Container(
+        // إزالة الارتفاع الثابت لضمان تمدد الكارت مع النصوص الكبيرة
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(22),
           gradient: const LinearGradient(
@@ -118,6 +121,7 @@ class _InComeWidgetState extends State<InComeWidget> {
         ),
         child: Stack(
           children: [
+            // الدوائر الزخرفية
             Positioned(
               top: 0,
               bottom: 0,
@@ -138,38 +142,38 @@ class _InComeWidgetState extends State<InComeWidget> {
               padding: const EdgeInsets.all(18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildHeader(context),
-                  const Divider(color: AppColors.white, thickness: 0.5),
-                  const SizedBox(height: 8),
-                  _buildInfoRow(context, false, "اسم الطالب:",
-                      widget.invoice.studentName),
-                  _buildInfoRow(context, true, "رقم الطالب:",
-                      widget.invoice.studentPhoneNumber),
-                  _buildInfoRow(context, true, "رقم الأم:",
-                      widget.invoice.momPhoneNumber),
-                  _buildInfoRow(context, true, "رقم الأب:",
-                      widget.invoice.dadPhoneNumber),
-                  _buildInfoRow(context, false, "الصف:", widget.invoice.grade),
-                  _buildInfoRow(context, false, "المبلغ:",
-                      "${widget.invoice.amount.toStringAsFixed(2)} ج.م"),
+                  const Divider(
+                      color: AppColors.white, thickness: 0.5, height: 25),
+
+                  // صفوف البيانات المحدثة لتكون Responsive
+                  _buildInfoRow("اسم الطالب:", widget.invoice.studentName),
                   _buildInfoRow(
-                      context,
-                      false,
+                      "رقم الطالب:", widget.invoice.studentPhoneNumber,
+                      isPhoneNumber: true),
+                  _buildInfoRow("رقم الأم:", widget.invoice.momPhoneNumber,
+                      isPhoneNumber: true),
+                  _buildInfoRow("رقم الأب:", widget.invoice.dadPhoneNumber,
+                      isPhoneNumber: true),
+                  _buildInfoRow("الصف:", widget.invoice.grade),
+                  _buildInfoRow("المبلغ:",
+                      "${widget.invoice.amount.toStringAsFixed(2)} ج.م",
+                      isAmount: true),
+                  _buildInfoRow(
                       "اسم الأشتراك:",
                       subscriptionFee?.subscriptionName ??
                           " الاشتراك لم يعد موجود "),
                   _buildInfoRow(
-                    context,
-                    false,
                     "الوصف:",
                     widget.invoice.description.isEmpty
                         ? "لا يوجد وصف"
                         : widget.invoice.description,
                   ),
-                  _buildInfoRow(context, false, "التاريخ:",
+                  _buildInfoRow("التاريخ:",
                       DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime)),
-                  _buildInfoRow(context, false, "الوقت:",
+                  _buildInfoRow("الوقت:",
                       DateFormat('hh:mm a').format(widget.invoice.dateTime)),
                 ],
               ),
@@ -184,14 +188,23 @@ class _InComeWidgetState extends State<InComeWidget> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          "تفاصيل الإيراد",
-          style: AppTextStyles.customText(
-            color: AppColors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        // حماية عنوان "تفاصيل الإيراد" من التداخل مع الأزرار
+        const Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              "تفاصيل الإيراد",
+              style: TextStyle(
+                // استخدمنا ستايل مباشر لضمان التجاوب مع FittedBox
+                color: AppColors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
+        const SizedBox(width: 10),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -225,54 +238,69 @@ class _InComeWidgetState extends State<InComeWidget> {
     );
   }
 
-  Widget _buildInfoRow(
-      BuildContext context, bool isPhoneNumber, String label, String value) {
-    void _launchPhoneNumber(String phoneNumber) async {
-      final String phoneUrl = 'tel:$phoneNumber';
-      if (await canLaunchUrlString(phoneUrl)) {
-        await launchUrlString(phoneUrl);
-      }
-    }
-
+  // دالة موحدة لبناء صفوف البيانات بمرونة كاملة
+  Widget _buildInfoRow(String label, String value,
+      {bool isPhoneNumber = false, bool isAmount = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.customText(
-              color: AppColors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+      child: LayoutBuilder(builder: (context, constraints) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          // لضمان التوازن لو النص نزل سطرين
+          children: [
+            // النص الثابت (Label)
+            SizedBox(
+              width: constraints.maxWidth * 0.35,
+              // تخصيص مساحة ثابتة للعنوان الثابت
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  label,
+                  style: AppTextStyles.customText(
+                    color: AppColors.white.withOpacity(0.9),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             ),
-          ),
-          Flexible(
-            child: GestureDetector(
-              onTap: isPhoneNumber ? () => _launchPhoneNumber(value) : null,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8.0),
+            const SizedBox(width: 10),
+            // القيمة المتغيرة (Value)
+            Expanded(
+              child: GestureDetector(
+                onTap: isPhoneNumber
+                    ? () async {
+                        final String phoneUrl = 'tel:$value';
+                        if (await canLaunchUrlString(phoneUrl)) {
+                          await launchUrlString(phoneUrl);
+                        }
+                      }
+                    : null,
                 child: Text(
                   value,
-                  textAlign: TextAlign.end,
+                  textAlign: TextAlign.left,
+                  // محاذاة لليسار لتمييزها عن العنوان الثابت
                   style: AppTextStyles.customText(
                     color: isPhoneNumber
                         ? AppColors.secondaryMain
                         : AppColors.white,
-                    fontSize: 16,
-                    fontWeight:
-                        isPhoneNumber ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 15,
+                    fontWeight: (isPhoneNumber || isAmount)
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ).copyWith(
                     decoration: isPhoneNumber
                         ? TextDecoration.underline
                         : TextDecoration.none,
                   ),
+                  softWrap: true, // السماح بالنزول لسطر جديد لو الاسم طويل جداً
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      }),
     );
   }
 
@@ -281,80 +309,194 @@ class _InComeWidgetState extends State<InComeWidget> {
         TextEditingController(text: widget.invoice.amount.toStringAsFixed(2));
     final descriptionController =
         TextEditingController(text: widget.invoice.description);
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("تعديل فاتورة الإيراد",
-              style: AppTextStyles.customText(
-                  fontWeight: FontWeight.bold, fontSize: 18)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                style: AppTextStyles.customText(color: Colors.black),
-                decoration: InputDecoration(
-                  labelText: "المبلغ",
-                  labelStyle: AppTextStyles.customText(fontSize: 14),
-                ),
+          backgroundColor: AppColors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          titlePadding: EdgeInsets.zero,
+          title: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: AppColors.primaryMain,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
-              TextFormField(
-                controller: descriptionController,
-                style: AppTextStyles.customText(color: Colors.black),
-                decoration: InputDecoration(
-                  labelText: "الوصف",
-                  labelStyle: AppTextStyles.customText(fontSize: 14),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("إلغاء",
-                  style: AppTextStyles.customText(color: Colors.grey)),
             ),
-            TextButton(
-              onPressed: () {
-                String formattedDate =
-                    DateFormat('yyyy-MM-dd').format(widget.invoice.dateTime);
-                double parsedAmount = double.tryParse(amountController.text) ??
-                    widget.invoice.amount;
-                double differenceAmount =
-                    (widget.invoice.amount - parsedAmount) * -1;
-
-                Invoice updatedInvoice = Invoice(
-                  studentId: widget.invoice.studentId,
-                  id: widget.invoice.id,
-                  amount: parsedAmount,
-                  description: descriptionController.text,
-                  dateTime: widget.invoice.dateTime,
-                  studentName: widget.invoice.studentName,
-                  studentPhoneNumber: widget.invoice.studentPhoneNumber,
-                  momPhoneNumber: widget.invoice.momPhoneNumber,
-                  subscriptionFeeID: widget.invoice.subscriptionFeeID,
-                  dadPhoneNumber: widget.invoice.dadPhoneNumber,
-                  grade: widget.invoice.grade,
-                );
-
-                FirebaseFunctions.updateInvoiceInBigInvoices(
-                  differenceAmount: differenceAmount,
-                  updatedInvoice: updatedInvoice,
-                  date: formattedDate,
-                );
-
-                Navigator.pushNamedAndRemoveUntil(
-                    context, "/HomeScreen", (route) => false);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.blue,
+            child: Row(
+              children: [
+                const Icon(Icons.edit_note_rounded,
+                    color: AppColors.white, size: 28),
+                const SizedBox(width: 12),
+                Text(
+                  'تعديل فاتورة الإيراد',
+                  style: AppTextStyles.customText(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 15),
+                  // حقل المبلغ
+                  TextFormField(
+                    controller: amountController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: AppTextStyles.customText(fontSize: 16),
+                    decoration: InputDecoration(
+                      labelText: 'المبلغ الجديد',
+                      prefixIcon: const Icon(Icons.monetization_on_outlined,
+                          color: AppColors.primaryMain),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(color: Colors.grey[200]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(color: Colors.grey[200]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                            color: AppColors.primaryMain, width: 1.5),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty)
+                        return 'يرجى إدخال المبلغ';
+                      if (double.tryParse(value) == null)
+                        return 'يرجى إدخال رقم صحيح';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // حقل الوصف
+                  TextFormField(
+                    controller: descriptionController,
+                    maxLines: 2,
+                    style: AppTextStyles.customText(fontSize: 16),
+                    decoration: InputDecoration(
+                      labelText: 'وصف الفاتورة / ملاحظات',
+                      prefixIcon: const Icon(Icons.description_outlined,
+                          color: AppColors.primaryMain),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(color: Colors.grey[200]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(color: Colors.grey[200]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                            color: AppColors.primaryMain, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: Text("تأكيد",
-                  style: AppTextStyles.customText(color: AppColors.white)),
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      "إلغاء",
+                      style: AppTextStyles.customText(
+                          color: AppColors.textSecondary),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryMain,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () async {
+                      if (!formKey.currentState!.validate()) return;
+                      await runWithLoading(context, () async {
+                        try {
+                          String formattedDate = DateFormat('yyyy-MM-dd')
+                              .format(widget.invoice.dateTime);
+                          double parsedAmount =
+                              double.tryParse(amountController.text) ??
+                                  widget.invoice.amount;
+                          double differenceAmount =
+                              (widget.invoice.amount - parsedAmount) * -1;
+
+                          Invoice updatedInvoice = Invoice(
+                            studentId: widget.invoice.studentId,
+                            id: widget.invoice.id,
+                            amount: parsedAmount,
+                            description: descriptionController.text,
+                            dateTime: widget.invoice.dateTime,
+                            studentName: widget.invoice.studentName,
+                            studentPhoneNumber:
+                                widget.invoice.studentPhoneNumber,
+                            momPhoneNumber: widget.invoice.momPhoneNumber,
+                            subscriptionFeeID: widget.invoice.subscriptionFeeID,
+                            dadPhoneNumber: widget.invoice.dadPhoneNumber,
+                            grade: widget.invoice.grade,
+                          );
+
+                          await FirebaseFunctions.updateInvoiceInBigInvoices(
+                            differenceAmount: differenceAmount,
+                            updatedInvoice: updatedInvoice,
+                            date: formattedDate,
+                          );
+
+                          if (context.mounted) {
+                            Navigator.pushNamedAndRemoveUntil(
+                                context, "/HomeScreen", (route) => false);
+                            AppSnackBars.showSuccess(
+                                context, "تم تحديث بيانات الفاتورة بنجاح");
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppSnackBars.showError(
+                                context, "حدث خطأ أثناء التحديث");
+                          }
+                        }
+                      });
+                    },
+                    child: Text(
+                      "حفظ التعديلات",
+                      style: AppTextStyles.customText(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -383,16 +525,13 @@ class _CardHelpers {
     String? tooltip,
   }) {
     return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: circleColor,
-        shape: BoxShape.circle,
-      ),
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
       child: IconButton(
         padding: EdgeInsets.zero,
         tooltip: tooltip,
-        icon: Icon(icon, color: iconColor, size: 20),
+        icon: Icon(icon, color: iconColor, size: 18),
         onPressed: onPressed,
       ),
     );

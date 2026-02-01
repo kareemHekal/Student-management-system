@@ -52,7 +52,6 @@ void main() async {
     ),
   );
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -60,44 +59,43 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(/* التيم بتاعك */),
-      // نستخدم StreamBuilder لمراقبة النت لحظة بلحظة
-      home: StreamBuilder<List<ConnectivityResult>>(
-        stream: Connectivity().onConnectivityChanged,
-        builder: (context, snapshot) {
-          final connectivityResult = snapshot.data;
+      builder: (context, child) {
+        return StreamBuilder<List<ConnectivityResult>>(
+          stream: Connectivity().onConnectivityChanged,
+          builder: (context, snapshot) {
+            final connectivityResult = snapshot.data;
 
-          // التحقق من وجود اتصال حقيقي
-          bool isConnected = connectivityResult != null &&
-              !connectivityResult.contains(ConnectivityResult.none);
+            // التحقق من الاتصال
+            bool isConnected = connectivityResult != null &&
+                !connectivityResult.contains(ConnectivityResult.none);
 
-          // في حالة عدم وجود داتا (بداية التشغيل) نقوم بعمل فحص سريع للـ ConnectionState
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            // يمكن استدعاء دالة تشيك سريعة أو ترك المستخدم يمر للـ AuthGate
-            // لكن الأفضل التأكد من وجود قيمة أولية
-            return const Scaffold(
-                body: Center(child: CircularProgressIndicator()));
-          }
+            // 1. لو لسه بيحمل الداتا لأول مرة
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return child!; // خليه يكمل تحميل الشاشة اللي هو فيها
+            }
 
-          if (!isConnected) {
-            return const NoInternetScreen(); // صفحة النت مقطوع
-          }
+            // 2. لو مفيش نت (اطرده فوراً)
+            if (!isConnected) {
+              return const NoInternetScreen();
+            }
 
-          // لو النت موجود، ادخل على بوابة التأكد من الهوية والاشتراك
-          return AuthGate();
-        },
-      ),
+            // 3. لو فيه نت، اعرض التطبيق الطبيعي (الـ child اللي هو الـ Navigator)
+            return child!;
+          },
+        );
+      },
+      home: const AuthGate(), // الـ AuthGate تبدأ شغلها هنا لو فيه نت
       routes: {
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/HomeScreen': (context) => const Homescreen(),
         '/StudentsTab': (context) => const AllStudentsTab(),
         '/expired': (context) => SubscriptionExpiredScreen(),
+
       },
     );
   }
 }
-
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 

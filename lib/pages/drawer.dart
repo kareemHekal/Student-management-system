@@ -120,6 +120,21 @@ class _CustomDrawerState extends State<CustomDrawer> {
           const Divider(color: AppColors.textOnDark, thickness: 0.5),
           _sectionTitle("إجراءات إعادة الضبط", danger: true),
           _drawerTile(
+            icon: Icons.person,
+            title: " الصفحه الشخصية",
+            onTap: () async {
+              await Provider.of<TeacherProvider>(context, listen: false)
+                  .refreshTeacherData();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TeacherProfilePage(),
+                ),
+                (route) => false,
+              );
+            },
+          ),
+          _drawerTile(
             icon: Icons.restore_page,
             title: "تصفير الغياب (بداية شهر)",
             onTap: () => showDialog(
@@ -135,19 +150,6 @@ class _CustomDrawerState extends State<CustomDrawer> {
               builder: (_) => ResetGradeAndStudentSubscriptionsDialog(),
             ),
           ),
-          _drawerTile(
-            icon: Icons.person_3,
-            title: " الصفحه الشخصية",
-            onTap: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TeacherProfilePage(),
-                ),
-                (route) => false,
-              );
-            },
-          ),
           const SizedBox(height: 14),
         ],
       ),
@@ -158,101 +160,114 @@ class _CustomDrawerState extends State<CustomDrawer> {
     final teacher =
         Provider.of<TeacherProvider>(context, listen: false).teacher;
 
-    // منطق حساب الأيام المتبقية
+    // 1. حسابات الأيام
     int daysLeft = 0;
     if (teacher?.subscriptionEndTime != null) {
       daysLeft = teacher!.subscriptionEndTime.difference(DateTime.now()).inDays;
     }
+
+    // 2. حسابات الطلاب
+    int current = teacher?.currentStudentCount ?? 0;
+    int allowed = teacher?.totalAllowedStudents ?? 0;
+    double occupancyRatio = allowed > 0 ? current / allowed : 0;
+    bool isNearLimit = occupancyRatio >= 0.9;
+    bool isOverLimit = current > allowed;
+
+    // 3. التحقق من وجود بيانات حقيقية (عشان مظهرش عدادات لـ "مدير النظام")
+    bool hasRealData = teacher != null && teacher.name != "مدير النظام";
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         children: [
-          // اللوجو مع تأثير بسيط
+          // اللوجو
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 2),
               ],
             ),
-            child: Image.asset(
-              "assets/images/logo.png",
-              height: 100,
-              width: 100,
-              fit: BoxFit.contain,
-            ),
+            child: Image.asset("assets/images/logo.png",
+                height: 100, width: 100, fit: BoxFit.contain),
           ),
           const SizedBox(height: 10),
+
           // اسم المدرس
           Text(
             teacher?.name ?? "مدير النظام",
             style: GoogleFonts.amiri(
-              fontWeight: FontWeight.bold,
-              fontSize: 28,
-              color: AppColors.primaryDark,
-            ),
+                fontWeight: FontWeight.bold,
+                fontSize: 26,
+                color: AppColors.primaryDark),
           ),
-          const SizedBox(height: 15),
-          // عرض مدة الاشتراك
-          if (teacher?.subscriptionEndTime != null)
-            Container(
-              // حددنا عرض أقصى للـ Container عشان يجبر اللي جواه يلف وينزل سطر جديد
-              constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.8),
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-              decoration: BoxDecoration(
-                color: daysLeft > 7
-                    ? AppColors.primaryDark.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: daysLeft > 7 ? AppColors.primaryDark : Colors.red,
-                  width: 0.5,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                // بيخلي الصف على قد المحتوى
-                crossAxisAlignment: CrossAxisAlignment.center,
-                // بيسنتر الأيقونة مع النص
+
+          // الفراغ والعدادات يظهروا فقط لو فيه بيانات مدرس حقيقية
+          if (hasRealData) ...[
+            const SizedBox(height: 15),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
                 children: [
-                  Icon(
-                    Icons.timer_outlined,
-                    size: 16,
-                    color: daysLeft > 7 ? AppColors.primaryDark : Colors.red,
+                  // كبسولة الأيام
+                  _buildHeaderChip(
+                    icon: Icons.timer_outlined,
+                    label:
+                        daysLeft > 0 ? "متبقي $daysLeft يوم" : "الاشتراك منتهي",
+                    color: daysLeft > 7 ? AppColors.textOnDark : Colors.red,
                   ),
-                  const SizedBox(width: 8),
-                  // الحل السحري هنا: الـ Flexible بيجبر النص يلتزم بالمساحة المتبقية وينزل لتحت
-                  Flexible(
-                    child: Text(
-                      daysLeft > 0
-                          ? "متبقي $daysLeft يوم على انتهاء الاشتراك"
-                          : "الاشتراك منتهي",
-                      textAlign: TextAlign.start,
-                      softWrap: true,
-                      style: GoogleFonts.cairo(
-                        fontSize: 14,
-                        height: 1.2,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            daysLeft > 7 ? AppColors.primaryDark : Colors.red,
-                      ),
-                    ),
+
+                  // كبسولة عدد الطلاب
+                  _buildHeaderChip(
+                    icon: Icons.groups_outlined,
+                    label: "الطلاب: $current / $allowed",
+                    color: isOverLimit
+                        ? Colors.red
+                        : (isNearLimit ? Colors.orange : AppColors.textOnDark),
                   ),
                 ],
               ),
             ),
+          ],
         ],
       ),
     );
   }
 
+// ويدجت مساعدة عشان شكل الكبسولات يكون موحد ونظيف
+  Widget _buildHeaderChip(
+      {required IconData icon, required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color, width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.cairo(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _sectionTitle(String title, {bool danger = false}) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),

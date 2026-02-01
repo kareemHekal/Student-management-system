@@ -9,7 +9,6 @@ import '../../theme/text_style.dart';
 
 class DailyInvoiceCard extends StatefulWidget {
   final DailyInvoice invoice;
-
   const DailyInvoiceCard({required this.invoice, super.key});
 
   @override
@@ -17,7 +16,6 @@ class DailyInvoiceCard extends StatefulWidget {
 }
 
 class _DailyInvoiceCardState extends State<DailyInvoiceCard> {
-  // دائرة زخرفية للخلفية
   Widget _buildCircle(double size, double opacity) {
     return Container(
       width: size,
@@ -29,7 +27,6 @@ class _DailyInvoiceCardState extends State<DailyInvoiceCard> {
     );
   }
 
-  // زر الطباعة
   Widget _buildPrintButton() {
     return Container(
       width: 40,
@@ -40,14 +37,8 @@ class _DailyInvoiceCardState extends State<DailyInvoiceCard> {
       ),
       child: IconButton(
         padding: EdgeInsets.zero,
-        icon: const Icon(
-          Icons.print,
-          size: 20,
-          color: AppColors.white,
-        ),
-        onPressed: () async {
-          await generateBigInvoicePDF(widget.invoice);
-        },
+        icon: const Icon(Icons.print, size: 20, color: AppColors.white),
+        onPressed: () async => await generateBigInvoicePDF(widget.invoice),
       ),
     );
   }
@@ -56,15 +47,8 @@ class _DailyInvoiceCardState extends State<DailyInvoiceCard> {
   Widget build(BuildContext context) {
     double totalIncome = 0;
     double totalOutcome = 0;
-
-    for (var inv in widget.invoice.invoices) {
-      totalIncome += inv.amount;
-    }
-
-    for (var payment in widget.invoice.payments) {
-      totalOutcome += payment.amount;
-    }
-
+    for (var inv in widget.invoice.invoices) totalIncome += inv.amount;
+    for (var payment in widget.invoice.payments) totalOutcome += payment.amount;
     double total = totalIncome - totalOutcome;
 
     return Directionality(
@@ -74,81 +58,68 @@ class _DailyInvoiceCardState extends State<DailyInvoiceCard> {
         child: GestureDetector(
           onTap: () {
             Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => OneInivoicePage(invoice: widget.invoice),
-              ),
-            );
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        OneInivoicePage(invoice: widget.invoice)));
           },
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(22),
               gradient: const LinearGradient(
-                colors: [
-                  AppColors.primaryMain,
-                  AppColors.secondaryMain,
-                ],
+                colors: [AppColors.primaryMain, AppColors.secondaryMain],
                 begin: Alignment.bottomLeft,
                 end: Alignment.topLeft,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryMain.withOpacity(0.35),
-                  blurRadius: 14,
-                  offset: const Offset(0, 6),
-                  spreadRadius: -4,
-                ),
+                    color: AppColors.primaryMain.withOpacity(0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                    spreadRadius: -4),
               ],
             ),
             child: Stack(
               children: [
+                Positioned(top: -10, right: -10, child: _buildCircle(60, 0.17)),
                 Positioned(
-                  top: -10,
-                  right: -10,
-                  child: _buildCircle(60, 0.17),
-                ),
-                Positioned(
-                  bottom: -40,
-                  left: -40,
-                  child: _buildCircle(100, 0.1),
-                ),
+                    bottom: -40, left: -40, child: _buildCircle(100, 0.1)),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      // --- الصف العلوي: التاريخ وزر الطباعة ---
+                      // --- الصف العلوي ---
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.calendar_month,
-                                size: 24,
-                                color: AppColors.white,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${widget.invoice.day}, ${widget.invoice.date}',
-                                style: AppTextStyles.customText(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.white,
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_month,
+                                    size: 24, color: AppColors.white),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      '${widget.invoice.day}, ${widget.invoice.date}',
+                                      style: AppTextStyles.customText(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.white),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                           _buildPrintButton(),
                         ],
                       ),
-
                       const Divider(
-                        color: AppColors.white,
-                        height: 20,
-                        thickness: 0.5,
-                      ),
+                          color: AppColors.white, height: 20, thickness: 0.5),
 
-                      // --- الصف السفلي: ملخص البيانات ---
+                      // --- الصف السفلي (الـ 3 أرقام جمب بعض زي ما تحب) ---
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
                         child: Row(
@@ -171,8 +142,7 @@ class _DailyInvoiceCardState extends State<DailyInvoiceCard> {
                             _showDataSummary(
                               "المصروفات",
                               totalOutcome,
-                              const Color(
-                                  0xFFFFCDD2), // لون أحمر فاتح جداً للتباين فوق التدرج
+                              const Color(0xFFFFCDD2),
                             ),
                           ],
                         ),
@@ -190,31 +160,38 @@ class _DailyInvoiceCardState extends State<DailyInvoiceCard> {
 
   Widget _buildVerticalDivider() {
     return Container(
-      height: 40,
-      width: 1,
-      color: AppColors.white.withOpacity(0.3),
-    );
+        height: 40, width: 1, color: AppColors.white.withOpacity(0.3));
   }
 
+  // الـ Widget دي هي اللي فيها السر عشان تضمن إن النصوص الثابتة والمبالغ ما تكسرش الـ Row
   Widget _showDataSummary(String label, double amount, Color amountColor) {
     return Expanded(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.customText(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.white.withOpacity(0.9),
+          // النص الثابت محمي بـ FittedBox عشان لو الخط كبر يصغر الكلمة بدل ما يزق اللي جنبه
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: AppTextStyles.customText(
+                fontSize: 13, // صغرنا الخط سنة لزيادة مساحة الأمان
+                fontWeight: FontWeight.w600,
+                color: AppColors.white.withOpacity(0.9),
+              ),
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            "${amount.toStringAsFixed(0)} ج.م",
-            style: AppTextStyles.customText(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: amountColor,
+          // المبلغ محمي بـ FittedBox عشان لو الرقم كبير (ملايين مثلاً) يفضل في مكانه
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              "${amount.toStringAsFixed(0)} ج.م",
+              style: AppTextStyles.customText(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: amountColor,
+              ),
             ),
           ),
         ],

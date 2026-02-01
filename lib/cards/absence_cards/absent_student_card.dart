@@ -36,14 +36,15 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(15),
+      // زيادة الـ Padding قليلاً للراحة البصرية
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.bottomRight,
           end: Alignment.topRight,
           colors: [
-            AppColors.primaryMain.withOpacity(.8),
-            AppColors.secondaryMain.withOpacity(.8),
+            AppColors.primaryMain.withOpacity(.85),
+            AppColors.secondaryMain.withOpacity(.85),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -56,13 +57,14 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildHeader(context),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Divider(color: AppColors.white.withOpacity(.3), thickness: .6),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           _buildInfoSection(),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           _buildStudentDaysList(),
         ],
       ),
@@ -70,42 +72,56 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Row(
-      children: [
-        CircleAvatar(
-          backgroundColor: AppColors.white.withOpacity(.2),
-          radius: 26,
-          child: Icon(Icons.person, color: AppColors.white, size: 30),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.studentModel.name ?? "",
-                  style: AppTextStyles.customText(
-                      fontSize: 17,
-                      color: AppColors.white,
-                      fontWeight: FontWeight.bold)),
-              Text("الإضافة: ${widget.studentModel.dateofadd}",
-                  style: AppTextStyles.customText(
-                      fontSize: 12, color: AppColors.white.withOpacity(0.8))),
-            ],
+    return LayoutBuilder(builder: (context, constraints) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            backgroundColor: AppColors.white.withOpacity(.2),
+            radius: 24,
+            child: const Icon(Icons.person, color: AppColors.white, size: 28),
           ),
-        ),
-        _buildActionButtons(context),
-      ],
-    );
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.studentModel.name ?? "",
+                  style: AppTextStyles.customText(
+                      fontSize: 16,
+                      color: AppColors.white,
+                      fontWeight: FontWeight.bold),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    "الإضافة: ${widget.studentModel.dateofadd}",
+                    style: AppTextStyles.customText(
+                        fontSize: 11, color: AppColors.white.withOpacity(0.8)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 5),
+          _buildActionButtons(context, constraints.maxWidth),
+        ],
+      );
+    });
   }
 
-  Widget _buildActionButtons(BuildContext context) {
-    return Row(
+  Widget _buildActionButtons(BuildContext context, double maxWidth) {
+    // إذا كانت الشاشة صغيرة جداً، نستخدم Wrap بدلاً من Row للأزرار
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      alignment: WrapAlignment.end,
       children: [
         _iconBtn(Icons.message_outlined, () => _showWhatsAppDialog(context)),
-        const SizedBox(width: 8),
         _iconBtn(Icons.add_comment_rounded, () => _showAddNoteDialog(context)),
-        const SizedBox(width: 8),
-        // Simplified to a standard Icon Button that triggers a Dialog
         _iconBtn(Icons.info_outline, () => _showNotesDialog(context)),
       ],
     );
@@ -114,14 +130,13 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
   Widget _iconBtn(IconData icon, VoidCallback onTap) => GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-              color: AppColors.white.withOpacity(.15), shape: BoxShape.circle),
-          child: Icon(icon, color: AppColors.white, size: 20),
+              color: AppColors.white.withOpacity(.18), shape: BoxShape.circle),
+          child: Icon(icon, color: AppColors.white, size: 18),
         ),
       );
 
-// New modern Dialog to replace the Tooltip
   void _showNotesDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -130,70 +145,66 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            Icon(Icons.info_outline, color: AppColors.primaryMain),
+            const Icon(Icons.info_outline, color: AppColors.primaryMain),
             const SizedBox(width: 10),
-            Text(
-              "ملاحظات الطالب",
-              style: AppTextStyles.customText(
-                fontSize: 18,
-                color: AppColors.primaryMain,
-                fontWeight: FontWeight.bold,
+            Expanded(
+              child: Text(
+                "ملاحظات الطالب",
+                style: AppTextStyles.customText(
+                  fontSize: 18,
+                  color: AppColors.primaryMain,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end, // RTL alignment
-          children: [
-            Text(
-              "عذر الغياب:",
-              style: AppTextStyles.customText(
-                fontSize: 14,
-                color: AppColors.secondaryMain,
-                fontWeight: FontWeight.bold,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _dialogSectionTitle("عذر الغياب:"),
+              Text(
+                _getNoteForDate(widget.selectedDateStr),
+                style: AppTextStyles.customText(
+                    fontSize: 14, color: AppColors.textPrimary),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _getNoteForDate(widget.selectedDateStr),
-              style: AppTextStyles.customText(
-                  fontSize: 15, color: AppColors.textPrimary),
-            ),
-            const Divider(height: 20),
-            Text(
-              "ملاحظة دائمة:",
-              style: AppTextStyles.customText(
-                fontSize: 14,
-                color: AppColors.secondaryMain,
-                fontWeight: FontWeight.bold,
+              const Divider(height: 25),
+              _dialogSectionTitle("ملاحظة دائمة:"),
+              Text(
+                widget.studentModel.note ?? "لا توجد ملاحظة",
+                style: AppTextStyles.customText(
+                    fontSize: 14, color: AppColors.textPrimary),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              widget.studentModel.note ?? "لا توجد ملاحظة",
-              style: AppTextStyles.customText(
-                  fontSize: 15, color: AppColors.textPrimary),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              "إغلاق",
-              style: AppTextStyles.customText(color: AppColors.primaryMain),
-            ),
+            child: Text("إغلاق",
+                style: AppTextStyles.customText(color: AppColors.primaryMain)),
           ),
         ],
       ),
     );
   }
 
+  Widget _dialogSectionTitle(String title) => Text(
+        title,
+        style: AppTextStyles.customText(
+          fontSize: 13,
+          color: AppColors.secondaryMain,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+
   Widget _buildInfoSection() {
     return Column(
       children: [
         _infoLine("رقم الهاتف", widget.studentModel.phoneNumber ?? "N/A"),
+        const SizedBox(height: 4),
         _infoLine("رقم ولي الأمر", widget.studentModel.fatherPhone ?? "N/A"),
       ],
     );
@@ -203,58 +214,64 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
         children: [
           Text("$label:",
               style: AppTextStyles.customText(
-                  fontSize: 14, color: AppColors.white.withOpacity(0.9))),
+                  fontSize: 13, color: AppColors.white.withOpacity(0.9))),
           const SizedBox(width: 8),
           Expanded(
             child: GestureDetector(
               onLongPress: () => StudentActionsHelper.launchPhone(value),
-              child: Text(value,
-                  textAlign: TextAlign.right,
-                  style: AppTextStyles.customText(
-                      fontSize: 15,
-                      color: AppColors.white,
-                      fontWeight: FontWeight.bold)),
+              child: FittedBox(
+                alignment: Alignment.centerRight,
+                fit: BoxFit.scaleDown,
+                child: Text(value,
+                    textAlign: TextAlign.right,
+                    style: AppTextStyles.customText(
+                        fontSize: 14,
+                        color: AppColors.white,
+                        fontWeight: FontWeight.bold)),
+              ),
             ),
           ),
         ],
       );
 
   Widget _buildStudentDaysList() {
-    // Accessing the list from widget.studentModel as per your first snippet
     final groups = widget.studentModel.hisGroups ?? [];
+    if (groups.isEmpty) return const SizedBox.shrink();
 
     return Wrap(
-      spacing: 8, // Horizontal space between items
-      runSpacing: 6, // Vertical space between lines
+      spacing: 8,
+      runSpacing: 8,
       children: groups.map((g) {
         final time = (g.time != null)
             ? StudentActionsHelper.formatTime12Hour(g.time!)
             : "—";
 
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: AppColors.white.withOpacity(0.3)),
+            color: AppColors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.white.withOpacity(0.2)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            // Important: prevents Row from taking full width
             children: [
+              Icon(Icons.calendar_today,
+                  size: 12, color: AppColors.white.withOpacity(0.8)),
+              const SizedBox(width: 5),
               Text(
                 g.day ?? "",
                 style: AppTextStyles.customText(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: AppColors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 6),
+              const VerticalDivider(color: Colors.white24, width: 10),
               Text(
                 time,
                 style: AppTextStyles.customText(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: AppColors.white.withOpacity(0.9),
                 ),
               ),
@@ -281,25 +298,27 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: SelectRecipientDialogContent(
-          sendMessageToFather: () =>
-              StudentActionsHelper.sendWhatsAppAbsenceMessage(
-                  teacher: teacher?.name ?? "",
-                  studentName: widget.studentModel.name!,
-                  parentRole: 'father',
-                  phoneNumber: widget.studentModel.fatherPhone ?? ""),
-          sendMessageToMother: () =>
-              StudentActionsHelper.sendWhatsAppAbsenceMessage(
-                  teacher: teacher?.name ?? "",
-                  studentName: widget.studentModel.name!,
-                  parentRole: 'mother',
-                  phoneNumber: widget.studentModel.motherPhone ?? ""),
-          sendMessageToStudent: () =>
-              StudentActionsHelper.sendWhatsAppAbsenceMessage(
-                  studentName: widget.studentModel.name!,
-                  teacher: teacher?.name ?? "",
-                  parentRole: 'student',
-                  phoneNumber: widget.studentModel.phoneNumber ?? ""),
+        content: SingleChildScrollView(
+          child: SelectRecipientDialogContent(
+            sendMessageToFather: () =>
+                StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                    teacher: teacher?.name ?? "",
+                    studentName: widget.studentModel.name!,
+                    parentRole: 'father',
+                    phoneNumber: widget.studentModel.fatherPhone ?? ""),
+            sendMessageToMother: () =>
+                StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                    teacher: teacher?.name ?? "",
+                    studentName: widget.studentModel.name!,
+                    parentRole: 'mother',
+                    phoneNumber: widget.studentModel.motherPhone ?? ""),
+            sendMessageToStudent: () =>
+                StudentActionsHelper.sendWhatsAppAbsenceMessage(
+                    studentName: widget.studentModel.name!,
+                    teacher: teacher?.name ?? "",
+                    parentRole: 'student',
+                    phoneNumber: widget.studentModel.phoneNumber ?? ""),
+          ),
         ),
       ),
     );
@@ -310,17 +329,19 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('إضافة عذر غياب'),
+        title: Text('إضافة عذر غياب',
+            style: AppTextStyles.customText(fontWeight: FontWeight.bold)),
         content: TextField(
             controller: _noteController,
+            style: AppTextStyles.customText(),
             decoration: const InputDecoration(hintText: "الملاحظة...")),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("إلغاء")),
+              child: Text("إلغاء",
+                  style: AppTextStyles.customText(color: Colors.grey))),
           TextButton(
             onPressed: () {
-              // Firebase update logic
               String dateKey = widget.selectedDateStr;
               widget.studentModel.notes ??= [];
               widget.studentModel.notes!.add({dateKey: _noteController.text});
@@ -328,7 +349,9 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
                   widget.magmo3aModel.id, widget.studentModel);
               Navigator.pop(context);
             },
-            child: const Text("حفظ"),
+            child: Text("حفظ",
+                style: AppTextStyles.customText(
+                    color: AppColors.primaryMain, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

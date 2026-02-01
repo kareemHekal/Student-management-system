@@ -18,11 +18,8 @@ class Groupsmallcard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            gradient: LinearGradient(
-              colors: [
-                AppColors.primaryMain,
-                AppColors.secondaryMain,
-              ],
+            gradient: const LinearGradient(
+              colors: [AppColors.primaryMain, AppColors.secondaryMain],
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
             ),
@@ -35,39 +32,32 @@ class Groupsmallcard extends StatelessWidget {
               ),
             ],
           ),
-          child: Stack(
-            children: [
-              // ===== decorative circles =====
-              Positioned(
-                top: -25,
-                left: -25,
-                child: _circle(80, 0.08),
-              ),
-              Positioned(
-                bottom: -20,
-                right: 40,
-                child: _circle(60, 0.25),
-              ),
-
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                child: Row(
-                  children: [
-                    _buildDayBadge(),
-                    const SizedBox(width: 14),
-                    Expanded(child: _buildInfoSection()),
-                  ],
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: Stack(
+              children: [
+                Positioned(top: -25, left: -25, child: _circle(80, 0.08)),
+                Positioned(bottom: -20, right: 40, child: _circle(60, 0.25)),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  child: Row(
+                    children: [
+                      // حماية البادج ليأخذ مساحة مناسبة فقط
+                      Flexible(flex: 2, child: _buildDayBadge()),
+                      const SizedBox(width: 14),
+                      // قسم المعلومات يأخذ المساحة الأكبر
+                      Expanded(flex: 5, child: _buildInfoSection()),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-
-  // ================= UI Parts =================
 
   Widget _buildDayBadge() {
     return Container(
@@ -75,7 +65,7 @@ class Groupsmallcard extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             AppColors.secondaryMain,
-            AppColors.secondaryMain.withOpacity(0.85),
+            AppColors.secondaryMain.withOpacity(0.85)
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -83,14 +73,18 @@ class Groupsmallcard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Text(
-          translateDayToArabic(magmo3aModel?.day ?? ""),
-          textAlign: TextAlign.center,
-          style: AppTextStyles.customText(
-            fontSize: 18,
-            color: AppColors.primaryDark,
-            fontWeight: FontWeight.bold,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: FittedBox(
+          // حماية اسم اليوم من الخروج عن حدود البادج
+          fit: BoxFit.scaleDown,
+          child: Text(
+            translateDayToArabic(magmo3aModel?.day ?? ""),
+            textAlign: TextAlign.center,
+            style: AppTextStyles.customText(
+              fontSize: 16, // صغرنا الخط قليلاً ليتناسب مع الكارت الصغير
+              color: AppColors.primaryDark,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
@@ -107,7 +101,7 @@ class Groupsmallcard extends StatelessWidget {
           label: "الصف",
           value: magmo3aModel?.grade ?? "",
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         _infoRow(
           icon: Icons.access_time,
           label: "الوقت",
@@ -127,32 +121,34 @@ class Groupsmallcard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Icon(icon, size: 16, color: AppColors.secondaryMain),
-        const SizedBox(width: 6),
-        RichText(
-          textDirection: TextDirection.rtl,
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: "$label: ",
-                // تم التأكد من استخدام الستايل المخصص هنا
-                style: AppTextStyles.customText(
-                  fontSize: 14,
-                  color: AppColors.secondaryMain,
-                  fontWeight: FontWeight.bold,
+        // استخدام Expanded مع FittedBox لحماية السطر بالكامل
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value,
+                  style: AppTextStyles.customText(
+                    fontSize: 14,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              TextSpan(
-                text: value,
-                // تم التأكد من استخدام الستايل المخصص هنا
-                style: AppTextStyles.customText(
-                  fontSize: 14,
-                  color: AppColors.white,
-                  // تم تعديله للون الأبيض لزيادة الوضوح على التدرج
-                  fontWeight: FontWeight.bold,
+                Text(
+                  " :$label",
+                  style: AppTextStyles.customText(
+                    fontSize: 14,
+                    color: AppColors.secondaryMain,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Icon(icon, size: 16, color: AppColors.secondaryMain),
+              ],
+            ),
           ),
         ),
       ],
@@ -169,8 +165,6 @@ class Groupsmallcard extends StatelessWidget {
       ),
     );
   }
-
-  // ================= Helpers =================
 
   String translateDayToArabic(String day) {
     switch (day.toLowerCase()) {

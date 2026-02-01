@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/models/daily_invoice.dart';
-import 'package:student_management_system/pages/invoices/daily_invoices_page.dart'; // Ensure path is correct
+import 'package:student_management_system/pages/invoices/daily_invoices_page.dart';
 import 'package:student_management_system/pages/pdf_genrators/big_invoice_pdf.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/text_style.dart';
 
 class WeeklyInvoiceCard extends StatelessWidget {
-  final String weekTitle; // Example: "الأسبوع 1 (2025-11)"
+  final String weekTitle;
   final List<DailyInvoice> dailyInvoices;
 
   const WeeklyInvoiceCard({
@@ -16,7 +16,6 @@ class WeeklyInvoiceCard extends StatelessWidget {
     super.key,
   });
 
-  // Maintains the same theme circles
   Widget _buildCircle(double size, double opacity) {
     return Container(
       width: size,
@@ -33,7 +32,6 @@ class WeeklyInvoiceCard extends StatelessWidget {
     double totalIncome = 0;
     double totalOutcome = 0;
 
-    // Calculate totals for the specific week
     for (var daily in dailyInvoices) {
       for (var inv in daily.invoices) {
         totalIncome += inv.amount;
@@ -53,10 +51,7 @@ class WeeklyInvoiceCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             gradient: const LinearGradient(
-              colors: [
-                AppColors.primaryMain,
-                AppColors.secondaryMain,
-              ],
+              colors: [AppColors.primaryMain, AppColors.secondaryMain],
               begin: Alignment.topRight,
               end: Alignment.topLeft,
             ),
@@ -79,73 +74,63 @@ class WeeklyInvoiceCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      // --- الصف العلوي: عنوان الأسبوع وأزرار التحكم ---
                       Row(
-                        spacing: 15,
                         children: [
-                          Text(
-                            weekTitle,
-                            style: AppTextStyles.customText(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.white,
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                weekTitle,
+                                style: AppTextStyles.customText(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.white,
+                                ),
+                              ),
                             ),
                           ),
-                          Spacer(),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.white.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: const Icon(
-                                Icons.arrow_forward_ios,
-                                size: 18,
-                                color: AppColors.white,
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => dailyInvoicesPage(
-                                      monthTitle: weekTitle,
-                                      invoices: dailyInvoices,
+                          const SizedBox(width: 10),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildActionIcon(
+                                icon: Icons.arrow_forward_ios,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => dailyInvoicesPage(
+                                        monthTitle: weekTitle,
+                                        invoices: dailyInvoices,
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.white.withOpacity(0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: const Icon(
-                                Icons.print,
-                                size: 18,
-                                color: AppColors.white,
+                                  );
+                                },
                               ),
-                              onPressed: () {
-                                runWithLoading(context, () async {
-                                  await InvoicePdfGenerator
-                                      .createWeeklyInvoicePDF(
-                                          dailyInvoices, weekTitle, context);
-                                });
-                              },
-                            ),
+                              const SizedBox(width: 8),
+                              _buildActionIcon(
+                                icon: Icons.print,
+                                onTap: () {
+                                  runWithLoading(context, () async {
+                                    await InvoicePdfGenerator
+                                        .createWeeklyInvoicePDF(
+                                            dailyInvoices, weekTitle, context);
+                                  });
+                                },
+                              ),
+                            ],
                           ),
                         ],
                       ),
+
                       const Divider(
                           color: AppColors.white, height: 25, thickness: 0.5),
+
+                      // --- الصف السفلي: الأرقام الثلاثة (Row مرن) ---
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -155,11 +140,17 @@ class WeeklyInvoiceCard extends StatelessWidget {
                             totalNet >= 0 ? AppColors.white : Colors.redAccent,
                           ),
                           _buildVerticalDivider(),
-                          _buildSummaryItem("إيراد الأسبوع", totalIncome,
-                              AppColors.secondaryMain),
+                          _buildSummaryItem(
+                            "إيراد الأسبوع",
+                            totalIncome,
+                            AppColors.secondaryMain,
+                          ),
                           _buildVerticalDivider(),
-                          _buildSummaryItem("مصروف الأسبوع", totalOutcome,
-                              const Color(0xFFFFCDD2)),
+                          _buildSummaryItem(
+                            "مصروف الأسبوع",
+                            totalOutcome,
+                            const Color(0xFFFFCDD2),
+                          ),
                         ],
                       ),
                     ],
@@ -169,6 +160,23 @@ class WeeklyInvoiceCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildActionIcon(
+      {required IconData icon, required VoidCallback onTap}) {
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        color: AppColors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        icon: Icon(icon, size: 16, color: AppColors.white),
+        onPressed: onTap,
       ),
     );
   }
@@ -184,22 +192,31 @@ class WeeklyInvoiceCard extends StatelessWidget {
   Widget _buildSummaryItem(String label, double amount, Color color) {
     return Expanded(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.customText(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.white.withOpacity(0.9),
+          // حماية النص الثابت "إيراد الأسبوع" وما شابه
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: AppTextStyles.customText(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.white.withOpacity(0.9),
+              ),
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            "${amount.toStringAsFixed(0)} ج.م",
-            style: AppTextStyles.customText(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: color,
+          // حماية الرقم المالي
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              "${amount.toStringAsFixed(0)} ج.م",
+              style: AppTextStyles.customText(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],

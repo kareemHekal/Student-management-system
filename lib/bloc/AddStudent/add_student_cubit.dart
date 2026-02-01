@@ -36,11 +36,16 @@ class StudentCubit extends Cubit<StudentState> {
     // 1. جلب بيانات المدرس الحالية من البروفايدر
     final teacherProvider =
         Provider.of<TeacherProvider>(context, listen: false);
+    await teacherProvider.refreshTeacherData();
     final teacher = teacherProvider.teacher;
 
-    // 2. التحققات الأساسية (Validations)
+    // 2. التحققات الأساسية
     if (hisGroups.isEmpty) {
       emit(StudentValidationError("من فضلك اختر مجموعة واحدة على الأقل"));
+      return;
+    }
+    if (selectedGender == "" || selectedGender == null) {
+      emit(StudentValidationError("من فضلك اختر جنس الطالب "));
       return;
     }
     if (name_controller.text.isEmpty) {
@@ -48,22 +53,26 @@ class StudentCubit extends Cubit<StudentState> {
       return;
     }
 
-    // ضبط أرقام الهاتف الافتراضية إذا كانت فارغة
     _sanitizePhoneNumbers();
 
-    // 3. التحقق من صلاحية الاشتراك وسعة الطلاب
+    // 3. التحقق الذكي من الاشتراك (القلب الجديد للسيستم)
     if (teacher != null) {
-      // أ- فحص انتهاء الاشتراك
-      if (teacher.subscriptionEndTime.isBefore(DateTime.now())) {
+      // أ- فحص انتهاء الاشتراك الأساسي (عشان يقدر يفتح التطبيق أصلاً)
+      if (teacher.subscriptionEndTime.isBefore(DateTime.now()) ||
+          teacher.isActive == false) {
         emit(StudentValidationError(
             "عفواً، اشتراكك منتهي. يرجى التجديد لتتمكن من إضافة طلاب"));
         return;
       }
 
-      // ب- فحص المساحة المتاحة
-      if (teacher.totalStudents >= teacher.subscriptionTotalStudents) {
+      // ب- فحص المساحة المتاحة (أساسي + بوست)
+      // لاحظ استخدام totalAllowedStudents بدلاً من المتغير القديم
+      int allowed = teacher.totalAllowedStudents;
+      int current = teacher.currentStudentCount;
+
+      if (current >= allowed) {
         emit(StudentValidationError(
-            "لقد وصلت للحد الأقصى للطلاب (${teacher.subscriptionTotalStudents}). يرجى ترقية الباقة لإضافة المزيد."));
+            "لقد وصلت للحد الأقصى المتاح لك حالياً ($allowed طالب). يمكنك شراء باقة Boost لزيادة السعة فوراً."));
         return;
       }
     } else {
@@ -89,7 +98,9 @@ class StudentCubit extends Cubit<StudentState> {
     try {
       emit(StudentLoading());
 
-      // 5. استدعاء الفايربيز (إضافة الطالب + زيادة العداد في Batch واحد)
+      // 5. استدعاء الفايربيز
+      // ملاحظة هامة: دالة addStudentToCollection لازم تكون بتستخدم Transaction أو Batch
+      // عشان تزود عداد الـ currentStudentCount في ملف المدرس بالتزامن مع إضافة الطالب
       String studentId = await FirebaseFunctions.addStudentToCollection(
         level ?? "",
         submodel,
@@ -112,22 +123,23 @@ class StudentCubit extends Cubit<StudentState> {
         );
       }
 
-      // 7. تحديث بيانات المدرس في البروفايدر محلياً ليعكس الرقم الجديد فوراً
-      await teacherProvider.refreshTeacherData(); // افترضنا وجود دالة تحديث
+      // 7. تحديث البروفايدر (تأكد أن refreshTeacherData يجلب البيانات الجديدة من Firestore)
+      await teacherProvider.refreshTeacherData();
 
       emit(StudentAddedSuccess());
       clearControllers();
 
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const Homescreen()),
-        (route) => false,
-      );
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Homescreen()),
+          (route) => false,
+        );
+      }
     } catch (e) {
       emit(StudentAddedFailure("حدث خطأ أثناء الإضافة: ${e.toString()}"));
     }
   }
-
 // دالة مساعدة لتنظيف الأرقام
   void _sanitizePhoneNumbers() {
     if (studentNumberController.text.trim().isEmpty)
