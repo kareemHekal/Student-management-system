@@ -25,8 +25,6 @@ class AuthService {
         isActive: false,
         // لا يفتح إلا بموافقتك
         subscriptionEndTime: DateTime.now(),
-        // ينتهي فوراً (يحتاج تفعيل)
-        baseStudentLimit: 0,
         // ليمت صفر حتى يحدد الأدمن باقة
         currentStudentCount: 0,
         activeBoosts: [], // لستة فارغة في البداية

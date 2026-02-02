@@ -67,7 +67,7 @@ class StudentCubit extends Cubit<StudentState> {
 
       // ب- فحص المساحة المتاحة (أساسي + بوست)
       // لاحظ استخدام totalAllowedStudents بدلاً من المتغير القديم
-      int allowed = teacher.totalAllowedStudents;
+      int allowed = await teacher.getTotalAllowedStudents();
       int current = teacher.currentStudentCount;
 
       if (current >= allowed) {

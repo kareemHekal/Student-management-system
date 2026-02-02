@@ -8,10 +8,9 @@ class Bill {
   final String subscriptionName;
   final int subscriptionDurationInDays;
   final String subscriptionDescription;
-
   // حقول التحكم الجديدة
   final String billType; // 'basic' أو 'boost'
-  final int? previousBaseLimit; // بنحتاجه في undo الـ basic
+  final int? baseStudentLimit; // بنحتاجه في undo الـ basic
   final int? boostAmount; // بنحتاجه في undo الـ boost
 
   Bill({
@@ -25,7 +24,7 @@ class Bill {
     required this.subscriptionDescription,
     required this.subscriptionDurationInDays,
     required this.billType,
-    this.previousBaseLimit,
+    this.baseStudentLimit,
     this.boostAmount,
   });
 
@@ -41,7 +40,7 @@ class Bill {
       subscriptionDescription: json['subscriptionDescription'] ?? '',
       subscriptionDurationInDays: json['subscriptionDurationInDays'] ?? 0,
       billType: json['billType'] ?? 'basic',
-      previousBaseLimit: json['previousBaseLimit'],
+      baseStudentLimit: json['baseStudentLimit'],
       boostAmount: json['boostAmount'],
     );
   }
@@ -57,7 +56,7 @@ class Bill {
       'subscriptionDescription': subscriptionDescription,
       'subscriptionDurationInDays': subscriptionDurationInDays,
       'billType': billType,
-      'previousBaseLimit': previousBaseLimit,
+      'baseStudentLimit': baseStudentLimit,
       'boostAmount': boostAmount,
     };
   }

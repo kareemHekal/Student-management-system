@@ -166,13 +166,6 @@ class _CustomDrawerState extends State<CustomDrawer> {
       daysLeft = teacher!.subscriptionEndTime.difference(DateTime.now()).inDays;
     }
 
-    // 2. حسابات الطلاب
-    int current = teacher?.currentStudentCount ?? 0;
-    int allowed = teacher?.totalAllowedStudents ?? 0;
-    double occupancyRatio = allowed > 0 ? current / allowed : 0;
-    bool isNearLimit = occupancyRatio >= 0.9;
-    bool isOverLimit = current > allowed;
-
     // 3. التحقق من وجود بيانات حقيقية (عشان مظهرش عدادات لـ "مدير النظام")
     bool hasRealData = teacher != null && teacher.name != "مدير النظام";
 
@@ -209,31 +202,49 @@ class _CustomDrawerState extends State<CustomDrawer> {
           // الفراغ والعدادات يظهروا فقط لو فيه بيانات مدرس حقيقية
           if (hasRealData) ...[
             const SizedBox(height: 15),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                alignment: WrapAlignment.center,
-                children: [
-                  // كبسولة الأيام
-                  _buildHeaderChip(
-                    icon: Icons.timer_outlined,
-                    label:
-                        daysLeft > 0 ? "متبقي $daysLeft يوم" : "الاشتراك منتهي",
-                    color: daysLeft > 7 ? AppColors.textOnDark : Colors.red,
-                  ),
+            // نستخدم FutureBuilder هنا
+            FutureBuilder<int>(
+              future: teacher.getTotalAllowedStudents(),
+              builder: (context, snapshot) {
+                int allowed = snapshot.data ?? 0;
+                int current = teacher.currentStudentCount;
+                double occupancyRatio = allowed > 0 ? current / allowed : 0;
+                bool isNearLimit = occupancyRatio >= 0.9;
+                bool isOverLimit = current > allowed;
 
-                  // كبسولة عدد الطلاب
-                  _buildHeaderChip(
-                    icon: Icons.groups_outlined,
-                    label: "الطلاب: $current / $allowed",
-                    color: isOverLimit
-                        ? Colors.red
-                        : (isNearLimit ? Colors.orange : AppColors.textOnDark),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      // كبسولة الأيام
+                      _buildHeaderChip(
+                        icon: Icons.timer_outlined,
+                        label: daysLeft > 0
+                            ? "متبقي $daysLeft يوم"
+                            : "الاشتراك منتهي",
+                        color: daysLeft > 7 ? AppColors.textOnDark : Colors.red,
+                      ),
+
+                      // كبسولة عدد الطلاب (ستظهر بعد انتهاء التحميل)
+                      _buildHeaderChip(
+                        icon: Icons.groups_outlined,
+                        label:
+                            snapshot.connectionState == ConnectionState.waiting
+                                ? "جاري الحساب..."
+                                : "الطلاب: $current / $allowed",
+                        color: isOverLimit
+                            ? Colors.red
+                            : (isNearLimit
+                                ? Colors.orange
+                                : AppColors.textOnDark),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ],
