@@ -156,163 +156,170 @@ class StudentsPdfGenerator {
     return last.date;
   }
 
+// دالة مساعدة لاختصار الرقم الطويل
+  static String formatPhone(String? phone) {
+    if (phone == null || phone.isEmpty) return "-";
+    if (phone.length <= 11) return phone;
+    // يأخذ أول 3 وأخر 3 ويضع بينهم نجوم
+    return "${phone.substring(0, 3)}**${phone.substring(phone.length - 3)}";
+  }
+
   static Future<void> generateQrCodesPdf(
       List<Studentmodel> students, String teacherName) async {
     final pdf = pw.Document();
-
-    // تحميل الخط العربي - تأكد من المسار الصحيح في pubspec.yaml
     final fontData = await rootBundle.load("fonts/NotoKufiArabic-Regular.ttf");
     final pw.Font arabicFont = pw.Font.ttf(fontData);
 
-    final boys = students.where((s) => s.gender == "ذكر").toList();
-    final girls = students.where((s) => s.gender == "أنثى").toList();
+    const int cols = 4;
+    const int rows = 9;
+    const int cardsPerPage = cols * rows;
 
-    Future<void> _addGenderSection(
-        List<Studentmodel> list, String title) async {
+    void _addSection(List<Studentmodel> list, String title) {
       if (list.isEmpty) return;
+      String gradeName =
+          students.isNotEmpty ? (students.first.grade ?? "") : "";
 
-      const int crossAxisCount = 6;
-      const double spacing = 8;
-      final pageWidth = PdfPageFormat.a4.landscape.width;
-      final pageHeight = PdfPageFormat.a4.landscape.height;
+      // صفحة الغلاف
+      pdf.addPage(pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        theme: pw.ThemeData.withFont(base: arabicFont, bold: arabicFont),
+        build: (pw.Context context) => pw.Center(
+          child: pw.Column(
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            children: [
+              pw.Text(title,
+                  style: pw.TextStyle(fontSize: 40),
+                  textDirection: pw.TextDirection.rtl),
+              pw.Text("المدرس: $teacherName",
+                  style: pw.TextStyle(fontSize: 25),
+                  textDirection: pw.TextDirection.rtl),
+              pw.Text("الصف الدراسي : $gradeName",
+                  style: pw.TextStyle(fontSize: 25),
+                  textDirection: pw.TextDirection.rtl),
+              pw.Text("عدد الطلاب: ${list.length}",
+                  style: pw.TextStyle(fontSize: 25),
+                  textDirection: pw.TextDirection.rtl),
+            ],
+          ),
+        ),
+      ));
 
-      final cardWidth =
-          (pageWidth - (crossAxisCount + 1) * spacing) / crossAxisCount;
-      const double cardHeight = 105; // زدت الارتفاع قليلاً لضمان ظهور البيانات
+      for (var i = 0; i < list.length; i += cardsPerPage) {
+        final chunk = list.sublist(
+            i, i + cardsPerPage > list.length ? list.length : i + cardsPerPage);
 
-      final maxRowsPerPage =
-          ((pageHeight - 60) / (cardHeight + spacing)).floor();
-      final totalCardsPerPage = crossAxisCount * maxRowsPerPage;
-      final totalPages = (list.length / totalCardsPerPage).ceil();
-
-      for (int pageIndex = 0; pageIndex < totalPages; pageIndex++) {
         pdf.addPage(
           pw.Page(
-            pageFormat: PdfPageFormat.a4.landscape,
-            margin: const pw.EdgeInsets.all(10),
-            // إعداد السمة العامة للخط والاتجاه
-            theme: pw.ThemeData.withFont(
-              base: arabicFont,
-              bold: arabicFont,
-            ),
-            build: (context) {
+            pageFormat: PdfPageFormat.a4,
+            margin: const pw.EdgeInsets.all(20),
+            theme: pw.ThemeData.withFont(base: arabicFont, bold: arabicFont),
+            build: (pw.Context context) {
+              List<List<Studentmodel?>> tableRows = [];
+              for (var j = 0; j < chunk.length; j += cols) {
+                List<Studentmodel?> row = [];
+                for (var k = 0; k < cols; k++) {
+                  row.add((j + k < chunk.length) ? chunk[j + k] : null);
+                }
+                tableRows.add(row);
+              }
+
               return pw.Directionality(
                 textDirection: pw.TextDirection.rtl,
-                // إجبار الاتجاه من اليمين لليسار
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.only(bottom: 10),
-                      child: pw.Text(title,
-                          style: pw.TextStyle(
-                              fontSize: 18, fontWeight: pw.FontWeight.bold)),
-                    ),
-                    pw.Column(
-                      children: List.generate(maxRowsPerPage, (rowIndex) {
-                        return pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.start,
-                          children: List.generate(crossAxisCount, (colIndex) {
-                            final index = pageIndex * totalCardsPerPage +
-                                rowIndex * crossAxisCount +
-                                colIndex;
-                            if (index >= list.length)
-                              return pw.SizedBox(
-                                  width: cardWidth, height: cardHeight);
+                child: pw.Table(
+                  columnWidths: {
+                    0: const pw.FractionColumnWidth(0.25),
+                    1: const pw.FractionColumnWidth(0.25),
+                    2: const pw.FractionColumnWidth(0.25),
+                    3: const pw.FractionColumnWidth(0.25),
+                  },
+                  children: tableRows.map((rowItems) {
+                    return pw.TableRow(
+                      children: rowItems.map((student) {
+                        if (student == null) return pw.Container();
 
-                            final student = list[index];
-
-                            return pw.Container(
-                              width: cardWidth,
-                              height: 90,
-                              margin: const pw.EdgeInsets.all(spacing / 2),
-                              padding: const pw.EdgeInsets.symmetric(
-                                  horizontal: 5, vertical: 4),
-                              decoration: pw.BoxDecoration(
-                                border: pw.Border.all(
-                                    color: PdfColors.grey400, width: 0.5),
-                                borderRadius: pw.BorderRadius.circular(4),
+                        return pw.Container(
+                          margin: const pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(5),
+                          height: (PdfPageFormat.a4.height - 60) / rows,
+                          decoration: pw.BoxDecoration(
+                            border: pw.Border.all(
+                                color: PdfColors.grey400, width: 0.5),
+                            borderRadius: pw.BorderRadius.circular(4),
+                          ),
+                          child: pw.Column(
+                            mainAxisAlignment:
+                                pw.MainAxisAlignment.spaceBetween,
+                            children: [
+                              pw.SizedBox(
+                                height: 14,
+                                child: pw.FittedBox(
+                                  child: pw.Text(student.name ?? "",
+                                      textDirection: pw.TextDirection.rtl,
+                                      style: pw.TextStyle(
+                                          fontWeight: pw.FontWeight.bold)),
+                                ),
                               ),
-                              child: pw.Column(
-                                mainAxisSize: pw.MainAxisSize.min,
-                                children: [
-                                  // اسم الطالب
-                                  pw.Text(
-                                    student.name ?? "غير مسجل",
-                                    style: pw.TextStyle(
-                                        fontSize: 8,
-                                        fontWeight: pw.FontWeight.bold),
-                                    maxLines: 1,
-                                  ),
-                                  pw.Divider(thickness: 0.5, height: 6),
-                                  // تقليل مساحة الفاصل
-
-                                  pw.Row(
-                                    mainAxisAlignment:
-                                        pw.MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        pw.CrossAxisAlignment.start,
-                                    children: [
-                                      // الـ QR Code مع إضافة مسافات جانبية
-                                      pw.Padding(
-                                        padding: const pw.EdgeInsets.only(
-                                            top: 2, left: 4, right: 4),
-                                        // مسافة من الأعلى واليسار واليمين
-                                        child: pw.Container(
-                                          width: 30,
-                                          height: 30,
-                                          child: pw.BarcodeWidget(
-                                            data: student.id ?? "0",
-                                            barcode: pw.Barcode.qrCode(),
-                                            drawText:
-                                                false, // لضمان عدم كتابة الرقم أسفل الكود إذا لم تحتاجه
-                                          ),
-                                        ),
+                              pw.Divider(thickness: 0.3, height: 2),
+                              pw.Expanded(
+                                child: pw.Row(
+                                  children: [
+                                    pw.Container(
+                                      width: 35,
+                                      height: 35,
+                                      child: pw.BarcodeWidget(
+                                        data: student.id ?? "0",
+                                        barcode: pw.Barcode.qrCode(),
+                                        drawText: false,
                                       ),
-
-                                      pw.SizedBox(width: 8),
-                                      // زيادة المسافة الفاصلة بين الـ QR ومنطقة البيانات
-
-                                      // البيانات
-                                      pw.Expanded(
-                                        child: pw.Column(
-                                          crossAxisAlignment:
-                                              pw.CrossAxisAlignment.end,
-                                          children: [
-                                            pw.Text(
-                                                "هاتف: ${student.phoneNumber ?? '-'}",
-                                                style: const pw.TextStyle(
-                                                    fontSize: 8)),
-                                            pw.SizedBox(height: 2),
-                                            pw.Text(
-                                                "الصف: ${student.grade ?? '-'}",
-                                                style: const pw.TextStyle(
-                                                    fontSize: 8)),
-
-                                            // مسافة عمودية قبل اسم المدرس
-                                            pw.SizedBox(height: 8),
-
-                                            pw.Text(
-                                              teacherName,
-                                              style: pw.TextStyle(
-                                                fontSize: 7,
-                                                color: PdfColors.grey700,
-                                                fontWeight: pw.FontWeight.bold,
-                                              ),
+                                    ),
+                                    pw.SizedBox(width: 4),
+                                    pw.Expanded(
+                                      child: pw.Column(
+                                        mainAxisAlignment:
+                                            pw.MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            pw.CrossAxisAlignment.start,
+                                        children: [
+                                          pw.Directionality(
+                                            textDirection: pw.TextDirection.ltr,
+                                            child: pw.FittedBox(
+                                              child: pw.Text(
+                                                  // تم استدعاء دالة الفورمات هنا
+                                                  "ت: ${formatPhone(student.phoneNumber)}",
+                                                  style: const pw.TextStyle(
+                                                      fontSize: 7)),
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                          pw.Divider(thickness: 0.2, height: 3),
+                                          pw.SizedBox(
+                                            height: 9,
+                                            child: pw.FittedBox(
+                                              child: pw.Text(
+                                                  "ص: ${student.grade ?? ''}",
+                                                  textDirection:
+                                                      pw.TextDirection.rtl),
+                                            ),
+                                          ),
+                                          pw.SizedBox(
+                                            height: 9,
+                                            child: pw.FittedBox(
+                                              child: pw.Text("أ: $teacherName",
+                                                  textDirection:
+                                                      pw.TextDirection.rtl),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            );
-                          }),
+                            ],
+                          ),
                         );
-                      }),
-                    ),
-                  ],
+                      }).toList(),
+                    );
+                  }).toList(),
                 ),
               );
             },
@@ -321,9 +328,20 @@ class StudentsPdfGenerator {
       }
     }
 
-    await _addGenderSection(boys, "الطلاب الذكور");
-    await _addGenderSection(girls, "الطالبات الإناث");
+    final List<Studentmodel> boys =
+        students.where((s) => s.gender == "ذكر").toList();
+    final List<Studentmodel> girls =
+        students.where((s) => s.gender == "أنثى").toList();
 
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    _addSection(boys, "قسم البنين");
+    _addSection(girls, "قسم البنات");
+
+    String gradeName = students.isNotEmpty ? (students.first.grade ?? "") : "";
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => pdf.save(),
+      // هنا نحدد اسم الملف الافتراضي عند الحفظ
+      name: 'Qr codes $gradeName',
+    );
   }
 }

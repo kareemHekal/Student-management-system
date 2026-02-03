@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:student_management_system/alert_dialogs/Notify%20Absence.dart';
 import 'package:student_management_system/cards/student/student_card_functions.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/models/Magmo3aModel.dart';
 import 'package:student_management_system/models/Student_model.dart';
 import 'package:student_management_system/provider.dart';
 import 'package:student_management_system/theme/colors_app.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
 import 'package:student_management_system/theme/text_style.dart';
 
 class AbsentStudentWidget extends StatefulWidget {
@@ -243,7 +245,7 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
       runSpacing: 8,
       children: groups.map((g) {
         final time = (g.time != null)
-            ? StudentActionsHelper.formatTime12Hour(g.time!)
+            ? StudentActionsHelper.formatTime12Hour(g.time)
             : "—";
 
         return Container(
@@ -325,7 +327,11 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
   }
 
   void _showAddNoteDialog(BuildContext context) {
-    _noteController.text = _getNoteForDate(widget.selectedDateStr);
+    if (_getNoteForDate(widget.selectedDateStr) ==
+        "لا توجد ملاحظات لتاريخ اليوم") {
+      _noteController.text = "";
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -341,13 +347,22 @@ class _AbsentStudentWidgetState extends State<AbsentStudentWidget> {
               child: Text("إلغاء",
                   style: AppTextStyles.customText(color: Colors.grey))),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               String dateKey = widget.selectedDateStr;
               widget.studentModel.notes ??= [];
               widget.studentModel.notes!.add({dateKey: _noteController.text});
-              FirebaseFunctions.updateStudentInCollection(widget.selectedDate,
-                  widget.magmo3aModel.id, widget.studentModel);
-              Navigator.pop(context);
+              runWithLoading(context, () async {
+                try {
+                  await FirebaseFunctions.updateStudentInCollection(
+                      widget.grade!,
+                      widget.studentModel.id,
+                      widget.studentModel);
+                  Navigator.pop(context);
+                  AppSnackBars.showSuccess(context, "تم اضافه الملاحظه بنجاح ");
+                } catch (e) {
+                  AppSnackBars.showError(context, "حدثت مشكله $e");
+                }
+              });
             },
             child: Text("حفظ",
                 style: AppTextStyles.customText(

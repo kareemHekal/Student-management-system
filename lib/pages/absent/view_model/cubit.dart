@@ -1,32 +1,21 @@
 import 'dart:async';
 
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
-
 import 'package:flutter/material.dart';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:student_management_system/alert_dialogs/group_selection_while_scanning.dart';
 import 'package:student_management_system/alert_dialogs/student_payment_bottom_sheet.dart';
-
 import 'package:student_management_system/firebase/firebase_functions.dart';
-
 import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
-
 import 'package:student_management_system/models/Magmo3aModel.dart';
-
 import 'package:student_management_system/models/Student_model.dart';
-
 import 'package:student_management_system/models/absence_app/absence_model.dart';
-
 import 'package:student_management_system/models/absence_app/day_record.dart';
-
 import 'package:student_management_system/models/absence_app/secondary_record.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
 
 import 'intent.dart';
-
 import 'states.dart';
 
 class AbsentCubit extends Cubit<AbsentState> {
@@ -55,10 +44,11 @@ class AbsentCubit extends Cubit<AbsentState> {
   bool? isAttendanceStarted;
 
   int? numberOfStudents;
-
+  final Map<String, Studentmodel> _studentsCache = {};
   StreamSubscription? _absenceSubscription;
 
   bool isFirstLoadDone = false;
+  bool _isProcessingAttendance = false;
 
   Future<void> handleIntent(AbsentIntent intent) async {
     if (isClosed) return;
@@ -192,68 +182,25 @@ class AbsentCubit extends Cubit<AbsentState> {
     }
   }
 
-  Future<void> _addManualStudentToPresent(
-      {required Studentmodel student, SecondaryRecord? targetSecondary}) async {
-    try {
-      List<Future> batchOperations = [];
-
-      if (targetSecondary != null) {
-        await getSecondaryGroupStudents(
-            grade: student.grade ?? "", secondaryRecord: targetSecondary);
-
-        final targetAbsence = await FirebaseFunctions.getAbsenceByDateOnce(
-            targetSecondary.day,
-            targetSecondary.magmo3aId,
-            targetSecondary.date);
-
-        if (targetAbsence != null) {
-          if (!targetAbsence.attendStudentIds.contains(student.id))
-            targetAbsence.attendStudentIds.add(student.id);
-
-          targetAbsence.absentStudentIds.remove(student.id);
-
-          batchOperations.add(
-              FirebaseFunctions.updateAbsenceByDateInSubcollection(
-                  targetSecondary.day,
-                  targetSecondary.magmo3aId,
-                  targetSecondary.date,
-                  targetAbsence));
-        }
-
-        absentStudents.removeWhere((s) => s.id == student.id);
-
-        student.countingAttendedDays ??= [];
-
-        student.countingAttendedDays!.add(DayRecord(
-          magmo3aId: targetSecondary.magmo3aId,
-          date: targetSecondary.date,
-          day: targetSecondary.day,
-          time: targetSecondary.time,
-          secondary: SecondaryRecord(
-              date: selectedDateStr,
-              day: selectedDay,
-              magmo3aId: magmo3aModel.id,
-              time: magmo3aModel.time),
-        ));
-
-        student.countingAbsentDays?.removeWhere((d) =>
-            (d.date == selectedDateStr && d.magmo3aId == magmo3aModel.id) ||
-            (d.date == targetSecondary.date &&
-                d.magmo3aId == targetSecondary.magmo3aId));
-      } else {
-        await _addBasicAttendance(student, batchOperations);
-      }
-
-      await _finalizeAttendanceUpdate(student, batchOperations);
-    } catch (e) {
-      emit(AbsentError('Manual Attendance Failed: $e'));
-    }
-  }
-
 // ---------------------------------------------------------
 
   Future<void> _fetchAbsenceStream() async {
     await _absenceSubscription?.cancel();
+
+    // أولاً: حمل كل طلبة المجموعة "مرة واحدة" وخزنهم في الـ Cache
+    // ده بيخلي الـ Stream سريع جداً لأنه بيتعامل مع IDs بس
+    try {
+      final allStudentsSnapshot =
+          await FirebaseFunctions.getStudentsByGroupIdOnce(
+        magmo3aModel.grade ?? "",
+        magmo3aModel.id,
+      );
+      for (var doc in allStudentsSnapshot.docs) {
+        _studentsCache[doc.id] = doc.data();
+      }
+    } catch (e) {
+      debugPrint("Cache Error: $e");
+    }
 
     _absenceSubscription = FirebaseFunctions.getAbsenceByDateStream(
       selectedDay,
@@ -262,49 +209,50 @@ class AbsentCubit extends Cubit<AbsentState> {
     ).listen((absenceRecord) async {
       if (isClosed) return;
 
-      try {
-        if (absenceRecord != null) {
-          final absentFutures = absenceRecord.absentStudentIds
-              .map(
-                (id) => FirebaseFunctions.getStudentById(
-                    magmo3aModel.grade ?? "", id),
-              )
-              .toList();
+      if (absenceRecord != null) {
+        // بدلاً من Future.wait وطلبات DB، استخدم الـ Cache فوراً
+        // ولو طالب مش موجود في الكاش (زي طالب جاي من مجموعة تانية) اطلبه لوحده
 
-          final attendFutures = absenceRecord.attendStudentIds
-              .map(
-                (id) => FirebaseFunctions.getStudentById(
-                    magmo3aModel.grade ?? "", id),
-              )
-              .toList();
+        List<Studentmodel> tempAbsent = [];
+        List<Studentmodel> tempAttend = [];
 
-          final results = await Future.wait([
-            Future.wait(absentFutures),
-            Future.wait(attendFutures),
-          ]);
-
-          if (isClosed) return;
-
-          absentStudents = results[0].whereType<Studentmodel>().toList();
-
-          attendStudents = results[1].whereType<Studentmodel>().toList();
-
-          numberOfStudents = absenceRecord.numberOfStudents;
-
-          _updateFilteredLists();
-
-          isAttendanceStarted = true;
-
-          isFirstLoadDone = true;
-
-          emit(AttendanceStarted());
-        } else {
-          await _fetchStudentsList();
+        for (var id in absenceRecord.absentStudentIds) {
+          if (_studentsCache.containsKey(id)) {
+            tempAbsent.add(_studentsCache[id]!);
+          } else {
+            // طالب غريب (Guest) مش في المجموعة دي أصلاً
+            final s = await FirebaseFunctions.getStudentById(
+                magmo3aModel.grade ?? "", id);
+            if (s != null) {
+              _studentsCache[id] = s;
+              tempAbsent.add(s);
+            }
+          }
         }
-      } catch (e) {
-        isFirstLoadDone = true;
 
-        if (!isClosed) emit(AbsentError('Error: $e'));
+        for (var id in absenceRecord.attendStudentIds) {
+          if (_studentsCache.containsKey(id)) {
+            tempAttend.add(_studentsCache[id]!);
+          } else {
+            final s = await FirebaseFunctions.getStudentById(
+                magmo3aModel.grade ?? "", id);
+            if (s != null) {
+              _studentsCache[id] = s;
+              tempAttend.add(s);
+            }
+          }
+        }
+
+        absentStudents = tempAbsent;
+        attendStudents = tempAttend;
+        numberOfStudents = absenceRecord.numberOfStudents;
+
+        _updateFilteredLists();
+        isAttendanceStarted = true;
+        isFirstLoadDone = true;
+        emit(AttendanceStarted());
+      } else {
+        await _fetchStudentsList();
       }
     });
   }
@@ -383,6 +331,230 @@ class AbsentCubit extends Cubit<AbsentState> {
     }
   }
 
+  Future<void> _scanQrcode(BuildContext context) async {
+    MobileScannerController _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+    );
+
+    Studentmodel? activeStudent;
+
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => BlocProvider.value(
+        value: this,
+        child: StatefulBuilder(
+          builder: (context, setScannerState) {
+            return AiBarcodeScanner(
+              controller: _scannerController,
+              onDispose: () => _scannerController.dispose(),
+              bottomSheetBuilder: (context, controller) {
+                if (activeStudent == null) {
+                  return Container(
+                    height: 100,
+                    color: Colors.white,
+                    child: const Center(child: Text("يرجى مسح كود الطالب")),
+                  );
+                }
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      color: Colors.white,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryMain,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () {
+                          setScannerState(() {
+                            activeStudent = null;
+                          });
+                          _scannerController.start();
+                        },
+                        icon: const Icon(Icons.arrow_forward),
+                        label: const Text(
+                          "الطالب التالي (فتح الكاميرا)",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    Flexible(
+                      child: StudentPaymentBottomSheet(
+                        student: activeStudent!,
+                      ),
+                    ),
+                  ],
+                );
+              },
+              onDetect: (BarcodeCapture capture) async {
+                if (_isProcessingAttendance) return;
+
+                final scannedValue = capture.barcodes.first.rawValue;
+                if (scannedValue == null) return;
+
+                // 1. فحص محلي فوري (بدون Loading) عشان لو حاضر نطلع SnackBar بسرعة
+                if (attendStudents.any((s) => s.id == scannedValue)) {
+                  AppSnackBars.showError(context, "⚠️ حاضر بالفعل");
+                  return;
+                }
+
+                try {
+                  _isProcessingAttendance = true;
+                  await _scannerController.stop();
+
+                  // 2. تشغيل الـ Loading لعملية كاملة (Block UI)
+                  await runWithLoading(context, () async {
+                    // أ- البحث في الذاكرة أولاً (فائق السرعة)
+                    Studentmodel? student = absentStudents
+                        .cast<Studentmodel?>()
+                        .firstWhere((s) => s?.id == scannedValue,
+                            orElse: () => null);
+
+                    // ب- لو مش في الذاكرة، نطلبه من Firebase (وأنت لسه جوه الـ Loading)
+                    student ??= await FirebaseFunctions.getStudentById(
+                        magmo3aModel.grade ?? "", scannedValue);
+
+                    if (student != null) {
+                      // ج- لو الطالب في مجموعته الأصلية، احفظ فوراً وأنت جوه الـ Loading
+                      if (student.hisGroupsId?.contains(magmo3aModel.id) ==
+                          true) {
+                        await _addQrStudentToPresent(
+                            student: student, originalSecondary: null);
+
+                        // تحديث الـ Bottom Sheet بعد ما الـ Loading يخلص
+                        setScannerState(() {
+                          activeStudent = student;
+                        });
+                      } else {
+                        // د- لو طالب مجموعة تانية، هنضطر نطلع من الـ Loading عشان يختار المجموعة
+                        // لكن هنمرر البيانات للـ Dialog مباشرة
+                        _isProcessingAttendance =
+                            false; // نفتح القفل مؤقتاً للـ Dialog
+
+                        // نغلق الـ Loading يدوياً هنا عشان نفتح الـ Dialog
+                        if (Navigator.canPop(context)) Navigator.pop(context);
+
+                        await showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (dCtx) => GroupSelectionWhileScanning(
+                            currentDate: selectedDateStr,
+                            studentGroups: student!.hisGroups ?? [],
+                            studentName: student.name ?? "",
+                            onConfirm: (selectedOriginalGroup) async {
+                              // نرجع نعمل Loading تاني وقت الحفظ فقط
+                              await runWithLoading(context, () async {
+                                await _addQrStudentToPresent(
+                                  student: student!,
+                                  originalSecondary: selectedOriginalGroup,
+                                );
+                              });
+                              Navigator.pop(dCtx);
+                              setScannerState(() {
+                                activeStudent = student;
+                              });
+                            },
+                          ),
+                        );
+                      }
+                    } else {
+                      AppSnackBars.showError(context, "❌ الطالب غير مسجل");
+                      _scannerController.start();
+                    }
+                  });
+                } catch (e) {
+                  debugPrint("❌ Scan Error: $e");
+                  _scannerController.start();
+                } finally {
+                  _isProcessingAttendance = false;
+                }
+              },
+            );
+          },
+        ),
+      ),
+    ));
+  }
+
+  Future<void> _addManualStudentToPresent(
+      {required Studentmodel student, SecondaryRecord? targetSecondary}) async {
+    if (_isProcessingAttendance) return;
+
+    try {
+      _isProcessingAttendance = true;
+      List<Future> batchOperations = [];
+
+      // ملاحظة: الـ runWithLoading يتم استدعاؤه من الـ UI (onConfirm) كما وضحت سابقاً
+
+      if (targetSecondary != null) {
+        // 1. التأكد من تهيئة سجل المجموعة البديلة (محلياً/سيرفر)
+        await getSecondaryGroupStudents(
+            grade: student.grade ?? "", secondaryRecord: targetSecondary);
+
+        // 2. التزامن: جلب أحدث نسخة للسجل البديل لضمان عدم ضياع شغل سكرتيرة أخرى
+        final targetAbsence = await FirebaseFunctions.getAbsenceByDateOnce(
+            targetSecondary.day,
+            targetSecondary.magmo3aId,
+            targetSecondary.date);
+
+        if (targetAbsence != null) {
+          if (!targetAbsence.attendStudentIds.contains(student.id)) {
+            targetAbsence.attendStudentIds.add(student.id);
+          }
+          targetAbsence.absentStudentIds.remove(student.id);
+
+          batchOperations.add(
+              FirebaseFunctions.updateAbsenceByDateInSubcollection(
+                  targetSecondary.day,
+                  targetSecondary.magmo3aId,
+                  targetSecondary.date,
+                  targetAbsence));
+        }
+
+        // تحديث الكائن المحلي للطالب (التعويض)
+        absentStudents.removeWhere((s) => s.id == student.id);
+        student.countingAttendedDays ??= [];
+
+        bool isAlreadyAttended = student.countingAttendedDays!.any((r) =>
+            r.magmo3aId == targetSecondary.magmo3aId &&
+            r.date == targetSecondary.date);
+
+        if (!isAlreadyAttended) {
+          student.countingAttendedDays!.add(DayRecord(
+            magmo3aId: targetSecondary.magmo3aId,
+            date: targetSecondary.date,
+            day: targetSecondary.day,
+            time: targetSecondary.time,
+            secondary: SecondaryRecord(
+                date: selectedDateStr,
+                day: selectedDay,
+                magmo3aId: magmo3aModel.id,
+                time: magmo3aModel.time),
+          ));
+        }
+
+        student.countingAbsentDays?.removeWhere((d) =>
+            (d.date == selectedDateStr && d.magmo3aId == magmo3aModel.id) ||
+            (d.date == targetSecondary.date &&
+                d.magmo3aId == targetSecondary.magmo3aId));
+      } else {
+        // الحضور العادي (يستخدم البحث المحلي داخل _addBasicAttendance)
+        await _addBasicAttendance(student, batchOperations);
+      }
+
+      // 3. الحفظ النهائي (بيحدث سجل الحصة الحالية وسجل الطالب)
+      await _finalizeAttendanceUpdate(student, batchOperations);
+    } catch (e) {
+      emit(AbsentError('Attendance Failed: $e'));
+    } finally {
+      _isProcessingAttendance = false;
+    }
+  }
+
   Future<void> _addQrStudentToPresent(
       {required Studentmodel student,
       SecondaryRecord? originalSecondary}) async {
@@ -390,6 +562,7 @@ class AbsentCubit extends Cubit<AbsentState> {
       List<Future> batchOperations = [];
 
       if (originalSecondary != null) {
+        // أ- تحديث سجل المجموعة الأصلية في الـ Firebase (إزالة من الغياب هناك)
         final originalAbsence = await FirebaseFunctions.getAbsenceByDateOnce(
             originalSecondary.day,
             originalSecondary.magmo3aId,
@@ -397,7 +570,6 @@ class AbsentCubit extends Cubit<AbsentState> {
 
         if (originalAbsence != null) {
           originalAbsence.absentStudentIds.remove(student.id);
-
           batchOperations.add(
               FirebaseFunctions.updateAbsenceByDateInSubcollection(
                   originalSecondary.day,
@@ -406,27 +578,31 @@ class AbsentCubit extends Cubit<AbsentState> {
                   originalAbsence));
         }
 
+        // ب- تحديث سجل الطالب (حضور تعويضي)
+        student.countingAttendedDays ??= [];
+        // التحقق من عدم تكرار "هذا التعويض" تحديداً
+        bool isAlreadyAttended = student.countingAttendedDays!.any((r) =>
+            r.magmo3aId == magmo3aModel.id &&
+            r.date == selectedDateStr &&
+            r.secondary?.magmo3aId == originalSecondary.magmo3aId);
+
+        if (!isAlreadyAttended) {
+          student.countingAttendedDays!.add(DayRecord(
+            magmo3aId: magmo3aModel.id,
+            date: selectedDateStr,
+            day: selectedDay,
+            time: magmo3aModel.time,
+            secondary: originalSecondary,
+          ));
+        }
+
+        // ج- التزامن: حذف الغياب للمجموعة "الأصلية" من سجل الطالب
+        student.countingAbsentDays?.removeWhere((d) =>
+            d.magmo3aId == originalSecondary.magmo3aId &&
+            d.date == originalSecondary.date);
+
         if (!attendStudents.any((s) => s.id == student.id))
           attendStudents.add(student);
-
-        student.countingAttendedDays ??= [];
-
-        student.countingAttendedDays!.add(DayRecord(
-          magmo3aId: magmo3aModel.id,
-          date: selectedDateStr,
-          day: selectedDay,
-          time: magmo3aModel.time,
-          secondary: SecondaryRecord(
-              date: originalSecondary.date,
-              day: originalSecondary.day,
-              magmo3aId: originalSecondary.magmo3aId,
-              time: originalSecondary.time),
-        ));
-
-        student.countingAbsentDays?.removeWhere((d) =>
-            (d.date == selectedDateStr && d.magmo3aId == magmo3aModel.id) ||
-            (d.date == originalSecondary.date &&
-                d.magmo3aId == originalSecondary.magmo3aId));
       } else {
         await _addBasicAttendance(student, batchOperations);
       }
@@ -437,147 +613,176 @@ class AbsentCubit extends Cubit<AbsentState> {
     }
   }
 
-// --- عملية الاسترجاع (Restore) ---
-
-  Future<void> _restoreStudent({required Studentmodel student}) async {
-    try {
-      // 1. Find the attendance record for the current session
-      DayRecord? attendanceRecord;
-      if (student.countingAttendedDays != null) {
-        attendanceRecord = student.countingAttendedDays!.firstWhere(
-          (r) =>
-              (r.magmo3aId == magmo3aModel.id ||
-                  r.secondary?.magmo3aId == magmo3aModel.id) &&
-              r.date == selectedDateStr,
-          orElse: () => throw Exception("Record not found"),
-        );
-      }
-
-      if (attendanceRecord == null) return;
-
-      List<Future> batchOperations = [];
-      final bool isGuest = attendanceRecord.secondary != null;
-
-      // 2. Handle the "Local" state (Current group UI)
-      attendStudents.removeWhere((s) => s.id == student.id);
-
-      // 3. Logic for restoring to Absence
-      if (!isGuest) {
-        // NORMAL CASE: Student belongs to THIS group
-        if (!absentStudents.any((s) => s.id == student.id)) {
-          absentStudents.add(student);
-        }
-
-        // Since it's the current group, we know the record exists
-        student.countingAbsentDays?.add(DayRecord(
-          magmo3aId: magmo3aModel.id,
-          date: selectedDateStr,
-          day: selectedDay,
-          time: magmo3aModel.time,
-          secondary: null,
-        ));
-      } else {
-        // GUEST CASE: Student belongs to a DIFFERENT group (Secondary)
-        final homeGroup = attendanceRecord.secondary!;
-
-        // Check if the home group's absence record still exists in Firebase
-        final homeAbsenceDoc = await FirebaseFunctions.getAbsenceByDateOnce(
-            homeGroup.day, homeGroup.magmo3aId, homeGroup.date);
-
-        if (homeAbsenceDoc != null) {
-          // ONLY if the record exists, we update it and add to student history
-          if (!homeAbsenceDoc.absentStudentIds.contains(student.id)) {
-            homeAbsenceDoc.absentStudentIds.add(student.id);
-          }
-
-          batchOperations.add(
-              FirebaseFunctions.updateAbsenceByDateInSubcollection(
-                  homeGroup.day,
-                  homeGroup.magmo3aId,
-                  homeGroup.date,
-                  homeAbsenceDoc));
-
-          // Add to student history ONLY because the record exists
-          student.countingAbsentDays?.add(DayRecord(
-            magmo3aId: homeGroup.magmo3aId,
-            date: homeGroup.date,
-            day: homeGroup.day,
-            time: homeGroup.time,
-            secondary: null,
-          ));
-        } else {
-          // If homeAbsenceDoc is NULL, the record was deleted.
-          // We do NOT add to countingAbsentDays here.
-          debugPrint(
-              "Skipping history update: Original absence record no longer exists.");
-        }
-      }
-
-      // 4. Clean up: Remove the attendance record we are restoring from
-      student.countingAttendedDays?.remove(attendanceRecord);
-
-      // 5. Update the current group's Absence Doc (to remove them from "Attended")
-      final currentAbsDoc = AbsenceModel(
-          numberOfStudents: numberOfStudents ?? 0,
-          date: selectedDateStr,
-          attendStudentIds: attendStudents.map((s) => s.id).toList(),
-          absentStudentIds: absentStudents.map((s) => s.id).toList());
-
-      batchOperations.add(FirebaseFunctions.updateAbsenceByDateInSubcollection(
-          selectedDay, magmo3aModel.id, selectedDateStr, currentAbsDoc));
-
-      // 6. Save the student's modified object
-      batchOperations.add(FirebaseFunctions.updateStudentInCollection(
-          student.grade ?? "", student.id, student));
-
-      await Future.wait(batchOperations);
-
-      _updateFilteredLists();
-      emit(AbsenceFetched());
-    } catch (e) {
-      emit(AbsentError('Restore Failed: $e'));
-    }
-  }
-
-// --- Helper Methods ---
-
   Future<void> _addBasicAttendance(
       Studentmodel student, List<Future> batch) async {
+    // 1. التحديث المحلي
     absentStudents.removeWhere((s) => s.id == student.id);
-
     if (!attendStudents.any((s) => s.id == student.id))
       attendStudents.add(student);
 
     student.countingAttendedDays ??= [];
 
-    student.countingAttendedDays!.add(DayRecord(
+    // التحقق من وجود "هذا السجل المعين" (نفس المجموعة ونفس التاريخ)
+    bool isAlreadyRecorded = student.countingAttendedDays!.any(
+        (r) => r.magmo3aId == magmo3aModel.id && r.date == selectedDateStr);
+
+    if (!isAlreadyRecorded) {
+      student.countingAttendedDays!.add(DayRecord(
         magmo3aId: magmo3aModel.id,
         date: selectedDateStr,
         day: selectedDay,
         time: magmo3aModel.time,
-        secondary: null));
+        secondary: null,
+      ));
+    }
 
+    // حذف الغياب "فقط" المرتبط بهذه الحصة المحددة
     student.countingAbsentDays?.removeWhere(
-        (d) => d.date == selectedDateStr && d.magmo3aId == magmo3aModel.id);
+        (d) => d.magmo3aId == magmo3aModel.id && d.date == selectedDateStr);
   }
+
+// --- عملية الاسترجاع (Restore) ---
+  // --- عملية الاسترجاع (Restore) المحدثة ---
+  Future<void> _restoreStudent({required Studentmodel student}) async {
+    if (_isProcessingAttendance) return;
+
+    try {
+      _isProcessingAttendance = true;
+
+      // 1. تحديد السجل الحالي المراد حذفه
+      final attendanceRecordIndex = student.countingAttendedDays?.indexWhere(
+          (r) => (r.magmo3aId == magmo3aModel.id) && r.date == selectedDateStr);
+
+      if (attendanceRecordIndex == null || attendanceRecordIndex == -1) return;
+
+      final attendanceRecord =
+          student.countingAttendedDays![attendanceRecordIndex];
+      final bool isGuest = attendanceRecord.secondary != null;
+
+      // تحديد بيانات "الحصة الأصلية"
+      final String targetMagmo3aId = isGuest
+          ? attendanceRecord.secondary!.magmo3aId
+          : attendanceRecord.magmo3aId;
+      final String targetDate =
+          isGuest ? attendanceRecord.secondary!.date : attendanceRecord.date;
+      final String targetDay =
+          isGuest ? attendanceRecord.secondary!.day : attendanceRecord.day;
+      final TimeOfDay targetTime =
+          isGuest ? attendanceRecord.secondary!.time : attendanceRecord.time;
+
+      List<Future> batchOperations = [];
+
+      // 2. الحذف المحلي من الحضور
+      student.countingAttendedDays!.removeAt(attendanceRecordIndex);
+      attendStudents.removeWhere((s) => s.id == student.id);
+
+      // 3. فحص هل هو حاضر في أي مكان آخر لنفس الحصة الأصلية؟
+      bool isStillPresentElsewhere = student.countingAttendedDays!.any((r) {
+        if (r.secondary == null) {
+          return r.magmo3aId == targetMagmo3aId && r.date == targetDate;
+        } else {
+          return r.secondary!.magmo3aId == targetMagmo3aId &&
+              r.secondary!.date == targetDate;
+        }
+      });
+
+      if (!isStillPresentElsewhere) {
+        // -------------------------------------------------------
+        // 🆕 التحقق من وجود AbsenceModel للمجموعة الأصلية قبل إضافة الغياب
+        // -------------------------------------------------------
+        final originalAbsDoc = await FirebaseFunctions.getAbsenceByDateOnce(
+            targetDay, targetMagmo3aId, targetDate);
+
+        if (originalAbsDoc != null) {
+          // أ- إضافة سجل غياب للطالب محلياً
+          student.countingAbsentDays ??= [];
+          bool alreadyInAbsent = student.countingAbsentDays!.any(
+              (d) => d.magmo3aId == targetMagmo3aId && d.date == targetDate);
+
+          if (!alreadyInAbsent) {
+            student.countingAbsentDays!.add(DayRecord(
+              magmo3aId: targetMagmo3aId,
+              date: targetDate,
+              day: targetDay,
+              time: targetTime,
+              secondary: null,
+            ));
+          }
+
+          // ب- تحديث قائمة الغياب في السجل البعيد (Firebase)
+          if (!originalAbsDoc.absentStudentIds.contains(student.id)) {
+            originalAbsDoc.absentStudentIds.add(student.id);
+          }
+          originalAbsDoc.attendStudentIds.remove(student.id);
+
+          batchOperations.add(
+              FirebaseFunctions.updateAbsenceByDateInSubcollection(
+                  targetDay, targetMagmo3aId, targetDate, originalAbsDoc));
+
+          // ج- لو كنا حالياً داخل المجموعة الأصلية، أضفه لقائمة الغياب لتحديث الـ Stream
+          if (magmo3aModel.id == targetMagmo3aId && !isGuest) {
+            if (!absentStudents.any((s) => s.id == student.id)) {
+              absentStudents.add(student);
+            }
+          }
+        } else {
+          debugPrint(
+              "Original Absence record doesn't exist yet. Student won't be marked absent.");
+        }
+      }
+
+      // 4. الحفظ النهائي (تحديث سجل المجموعة الحالية وسجل الطالب)
+      await _finalizeAttendanceUpdate(student, batchOperations);
+    } catch (e) {
+      emit(AbsentError('Restore Failed: $e'));
+    } finally {
+      _isProcessingAttendance = false;
+    }
+  }
+
+  Future<void> _updateRemoteAbsenceRecord(
+      String day, String magmo3aId, String date, String studentId,
+      {required bool isAddingToAbsent}) async {
+    final absDoc =
+        await FirebaseFunctions.getAbsenceByDateOnce(day, magmo3aId, date);
+    if (absDoc != null) {
+      if (isAddingToAbsent) {
+        if (!absDoc.absentStudentIds.contains(studentId))
+          absDoc.absentStudentIds.add(studentId);
+        absDoc.attendStudentIds.remove(studentId);
+      } else {
+        absDoc.absentStudentIds.remove(studentId);
+        if (!absDoc.attendStudentIds.contains(studentId))
+          absDoc.attendStudentIds.add(studentId);
+      }
+      await FirebaseFunctions.updateAbsenceByDateInSubcollection(
+          day, magmo3aId, date, absDoc);
+    }
+  }
+
 
   Future<void> _finalizeAttendanceUpdate(
       Studentmodel student, List<Future> batch) async {
+    // تحديث محلي للقوائم المفلترة
+    _updateFilteredLists();
+
+    // بناء الموديل للمجموعة الحالية من اللستة اللي اتحدثت فوق
     final currentAbs = AbsenceModel(
         numberOfStudents: numberOfStudents ?? 0,
         date: selectedDateStr,
-        attendStudentIds: attendStudents.map((s) => s.id).toList(),
-        absentStudentIds: absentStudents.map((s) => s.id).toList());
+        attendStudentIds: attendStudents.map((s) => s.id).toSet().toList(),
+        absentStudentIds: absentStudents.map((s) => s.id).toSet().toList());
 
+    // إضافة تحديث المجموعة الحالية والسجل للطالب
     batch.add(FirebaseFunctions.updateAbsenceByDateInSubcollection(
         selectedDay, magmo3aModel.id, selectedDateStr, currentAbs));
-
     batch.add(FirebaseFunctions.updateStudentInCollection(
         student.grade ?? "", student.id, student));
 
     await Future.wait(batch);
 
-    _updateFilteredLists();
+    // تحديث الكاش عشان الـ Stream يقرأ من الميموري
+    _studentsCache[student.id] = student;
 
     emit(ScanSuccess(student));
   }
@@ -622,139 +827,6 @@ class AbsentCubit extends Cubit<AbsentState> {
     filteredAbsentStudentsList = List.from(absentStudents);
 
     emit(SearchResultsUpdated(filteredAbsentStudentsList));
-  }
-
-  Future<void> _scanQrcode(BuildContext context) async {
-    MobileScannerController _scannerController = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
-    );
-
-    Studentmodel? activeStudent;
-
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => BlocProvider.value(
-        value: this,
-        child: StatefulBuilder(
-          builder: (context, setScannerState) {
-            return AiBarcodeScanner(
-              controller: _scannerController,
-              onDispose: () => _scannerController.dispose(),
-              // Using the bottomSheetBuilder logic from the first function
-              bottomSheetBuilder: (context, controller) {
-                if (activeStudent == null) {
-                  return Container(
-                    height: 100,
-                    color: Colors.white,
-                    child: const Center(child: Text("يرجى مسح كود الطالب")),
-                  );
-                }
-
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      color: Colors.white,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryMain,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () {
-                          // Reset state to scan next student
-                          setScannerState(() {
-                            activeStudent = null;
-                          });
-                          _scannerController.start();
-                        },
-                        icon: const Icon(Icons.arrow_forward),
-                        label: const Text(
-                          "الطالب التالي (فتح الكاميرا)",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                    Flexible(
-                      child: StudentPaymentBottomSheet(
-                        student: activeStudent!,
-                      ),
-                    ),
-                  ],
-                );
-              },
-              onDetect: (BarcodeCapture capture) async {
-                final scannedValue = capture.barcodes.first.rawValue;
-                if (scannedValue == null) return;
-
-                // 1. Check if already attended using AppSnackBars
-                if (attendStudents.any((s) => s.id == scannedValue)) {
-                  AppSnackBars.showError(context, "⚠️ حاضر بالفعل");
-                  return;
-                }
-
-                // 2. Pause scanner to focus on the current student
-                await _scannerController.stop();
-
-                try {
-                  await runWithLoading(context, () async {
-                    // Fetch student logic
-                    Studentmodel? student = absentStudents
-                            .cast<Studentmodel?>()
-                            .firstWhere((s) => s?.id == scannedValue,
-                                orElse: () => null) ??
-                        await FirebaseFunctions.getStudentById(
-                            magmo3aModel.grade ?? "", scannedValue);
-
-                    if (student != null) {
-                      // 3. Process Attendance
-                      if (student.hisGroupsId?.contains(magmo3aModel.id) ==
-                          true) {
-                        await _addQrStudentToPresent(
-                            student: student, originalSecondary: null);
-                      } else {
-                        await showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (dCtx) => GroupSelectionWhileScanning(
-                            currentDate: selectedDateStr,
-                            studentGroups: student.hisGroups ?? [],
-                            studentName: student.name ?? "",
-                            onConfirm: (selectedOriginalGroup) async {
-                              await runWithLoading(context, () async {
-                                await _addQrStudentToPresent(
-                                  student: student,
-                                  originalSecondary: selectedOriginalGroup,
-                                );
-                              });
-                            },
-                          ),
-                        );
-                      }
-
-                      // 4. Update UI to show the payment sheet (activeStudent)
-                      setScannerState(() {
-                        activeStudent = student;
-                      });
-                    } else {
-                      // Student not found logic
-                      AppSnackBars.showError(
-                          context, "❌ الطالب غير مسجل في السيستم");
-                      _scannerController.start();
-                    }
-                  });
-                } catch (e) {
-                  debugPrint("❌ Error during scan: $e");
-                  _scannerController.start();
-                }
-              },
-            );
-          },
-        ),
-      ),
-    ));
   }
 
   @override

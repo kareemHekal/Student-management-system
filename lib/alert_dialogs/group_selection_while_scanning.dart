@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_management_system/cards/magmo3at/magmo3a_for_display_widget.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/models/Magmo3aModel.dart';
 import 'package:student_management_system/models/absence_app/secondary_record.dart';
 import 'package:student_management_system/theme/colors_app.dart';
@@ -74,15 +75,17 @@ class GroupSelectionWhileScanning extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final group = studentGroups[index];
                         return InkWell(
-                          onTap: () {
-                            final date =
-                                _calculateNearestDate(group.day ?? "Saturday");
-                            onConfirm(SecondaryRecord(
-                                magmo3aId: group.id,
-                                date: date,
-                                day: group.day ?? "",
-                                time: group.time));
-                            Navigator.pop(context);
+                          onTap: () async {
+                            await runWithLoading(context, () async {
+                              final date = await _calculateNearestDate(
+                                  group.day ?? "Saturday");
+                              await onConfirm(SecondaryRecord(
+                                  magmo3aId: group.id,
+                                  date: date,
+                                  day: group.day ?? "",
+                                  time: group.time));
+                              Navigator.pop(context);
+                            });
                           },
                           child:
                               Magmo3aWidgetWithoutSlidable(magmo3aModel: group),

@@ -9,6 +9,7 @@ import 'package:student_management_system/loadingFile/loading_alert/run_with_loa
 import 'package:student_management_system/models/absence_app/day_record.dart';
 import 'package:student_management_system/pages/absent/students_attending_page.dart';
 import 'package:student_management_system/pages/absent/view_model/cubit.dart';
+import 'package:student_management_system/pages/absent/view_model/intent.dart';
 
 import '../../absent_home_screen.dart';
 import '../../firebase/firebase_functions.dart';
@@ -93,6 +94,8 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
                         ),
                       ),
                     );
+                    cubit.searchController.clear();
+                    cubit.handleIntent(SearchStudent(query: ''));
                   }),
               _buildModernActionButton(
                 icon: Icons.delete_forever_rounded,
@@ -161,6 +164,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
       ),
     );
   }
+
   // --- PDF & Logic Methods ---
 
   String _buildNotesForDate(Studentmodel student, String dateKey) {
@@ -308,6 +312,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
       ),
     );
   }
+
   Future<void> fixAttendanceCounts() async {
     try {
       debugPrint("🚀 Starting Attendance Rollback...");

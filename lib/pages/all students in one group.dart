@@ -38,9 +38,11 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
 
     stream.listen((snapshot) {
       final students = snapshot.docs.map((e) => e.data()).toList();
-      setState(() {
-        allStudents = students;
-      });
+      if (mounted) {
+        setState(() {
+          allStudents = students;
+        });
+      }
     });
   }
 
@@ -233,5 +235,4 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
       ),
     );
   }
-
 }

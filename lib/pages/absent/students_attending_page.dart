@@ -33,23 +33,39 @@ class StudentsAttending extends StatelessWidget {
         }
       },
       builder: (context, state) {
-        final students = cubit.filteredAttendStudentsList.isNotEmpty
+        // ✅ المنطق الصحيح للبحث:
+        // إذا كان حقل البحث يحتوي على نص، نعتمد كلياً على قائمة الفلترة (حتى لو كانت فارغة)
+        // إذا كان الحقل فارغاً، نعرض قائمة الحضور الكاملة
+        final bool isSearching = cubit.searchController.text.isNotEmpty;
+        final students = isSearching
             ? cubit.filteredAttendStudentsList
             : cubit.attendStudents;
 
-        return Scaffold(
-          backgroundColor: const Color(0xffF8F9FE),
-          appBar: _buildAppBar(context, cubit, students.length),
-          body: Stack(
-            children: [
-              Center(
-                child: Opacity(
-                  opacity: 0.05,
-                  child: Image.asset("assets/images/logo.png", width: 250),
+        return PopScope(
+          canPop: true,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) {
+              cubit.searchController.clear();
+              cubit.handleIntent(SearchStudent(query: ''));
+            }
+          },
+          child: Scaffold(
+            backgroundColor: const Color(0xffF8F9FE),
+            appBar: _buildAppBar(context, cubit, students.length),
+            body: Stack(
+              children: [
+                Center(
+                  child: Opacity(
+                    opacity: 0.05,
+                    child: Image.asset("assets/images/logo.png", width: 250),
+                  ),
                 ),
-              ),
-              _buildContent(context, cubit, students),
-            ],
+                // ✅ فحص الحالة الفارغة هنا بناءً على نوع القائمة المعروضة
+                students.isEmpty
+                    ? _emptySearchState(isSearching)
+                    : _buildContent(context, cubit, students),
+              ],
+            ),
           ),
         );
       },
@@ -57,11 +73,9 @@ class StudentsAttending extends StatelessWidget {
   }
 
   // ------------------- APP BAR -------------------
-  PreferredSizeWidget _buildAppBar(
-    BuildContext context,
-    AbsentCubit cubit,
-    int total,
-  ) {
+  PreferredSizeWidget _buildAppBar(BuildContext context,
+      AbsentCubit cubit,
+      int total,) {
     return AppBar(
       backgroundColor: AppColors.primaryMain,
       elevation: 0,
@@ -69,7 +83,11 @@ class StudentsAttending extends StatelessWidget {
       centerTitle: true,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.white),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () {
+          cubit.searchController.clear();
+          cubit.handleIntent(SearchStudent(query: ''));
+          Navigator.pop(context);
+        },
       ),
       title: Image.asset("assets/images/logo.png", height: 60),
       shape: const RoundedRectangleBorder(
@@ -139,15 +157,10 @@ class StudentsAttending extends StatelessWidget {
   }
 
   // ------------------- CONTENT -------------------
-  Widget _buildContent(
-    BuildContext context,
-    AbsentCubit cubit,
-    List<Studentmodel> students,
-  ) {
-    if (students.isEmpty) {
-      return _emptyState();
-    }
-
+  Widget _buildContent(BuildContext context,
+      AbsentCubit cubit,
+      List<Studentmodel> students,) {
+    // تم حذف فحص isEmpty من هنا لضمان عمل الـ emptySearchState الخارجي بشكل صحيح
     return ListView.builder(
       padding: const EdgeInsets.only(top: 10),
       itemCount: students.length,
@@ -165,31 +178,6 @@ class StudentsAttending extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  // ------------------- EMPTY STATE -------------------
-  Widget _emptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.people_outline_rounded,
-            size: 80,
-            color: AppColors.primaryMain.withOpacity(0.15),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'لا يوجد طلاب حاضرون',
-            style: AppTextStyles.customText(
-              fontSize: 16,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -266,6 +254,35 @@ class StudentsAttending extends StatelessWidget {
             title,
             style: AppTextStyles.customText(
               color: AppColors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ تعديل الحالة الفارغة لتكون شاملة للبحث وللقائمة الأصلية
+  Widget _emptySearchState(bool isSearching) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            isSearching
+                ? Icons.search_off_rounded
+                : Icons.people_outline_rounded,
+            size: 80,
+            color: AppColors.primaryMain.withOpacity(0.15),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            isSearching
+                ? 'لا توجد نتائج لهذا البحث'
+                : "لا يوجد طلاب حاضرون حالياً",
+            style: AppTextStyles.customText(
+              fontSize: 16,
+              color: AppColors.textSecondary,
               fontWeight: FontWeight.bold,
             ),
           ),

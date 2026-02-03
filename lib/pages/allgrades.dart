@@ -73,9 +73,9 @@ class _AllgradesState extends State<Allgrades> {
                         DeleteGradeDialog(context, secondaries[index]);
                       },
                       gradeName: secondaries[index],
-                      onRename: () {
+                      onRename: () async {
                         // Original rename logic
-                        renameGrade(
+                        await renameGrade(
                             context: context, oldGrade: secondaries[index]);
                       },
                       onNavigateToExams: () {

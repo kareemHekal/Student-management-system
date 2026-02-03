@@ -7,6 +7,7 @@ import 'package:student_management_system/models/grade_subscriptions_model.dart'
 import 'package:student_management_system/models/student_paid_subscription.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/text_style.dart';
+
 import 'edit_on_payment.dart';
 
 class StudentPaymentBottomSheet extends StatefulWidget {
@@ -25,7 +26,7 @@ class _StudentPaymentBottomSheetState extends State<StudentPaymentBottomSheet> {
     return Container(
       // Height can be adjusted or set to dynamic
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.8,
+        maxHeight: MediaQuery.of(context).size.height * 0.6,
       ),
       decoration: const BoxDecoration(
         color: AppColors.white,

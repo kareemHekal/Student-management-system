@@ -25,16 +25,17 @@ class Teacher {
   });
 
   // --- الحسبة الذكية (Logic) ---
-
   Future<int> getBaseStudentLimit() async {
     final now = DateTime.now();
 
-    // نستخدم "id" الخاص بالأوبجكت الحالي مباشرة
+    // تحسين: جلب الفواتير التي تاريخ انتهائها "أكبر من" الآن فقط
+    // ملحوظة: مقارنة النصوص ISO8601 تعمل بشكل صحيح للتواريخ
     var snapshot = await FirebaseFirestore.instance
         .collection('teachers')
         .doc(id)
         .collection('bills')
         .where('billType', isEqualTo: 'basic')
+        .where('expiryDate', isGreaterThan: now.toIso8601String())
         .get();
 
     if (snapshot.docs.isEmpty) return 0;
@@ -42,19 +43,17 @@ class Teacher {
     int highestLimit = 0;
 
     for (var doc in snapshot.docs) {
+      // مش محتاجين نتحقق من التاريخ هنا تاني، الـ Query عمل الواجب
+      // بس زيادة تأكيد مش هتضر
       final bill = Bill.fromJson(doc.data(), doc.id);
+      int limit = bill.baseStudentLimit ?? 0;
 
-      // نتحقق أن الفاتورة سارية المفعول
-      if (bill.expiryDate.isAfter(now)) {
-        int limit = bill.baseStudentLimit ?? 0;
-        if (limit > highestLimit) {
-          highestLimit = limit;
-        }
+      if (limit > highestLimit) {
+        highestLimit = limit;
       }
     }
     return highestLimit;
   }
-
   /// دالة واحدة تجلب الحد الأقصى الكلي (الأساسي + البوستات) ديناميكياً
   Future<int> getTotalAllowedStudents() async {
     // 1. جلب الليمت الأساسي من الفواتير (نادينا الفانكشن اللي في نفس الكلاس)

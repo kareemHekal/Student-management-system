@@ -17,7 +17,7 @@ Future<void> renameGrade({
 
   await showDialog(
     context: context,
-    builder: (context) {
+    builder: (dialogContext) {
       return AlertDialog(
         backgroundColor: AppColors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -136,17 +136,18 @@ Future<void> renameGrade({
 
                       // Proceed with password verification
                       if (context.mounted) {
+                        final pageContext = context;
                         showVerifyPasswordDialog(
-                          context: context,
+                          context: dialogContext,
                           onVerified: () async {
-                            await runWithLoading(context, () async {
+                            await runWithLoading(dialogContext, () async {
                               await FirebaseFunctions.renameGrade(
                                   oldGrade, newGrade);
                             });
-                            if (context.mounted) {
-                              Navigator.pop(context); // Close rename dialog
+                            if (pageContext.mounted) {
+                              Navigator.pop(pageContext);
                               AppSnackBars.showSuccess(
-                                  context, "تم تغيير اسم الصف بنجاح ✅");
+                                  pageContext, "تم تغيير اسم الصف بنجاح ✅");
                             }
                           },
                         );
