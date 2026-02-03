@@ -35,15 +35,12 @@ class FirebaseFunctions {
     // Save the document in Firestore
     await newDocRef.set(magmo3a);
   }
-
-  static Future<void> editMagmo3aInDay(
-    String oldDay,
-    String oldGrade,
-    Magmo3amodel updatedMagmo3a,
-  ) async {
+  static Future<void> editMagmo3aInDay(String oldDay,
+      String oldGrade,
+      Magmo3amodel updatedMagmo3a,) async {
     final newDay = updatedMagmo3a.day;
 
-    // 🧩 1️⃣ Move document if the day changed
+    // 🧩 1️⃣ نقل المجموعة لو اليوم اتغير
     if (newDay != oldDay) {
       final oldDayCollection = getDayCollection(oldDay);
       await oldDayCollection.doc(updatedMagmo3a.id).delete();
@@ -55,36 +52,34 @@ class FirebaseFunctions {
       await dayCollection.doc(updatedMagmo3a.id).set(updatedMagmo3a);
     }
 
-    // 🧩 2️⃣ Fetch all students who have this group (from OLD grade)
-    final studentsSnapshot = await getStudentsByGroupId(
+    // 🧩 2️⃣ جلب الطلاب (دلوقتي دي بقت List مباشرة مش Snapshot)
+    final studentsList = await getStudentsByGroupId_future(
       oldGrade,
       updatedMagmo3a.id,
-    ).first;
+    );
 
-    // 🧩 3️⃣ Update their hisGroups
-    for (var doc in studentsSnapshot.docs) {
-      final data = doc.data();
-      final student = data;
-
-      bool updated = false;
+    // 🧩 3️⃣ تحديث بيانات المجموعة جوه كل طالب
+    for (var student in studentsList) {
+      bool isChanged = false;
 
       if (student.hisGroups != null) {
         for (int i = 0; i < student.hisGroups!.length; i++) {
+          // لو لقينا المجموعة القديمة بنحدثها بالجديدة
           if (student.hisGroups![i].id == updatedMagmo3a.id) {
             student.hisGroups![i] = updatedMagmo3a;
-            updated = true;
+            isChanged = true;
           }
         }
       }
 
-      if (updated) {
+      // بنعمل Update فقط لو الطالب فعلاً اتأثر بالتعديل
+      if (isChanged) {
         await getSecondaryCollection(oldGrade).doc(student.id).update({
           "hisGroups": student.hisGroups!.map((g) => g.toJson()).toList(),
         });
       }
     }
   }
-
   static Future<void> deleteMagmo3aFromDay({
     required String day,
     required String grade,
@@ -436,39 +431,37 @@ class FirebaseFunctions {
         .update(updatedStudentModel.toJson());
   }
 
-  static Stream<List<Studentmodel>> getAllStudentsByGrade(String grade) {
-    return getSecondaryCollection(grade)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
-  }
-
+  // 1. جلب كل طلاب المرحلة (Future) - موفر جداً
   static Future<List<Studentmodel>> getAllStudentsByGrade_future(
       String grade) async {
-    QuerySnapshot<Studentmodel> snapshot =
-        await getSecondaryCollection(grade).get();
+    // بنحدد إننا عايزين الداتا من الـ Cache والسيرفر بذكاء
+    QuerySnapshot<Studentmodel> snapshot = await getSecondaryCollection(grade)
+        .get(const GetOptions(source: Source.serverAndCache));
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-  static Stream<QuerySnapshot<Studentmodel>> getStudentsByGroupId(
-      String grade, String groupId) {
-    return getSecondaryCollection(grade)
+// 2. جلب طلاب مجموعة معينة (Future) - ممتاز للطباعة والبحث
+  static Future<List<Studentmodel>> getStudentsByGroupId_future(
+      String grade, String groupId) async {
+    QuerySnapshot<Studentmodel> snapshot = await getSecondaryCollection(grade)
         .where("hisGroupsId", arrayContains: groupId)
-        .snapshots();
+        .get(const GetOptions(source: Source.serverAndCache));
+
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-  /// المصنع الأساسي لمسارات الطلاب (تم تعديله)
+// الـ CollectionReference زي ما هو
   static CollectionReference<Studentmodel> getSecondaryCollection(
       String grade) {
     return FirebaseFirestore.instance
-        .doc(_teacherPath) // الدخول لدوكيومنت المدرس
-        .collection(grade) // المرحلة كـ Sub-collection جواه
+        .doc(_teacherPath)
+        .collection(grade)
         .withConverter<Studentmodel>(
           fromFirestore: (snapshot, _) =>
               Studentmodel.fromJson(snapshot.data()!),
           toFirestore: (value, _) => value.toJson(),
         );
   }
-
   static Future<void> addGradeToList(String newGrade) async {
     try {
       // تعديل المسار: الثوابت بقت خاصة بكل مدرس
@@ -519,13 +512,14 @@ class FirebaseFunctions {
 
   static Future<List<String>> getGradesList() async {
     try {
-      // التعديل: جلب قائمة مراحل المدرس الحالي فقط
+      // التعديل: أضفنا GetOptions مع Source.serverAndCache
+      // دي بتخلي الفايربيز يشوف الموبايل الأول، ولو مفيش تغيير ميسحبش Reads
       DocumentSnapshot<Map<String, dynamic>> docSnapshot =
           await FirebaseFirestore.instance
               .doc(_teacherPath)
               .collection('constants')
               .doc('grades')
-              .get();
+              .get(const GetOptions(source: Source.serverAndCache));
 
       if (docSnapshot.exists) {
         List<dynamic> gradesDynamic = docSnapshot.data()?['grades'] ?? [];
@@ -533,6 +527,7 @@ class FirebaseFunctions {
       }
       return [];
     } catch (e) {
+      print("Error fetching grades: $e");
       return [];
     }
   }
@@ -966,8 +961,7 @@ class FirebaseFunctions {
     }
   }
 
-  static Future<List<Invoice>> getInvoicesByStudentNumber(
-      String studentNumber) async {
+  static Future<List<Invoice>> getInvoicesByStudenId(String studentID) async {
     // التعديل: البحث في فواتير المدرس الحالي فقط
     QuerySnapshot snapshot = await FirebaseFirestore.instance
         .doc(_teacherPath)
@@ -981,7 +975,7 @@ class FirebaseFunctions {
       DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
       var matchingInvoices = bigInvoice.invoices
-          .where((invoice) => invoice.studentId == studentNumber)
+          .where((invoice) => invoice.studentId == studentID)
           .toList();
 
       studentInvoices.addAll(matchingInvoices);
@@ -1097,7 +1091,9 @@ class FirebaseFunctions {
         .collection('grades')
         .doc(gradeName);
 
-    final doc = await docRef.get();
+    final doc =
+        await docRef.get(const GetOptions(source: Source.serverAndCache));
+
     if (!doc.exists) return null;
 
     final data = doc.data();
@@ -1113,7 +1109,6 @@ class FirebaseFunctions {
       return null;
     }
   }
-
   static Stream<GradeSubscriptionsModel?> getGradeSubscriptionsStream(
       String gradeName) {
     return FirebaseFirestore.instance
@@ -1237,14 +1232,18 @@ class FirebaseFunctions {
 
   static Future<QuerySnapshot<Studentmodel>> getStudentsByGroupIdOnce(
       String grade, String groupId) async {
+    // التعديل هنا بيضمن إن لو المدرس دخل المجموعة دي قبل كده، الداتا تظهر Offline
     return await getSecondaryCollection(grade)
         .where("hisGroupsId", arrayContains: groupId)
-        .get();
+        .get(const GetOptions(source: Source.serverAndCache));
   }
-
   static Future<Teacher?> getTeacherById(String id) async {
-    var doc =
-        await FirebaseFirestore.instance.collection('teachers').doc(id).get();
+    // أضفنا GetOptions عشان يفتح البروفايل فوراً من الموبايل
+    var doc = await FirebaseFirestore.instance
+        .collection('teachers')
+        .doc(id)
+        .get(const GetOptions(source: Source.serverAndCache));
+
     return doc.exists ? Teacher.fromJson(doc.data()!, doc.id) : null;
   }
 }

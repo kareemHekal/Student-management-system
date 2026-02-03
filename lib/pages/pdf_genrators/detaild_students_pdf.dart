@@ -11,58 +11,67 @@ class StudentsPdfGenerator {
       List<Studentmodel> students) async {
     final pdf = pw.Document();
 
-    // 🔤 Arabic Font
+    // 🔤 تحميل الخط
     final fontData = await rootBundle.load('fonts/NotoKufiArabic-Regular.ttf');
     final font = pw.Font.ttf(fontData);
 
-    final titleStyle = pw.TextStyle(
-      font: font,
-      fontSize: 18,
-      fontWeight: pw.FontWeight.bold,
-    );
-
+    // تجهيز الستايلات
+    final titleStyle =
+        pw.TextStyle(font: font, fontSize: 18, fontWeight: pw.FontWeight.bold);
     final sectionStyle = pw.TextStyle(
-      font: font,
-      fontSize: 15,
-      fontWeight: pw.FontWeight.bold,
-    );
-
-    final labelStyle = pw.TextStyle(
-      font: font,
-      fontSize: 11,
-      fontWeight: pw.FontWeight.bold,
-    );
-
-    final valueStyle = pw.TextStyle(
-      font: font,
-      fontSize: 8,
-    );
+        font: font,
+        fontSize: 15,
+        fontWeight: pw.FontWeight.bold,
+        color: PdfColors.blue900);
+    final labelStyle =
+        pw.TextStyle(font: font, fontSize: 9, fontWeight: pw.FontWeight.bold);
+    final valueStyle = pw.TextStyle(font: font, fontSize: 8);
 
     final boys = students.where((s) => s.gender == 'ذكر').toList();
     final girls = students.where((s) => s.gender == 'أنثى').toList();
+
+    // استخراج اسم الصف من أول طالب لتسمية الملف
+    String gradeName =
+        students.isNotEmpty ? (students.first.grade ?? "عام") : "عام";
 
     pdf.addPage(
       pw.MultiPage(
         theme: pw.ThemeData.withFont(base: font),
         textDirection: pw.TextDirection.rtl,
         pageFormat: PdfPageFormat.a4,
-        build: (_) => [
-          pw.Text('تقرير بيانات الطلاب', style: titleStyle),
-          pw.SizedBox(height: 12),
+        margin: const pw.EdgeInsets.all(30),
+        // هوامش أمان للطباعة
+        build: (context) => [
+          pw.Header(
+            level: 0,
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('تقرير بيانات الطلاب - $gradeName', style: titleStyle),
+                pw.Text('العدد الإجمالي: ${students.length}',
+                    style: labelStyle),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 10),
 
-          // ================= BOYS TABLE =================
+          // ================= قسم البنين =================
           if (boys.isNotEmpty) ...[
-            pw.Text('الطلاب الذكور', style: sectionStyle),
-            pw.SizedBox(height: 6),
-            _studentsTable(boys, labelStyle, valueStyle),
+            pw.Text('الطلاب الذكور (${boys.length})', style: sectionStyle),
+            pw.Divider(thickness: 1, color: PdfColors.grey300),
+            pw.SizedBox(height: 5),
+            // تقسيم البنين لمجموعات كل مجموعة 20 طالب عشان الـ Memory
+            ..._buildSegmentedTable(boys, labelStyle, valueStyle),
             pw.SizedBox(height: 20),
           ],
 
-          // ================= GIRLS TABLE =================
+          // ================= قسم البنات =================
           if (girls.isNotEmpty) ...[
-            pw.Text('الطالبات الإناث', style: sectionStyle),
-            pw.SizedBox(height: 6),
-            _studentsTable(girls, labelStyle, valueStyle),
+            pw.Text('الطالبات الإناث (${girls.length})', style: sectionStyle),
+            pw.Divider(thickness: 1, color: PdfColors.grey300),
+            pw.SizedBox(height: 5),
+            // تقسيم البنات لمجموعات كل مجموعة 20 طالب
+            ..._buildSegmentedTable(girls, labelStyle, valueStyle),
           ],
         ],
       ),
@@ -70,100 +79,81 @@ class StudentsPdfGenerator {
 
     await Printing.layoutPdf(
       onLayout: (_) async => pdf.save(),
+      name: 'بيانات طلاب : $gradeName',
     );
   }
 
-  // ==================================================
-  // 📊 Students Table
-  // ==================================================
-  static pw.Widget _studentsTable(
-    List<Studentmodel> students,
-    pw.TextStyle headerStyle,
-    pw.TextStyle cellStyle,
-  ) {
-    return pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey400),
-      columnWidths: const {
-        0: pw.FlexColumnWidth(2),
-        1: pw.FlexColumnWidth(1.5),
-        2: pw.FlexColumnWidth(2),
-        3: pw.FlexColumnWidth(2),
-        4: pw.FlexColumnWidth(2),
-        5: pw.FlexColumnWidth(1.5),
-        6: pw.FlexColumnWidth(1.5),
-      },
-      children: [
-        // ---------- Header ----------
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+  // دالة ذكية لتقسيم الطلاب إلى جداول صغيرة لمنع التهنيق
+  static List<pw.Widget> _buildSegmentedTable(List<Studentmodel> students,
+      pw.TextStyle headerStyle, pw.TextStyle cellStyle) {
+    List<pw.Widget> segments = [];
+    const int chunkSize = 22; // كل جدول صغير يحتوي على 22 طالب فقط
+
+    for (var i = 0; i < students.length; i += chunkSize) {
+      final chunk = students.sublist(
+          i, i + chunkSize > students.length ? students.length : i + chunkSize);
+
+      segments.add(
+        pw.Table(
+          border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.5),
+          columnWidths: const {
+            0: pw.FlexColumnWidth(2.5), // الاسم
+            1: pw.FlexColumnWidth(1.2), // الصف
+            2: pw.FlexColumnWidth(1.8), // هاتف الطالب
+            3: pw.FlexColumnWidth(1.8), // هاتف الأب
+            4: pw.FlexColumnWidth(1.2), // آخر حضور
+          },
           children: [
-            _tableCell('الاسم', headerStyle),
-            _tableCell('المرحلة', headerStyle),
-            _tableCell('هاتف الطالب', headerStyle),
-            _tableCell('هاتف الأب', headerStyle),
-            _tableCell('هاتف الأم', headerStyle),
-            _tableCell('آخر حضور', headerStyle),
-            _tableCell('آخر غياب', headerStyle),
+            // الهيدر يظهر فقط في بداية كل مجموعة
+            if (i == 0)
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _tableCell('الاسم', headerStyle),
+                  _tableCell('الصف', headerStyle),
+                  _tableCell('هاتف الطالب', headerStyle),
+                  _tableCell('هاتف ولي الأمر', headerStyle),
+                  _tableCell('آخر حضور', headerStyle),
+                ],
+              ),
+            // الصفوف
+            ...chunk.map((s) => pw.TableRow(
+                  children: [
+                    _tableCell(s.name ?? 'غير مسجل', cellStyle),
+                    _tableCell(s.grade ?? '-', cellStyle),
+                    // استخدام دالة الفورمات للأرقام
+                    _tableCell(formatPhone(s.phoneNumber), cellStyle),
+                    _tableCell(
+                        formatPhone(s.fatherPhone ?? s.motherPhone), cellStyle),
+                    _tableCell(_getLastDay(s.countingAttendedDays), cellStyle),
+                  ],
+                )),
           ],
         ),
-
-        // ---------- Rows ----------
-        ...students.map(
-          (s) => pw.TableRow(
-            children: [
-              _tableCell(s.name ?? 'غير مسجل', cellStyle),
-              _tableCell(s.grade ?? '-', cellStyle),
-              _tableCell(s.phoneNumber ?? '-', cellStyle),
-              _tableCell(s.fatherPhone ?? '-', cellStyle),
-              _tableCell(s.motherPhone ?? '-', cellStyle),
-              _tableCell(
-                _getLastDay(s.countingAttendedDays),
-                cellStyle,
-              ),
-              _tableCell(
-                _getLastDay(s.countingAbsentDays),
-                cellStyle,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+      );
+      segments.add(pw.SizedBox(
+          height: 0)); // لا يوجد مسافات كبيرة بين الجداول لتظهر كجدول واحد
+    }
+    return segments;
   }
 
-  // ==================================================
-  // 🔹 Table Cell
-  // ==================================================
   static pw.Widget _tableCell(String text, pw.TextStyle style) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.all(6),
-      child: pw.Text(
-        text,
-        style: style,
-        textAlign: pw.TextAlign.center,
-      ),
+      padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+      child: pw.Text(text, style: style, textAlign: pw.TextAlign.center),
     );
   }
 
-  // ==================================================
-  // 🔹 Helpers (UNCHANGED)
-  // ==================================================
   static String _getLastDay(List<DayRecord>? records) {
-    if (records == null || records.isEmpty) {
-      return 'لا يوجد';
-    }
-    final last = records.last;
-    return last.date;
+    if (records == null || records.isEmpty) return 'لا يوجد';
+    return records.last.date;
   }
 
-// دالة مساعدة لاختصار الرقم الطويل
   static String formatPhone(String? phone) {
     if (phone == null || phone.isEmpty) return "-";
     if (phone.length <= 11) return phone;
-    // يأخذ أول 3 وأخر 3 ويضع بينهم نجوم
     return "${phone.substring(0, 3)}**${phone.substring(phone.length - 3)}";
   }
-
   static Future<void> generateQrCodesPdf(
       List<Studentmodel> students, String teacherName) async {
     final pdf = pw.Document();

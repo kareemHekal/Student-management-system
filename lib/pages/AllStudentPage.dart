@@ -178,7 +178,7 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
                                 ),
                               ),
                               Expanded(
-                                child: StudentStreamBuilder(grade: grade ?? ""),
+                                child: StudentListBuilder(grade: grade ?? ""),
                               ),
                             ],
                           )

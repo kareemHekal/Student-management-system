@@ -64,7 +64,7 @@ class StudentActionsBottomSheet {
                   try {
                     // 1️⃣ تحميل كل الفواتير الخاصة بالطالب
                     List<Invoice> invoices =
-                        await FirebaseFunctions.getInvoicesByStudentNumber(
+                        await FirebaseFunctions.getInvoicesByStudenId(
                             student.id);
 
                     // 2️⃣ تحميل كل الاشتراكات المرتبطة بالفواتير

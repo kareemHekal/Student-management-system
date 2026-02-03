@@ -7,6 +7,7 @@ import 'package:student_management_system/provider.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
 import 'package:student_management_system/theme/text_style.dart';
+
 import 'subscription_expired_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,20 +21,27 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _isPasswordVisible = false; // لمتابعة حالة إظهار الباسورد
+  bool _isPasswordVisible = false;
 
   void _handleLogin() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      AppSnackBars.showError(context, "برجاء ملء جميع البيانات");
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      AppSnackBars.showError(
+          context, "برجاء إدخال البريد الإلكتروني وكلمة المرور");
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      AppSnackBars.showError(context, "صيغة البريد الإلكتروني غير صحيحة");
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      Teacher? teacher = await AuthService().loginTeacher(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+      Teacher? teacher = await AuthService().loginTeacher(email, password);
 
       if (teacher != null) {
         if (!mounted) return;
@@ -52,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-                builder: (context) => SubscriptionExpiredScreen()),
+                builder: (context) => const SubscriptionExpiredScreen()),
           );
         }
       }
@@ -65,113 +73,172 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      backgroundColor: AppColors.white,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // اللوجو مع Hero animation وتأثير ظل ناعم
-              Hero(
-                tag: 'app_logo',
-                child: Container(
-                  padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryMain.withOpacity(0.15),
-                        blurRadius: 25,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Image.asset(
-                    "assets/images/logo.png",
-                    height: 140,
-                    width: 140,
-                    fit: BoxFit.contain,
-                  ),
-                ),
+      body: Stack(
+        children: [
+          // 1. خلفية متدرجة (Gradient Background)
+          Container(
+            height: size.height,
+            width: size.width,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  AppColors.primaryMain,
+                  // اللون الأساسي بتاعك فوق
+                  AppColors.primaryMain.withOpacity(0.7),
+                  // تدرج للأسفل
+                  const Color(0xFFEBFFF4),
+                  // 🟢 اللون السحري: أبيض بلمسة خضراء هادية جداً
+                  const Color(0xFFF7FCF9),
+                  // أفتح شوية في النهاية
+                ],
+                stops: const [0.0, 0.2, 0.7, 1.0], // توزيع الألوان
               ),
-              const SizedBox(height: 30),
-              Text(
-                "تسجيل الدخول",
-                style: AppTextStyles.customText(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryMain),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                "مرحباً بك في نظام إدارة غيابك",
-                style: AppTextStyles.customText(
-                    fontSize: 16, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 40),
+            ),
+          ),
 
-              _buildTextField(
-                controller: _emailController,
-                hint: "البريد الإلكتروني",
-                icon: Icons.email_outlined,
-              ),
-              const SizedBox(height: 20),
-              _buildTextField(
-                controller: _passwordController,
-                hint: "كلمة المرور",
-                icon: Icons.lock_outline,
-                isPassword: true,
-                isVisible: _isPasswordVisible,
-                onToggle: () =>
-                    setState(() => _isPasswordVisible = !_isPasswordVisible),
-              ),
-
-              const SizedBox(height: 40),
-              _isLoading
-                  ? CircularProgressIndicator(color: AppColors.primaryMain)
-                  : SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.buttonPrimary,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15)),
-                          elevation: 3,
+          // 2. محتوى الصفحة
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  children: [
+                    // اللوجو مع تأثير زجاجي خفيف (Frosted Glass effect concept)
+                    Hero(
+                      tag: 'app_logo',
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
-                        onPressed: _handleLogin,
-                        child: Text("دخول",
-                            style: AppTextStyles.customText(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18)),
+                        child: Image.asset(
+                          "assets/images/logo.png",
+                          height: 100,
+                          width: 100,
+                        ),
                       ),
                     ),
-              const SizedBox(height: 25),
-              TextButton(
-                onPressed: () => Navigator.pushNamed(context, '/register'),
-                child: RichText(
-                  text: TextSpan(
-                    text: "ليس لديك حساب؟ ",
-                    style: AppTextStyles.customText(
-                        color: AppColors.textSecondary, fontSize: 15),
-                    children: [
-                      TextSpan(
-                        text: "سجل الآن كـ مدرس",
-                        style: AppTextStyles.customText(
-                            color: AppColors.primaryMain,
-                            fontWeight: FontWeight.bold),
+                    const SizedBox(height: 25),
+                    Text(
+                      "مرحباً بك مجدداً",
+                      style: AppTextStyles.customText(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "سجل دخولك للمتابعة",
+                      style: AppTextStyles.customText(
+                          fontSize: 16, color: Colors.white.withOpacity(0.9)),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // 3. كارت المدخلات (Input Card)
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        // لون الكارت "كريمي" فاتح عشان يظهر فوق الأبيض المخضر
+                        color: const Color(0xFFFDFDFD),
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            // ظل بلون أخضر غامق خفيف جداً بدل الأسود عشان يندمج مع الخلفية
+                            color: const Color(0xFF1B5E20).withOpacity(0.3),
+                            blurRadius: 35,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 15),
+                          ),
+                        ],
+                        border: Border.all(
+                            color: const Color(0xFFE8F5E9),
+                            width: 1.5), // برواز أخضر باهت جداً
                       ),
-                    ],
-                  ),
+                      child: Column(
+                        children: [
+                          _buildTextField(
+                            controller: _emailController,
+                            hint: "البريد الإلكتروني",
+                            icon: Icons.alternate_email_rounded,
+                          ),
+                          const SizedBox(height: 18),
+                          _buildTextField(
+                            controller: _passwordController,
+                            hint: "كلمة المرور",
+                            icon: Icons.lock_open_rounded,
+                            isPassword: true,
+                            isVisible: _isPasswordVisible,
+                            onToggle: () => setState(
+                                () => _isPasswordVisible = !_isPasswordVisible),
+                          ),
+                          const SizedBox(height: 20),
+                          _isLoading
+                              ? CircularProgressIndicator(
+                                  color: AppColors.primaryMain)
+                              : SizedBox(
+                                  width: double.infinity,
+                                  height: 55,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryMain,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(15)),
+                                      elevation: 0,
+                                    ),
+                                    onPressed: _handleLogin,
+                                    child: Text("تسجيل الدخول",
+                                        style: AppTextStyles.customText(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 17)),
+                                  ),
+                                ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // زرار التسجيل في الأسفل
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/register'),
+                      child: RichText(
+                        text: TextSpan(
+                          text: "ليس لديك حساب؟ ",
+                          style: AppTextStyles.customText(
+                              color: AppColors.textSecondary, fontSize: 15),
+                          children: [
+                            TextSpan(
+                              text: "سجل الآن",
+                              style: AppTextStyles.customText(
+                                  color: AppColors.primaryMain,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -184,39 +251,43 @@ class _LoginScreenState extends State<LoginScreen> {
     bool isVisible = false,
     VoidCallback? onToggle,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword && !isVisible,
-      style: AppTextStyles.customText(),
-      decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: AppColors.primaryMain),
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  isVisible
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  color: Colors.grey,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: TextField(
+            controller: controller,
+            obscureText: isPassword && !isVisible,
+            style: AppTextStyles.customText(fontSize: 15),
+            decoration: InputDecoration(
+              prefixIcon: Icon(icon, color: AppColors.primaryMain, size: 22),
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(
+                        isVisible
+                            ? Icons.visibility_rounded
+                            : Icons.visibility_off_rounded,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
                 onPressed: onToggle,
               )
-            : null,
-        hintText: hint,
-        hintStyle: AppTextStyles.customText(
-            color: AppColors.textSecondary, fontSize: 14),
-        filled: true,
-        fillColor: Colors.grey[50],
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.grey[200]!),
+                  : null,
+              hintText: hint,
+              hintStyle: AppTextStyles.customText(
+                  color: Colors.grey[400]!, fontSize: 14),
+              border: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.symmetric(vertical: 18, horizontal: 15),
+            ),
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: AppColors.primaryMain, width: 1.5),
-        ),
-      ),
+      ],
     );
   }
 }

@@ -27,7 +27,7 @@ class _AllBillsForStudentState extends State<AllBillsForStudent> {
   Future<void> _loadInvoices() async {
     try {
       List<Invoice> loadedInvoices =
-      await FirebaseFunctions.getInvoicesByStudentNumber(widget.studentId);
+          await FirebaseFunctions.getInvoicesByStudenId(widget.studentId);
       if (!mounted) return;
       setState(() {
         isLoading = false;

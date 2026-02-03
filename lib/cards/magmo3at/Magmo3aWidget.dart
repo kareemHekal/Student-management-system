@@ -219,7 +219,7 @@ class Magmo3aWidget extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => StudentInAgroup(magmo3aModel: magmo3aModel),
+            builder: (_) => AllStudedntsInOneGroup(magmo3aModel: magmo3aModel),
           ),
         );
       },

@@ -167,149 +167,118 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
 
   // --- PDF & Logic Methods ---
 
-  String _buildNotesForDate(Studentmodel student, String dateKey) {
-    if (student.notes == null || student.notes!.isEmpty)
-      return "لا توجد ملاحظات";
-    for (var note in student.notes!) {
-      if (note.containsKey(dateKey)) return note[dateKey] ?? "لا توجد";
-    }
-    return "لا توجد ملاحظات لتاريخ $dateKey";
-  }
 
   Future<void> _generatePdf(BuildContext context) async {
-    final pdf = pw.Document();
-
-    // Load Arabic font
-    final fontData = await rootBundle.load("fonts/NotoKufiArabic-Regular.ttf");
-    final pw.Font font = pw.Font.ttf(fontData);
-
-    // Separate the lists (Assuming these are available in your widget/state)
-    // If you are calling this from the Cubit, use cubit.attendStudents and cubit.absentStudents
+    // 1. تجهيز البيانات بره خالص بعيد عن الـ UI Thread
+    final String dateStr = widget.cubit.selectedDateStr;
+    final String groupInfo =
+        "${widget.cubit.magmo3aModel.grade}_${widget.cubit.magmo3aModel.day}";
     final attended = widget.cubit.attendStudents;
     final absent = widget.cubit.absentStudents;
 
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        textDirection: pw.TextDirection.rtl,
-        margin: const pw.EdgeInsets.all(32),
-        build: (pw.Context context) => [
-          // --- Report Header ---
-          pw.Center(
-            child: pw.Text(
-                "تقرير الحضور والغياب - ${widget.cubit.magmo3aModel.grade}",
-                style: pw.TextStyle(
-                    font: font, fontSize: 22, fontWeight: pw.FontWeight.bold)),
-          ),
-          pw.SizedBox(height: 10),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text("التاريخ: ${widget.cubit.selectedDateStr}",
-                  style: pw.TextStyle(font: font, fontSize: 12)),
-              pw.Text("اليوم: ${widget.cubit.selectedDay}",
-                  style: pw.TextStyle(font: font, fontSize: 12)),
-            ],
-          ),
-          pw.Divider(thickness: 1),
-          pw.SizedBox(height: 15),
+    try {
+      await Printing.layoutPdf(
+        name: "Attendance_${groupInfo}_$dateStr"
+            .replaceAll(RegExp(r'[^\w\s]+'), '_'),
+        onLayout: (PdfPageFormat format) async {
+          final pdf = pw.Document();
+          final fontData =
+              await rootBundle.load("fonts/NotoKufiArabic-Regular.ttf");
+          final pw.Font font = pw.Font.ttf(fontData);
 
-          // --- Attending Students Section ---
-          _buildSectionHeader(
-              "قائمة الحضور (${attended.length})", PdfColors.green900, font),
-          pw.SizedBox(height: 10),
-          attended.isEmpty
-              ? pw.Text("لا يوجد طلاب حاضرون",
-                  style: pw.TextStyle(font: font, fontSize: 10))
-              : pw.Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: attended
-                      .map((s) =>
-                          _buildPdfStudentCard(s, font, PdfColors.green50))
-                      .toList(),
-                ),
+          pdf.addPage(
+            pw.MultiPage(
+              pageFormat: PdfPageFormat.a4,
+              textDirection: pw.TextDirection.rtl,
+              margin: const pw.EdgeInsets.all(20),
+              theme: pw.ThemeData.withFont(base: font, bold: font),
+              build: (pw.Context context) {
+                return [
+                  // الهيدر
+                  pw.Header(
+                    level: 0,
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text("تقرير الحضور والغياب: $groupInfo",
+                            style: pw.TextStyle(fontSize: 15)),
+                        pw.Text("التاريخ: $dateStr",
+                            style: pw.TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  ),
 
-          pw.SizedBox(height: 20),
-          pw.Divider(),
-          pw.SizedBox(height: 20),
+                  // قسم الحضور
+                  _buildFastSectionHeader(
+                      "قائمة الحضور (${attended.length})", PdfColors.green900),
+                  pw.SizedBox(height: 10),
+                  _buildOptimizedGrid(attended, PdfColors.green50),
 
-          // --- Absent Students Section ---
-          _buildSectionHeader(
-              "قائمة الغياب (${absent.length})", PdfColors.red900, font),
-          pw.SizedBox(height: 10),
-          absent.isEmpty
-              ? pw.Text("لا يوجد طلاب غائبون",
-                  style: pw.TextStyle(font: font, fontSize: 10))
-              : pw.Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: absent
-                      .map(
-                          (s) => _buildPdfStudentCard(s, font, PdfColors.red50))
-                      .toList(),
-                ),
-        ],
-      ),
-    );
+                  pw.SizedBox(height: 20),
 
-    await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save());
+                  // قسم الغياب
+                  _buildFastSectionHeader(
+                      "قائمة الغياب (${absent.length})", PdfColors.red900),
+                  pw.SizedBox(height: 10),
+                  _buildOptimizedGrid(absent, PdfColors.red50),
+                ];
+              },
+            ),
+          );
+          return pdf.save();
+        },
+      );
+    } catch (e) {
+      debugPrint("PDF Error: $e");
+    }
   }
 
-// Helper to build Section Headers
-  pw.Widget _buildSectionHeader(String title, PdfColor color, pw.Font font) {
+// دالة بناء الشبكة محسنة جداً للأداء
+  pw.Widget _buildOptimizedGrid(List<Studentmodel> students, PdfColor bgColor) {
+    return pw.Wrap(
+      spacing: 5,
+      runSpacing: 5,
+      children: students
+          .map((s) => pw.Container(
+                width: 170, // تصغير العرض عشان يجي 3 في السطر ويقلل عدد الصفحات
+                padding: const pw.EdgeInsets.all(5),
+                decoration: pw.BoxDecoration(
+                  color: bgColor,
+                  border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(s.name ?? "",
+                        style: pw.TextStyle(
+                            fontSize: 8, fontWeight: pw.FontWeight.bold),
+                        maxLines: 1),
+                    pw.Text("ت: ${s.phoneNumber}",
+                        style: const pw.TextStyle(fontSize: 7)),
+                    if (s.note != null && s.note!.isNotEmpty)
+                      pw.Text("ملاحظة: ${s.note}",
+                          style: pw.TextStyle(
+                              fontSize: 6, color: PdfColors.red700),
+                          maxLines: 1),
+                  ],
+                ),
+              ))
+          .toList(),
+    );
+  }
+
+  pw.Widget _buildFastSectionHeader(String title, PdfColor color) {
     return pw.Container(
       width: double.infinity,
-      padding: const pw.EdgeInsets.all(5),
-      decoration: pw.BoxDecoration(color: color),
+      padding: const pw.EdgeInsets.all(4),
+      decoration: pw.BoxDecoration(
+          color: color, borderRadius: pw.BorderRadius.circular(2)),
       child: pw.Text(title,
           style: pw.TextStyle(
-              font: font,
-              fontSize: 14,
+              fontSize: 12,
               color: PdfColors.white,
               fontWeight: pw.FontWeight.bold)),
-    );
-  }
-
-// Enhanced Student Card for PDF
-  pw.Widget _buildPdfStudentCard(
-      Studentmodel student, pw.Font font, PdfColor bgColor) {
-    String note = _buildNotesForDate(student, widget.cubit.selectedDateStr);
-    return pw.Container(
-      width: 240, // Fixed width helps the Wrap layout stay organized
-      padding: const pw.EdgeInsets.all(8),
-      decoration: pw.BoxDecoration(
-        color: bgColor,
-        border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
-        borderRadius: pw.BorderRadius.circular(4),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Text("الاسم: ${student.name}",
-              style: pw.TextStyle(
-                  font: font, fontSize: 10, fontWeight: pw.FontWeight.bold)),
-          pw.SizedBox(height: 2),
-          pw.Text("رقم الطالب: ${student.phoneNumber}",
-              style: pw.TextStyle(font: font, fontSize: 8)),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text("الأب: ${student.fatherPhone}",
-                  style: pw.TextStyle(font: font, fontSize: 8)),
-              pw.Text("الأم: ${student.motherPhone}",
-                  style: pw.TextStyle(font: font, fontSize: 8)),
-            ],
-          ),
-          if (note.isNotEmpty) ...[
-            pw.Divider(thickness: 0.3),
-            pw.Text("ملاحظة: $note",
-                style: pw.TextStyle(
-                    font: font, fontSize: 8, color: PdfColors.red700)),
-          ],
-        ],
-      ),
     );
   }
 

@@ -33,7 +33,10 @@ void main() async {
     Firebase.app();
   }
   // ------------------
-
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true, // تفعيل الحفظ على الموبايل
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED, // مساحة تخزين مفتوحة
+  );
   FlutterError.onError = (errorDetails) {
     FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
   };
@@ -52,6 +55,7 @@ void main() async {
     ),
   );
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
