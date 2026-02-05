@@ -72,7 +72,7 @@ class StudentCubit extends Cubit<StudentState> {
 
       if (current >= allowed) {
         emit(StudentValidationError(
-            "لقد وصلت للحد الأقصى المتاح لك حالياً ($allowed طالب). يمكنك شراء باقة Boost لزيادة السعة فوراً."));
+            "لقد استهلكت كامل السعة المتاحة ($allowed طالب). يمكنك ترقية حسابك عبر باقة Boost لإضافة سعة إضافية فورًا."));
         return;
       }
       if (current >= (allowed - 10)) {

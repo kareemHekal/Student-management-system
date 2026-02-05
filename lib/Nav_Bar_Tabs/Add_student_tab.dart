@@ -39,9 +39,12 @@ class _AddStudentTabState extends State<AddStudentTab> {
 
     if (grades!.isEmpty) {
       return const Center(
-        child: Text(
-          "There are no grades, you must add one first.",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            "لا توجد صفوف دراسيه متاحه يجب اضافه صفوف اولا ",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
         ),
       );
     }

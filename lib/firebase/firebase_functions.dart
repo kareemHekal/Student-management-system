@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:student_management_system/models/absence_app/absence_model.dart';
 import 'package:student_management_system/models/absence_app/secondary_record.dart';
+import 'package:student_management_system/models/admin/bill.dart';
+import 'package:student_management_system/models/admin/boost_subscription.dart';
+import 'package:student_management_system/models/admin/subsription.dart';
 import 'package:student_management_system/models/admin/teacher.dart';
 
 import '../models/Invoice.dart';
@@ -15,13 +18,14 @@ import '../models/subscription_fee.dart';
 import 'exams_functions.dart';
 
 class FirebaseFunctions {
+  static final _db = FirebaseFirestore.instance;
+
   // دالة المساعدة الأساسية للحصول على مسار المدرس الحالي
   static String get teacherPath {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception("لا يوجد مدرس مسجل دخول!");
     return 'teachers/${user.uid}';
   }
-
   // =============================== Magmo3a Functions ===============================
 
   /// Adds a `Magmo3aModel` to a specific day's collection
@@ -86,7 +90,6 @@ class FirebaseFunctions {
     required String grade,
     required String magmo3aId,
   }) async {
-    final firestore = FirebaseFirestore.instance;
 
     try {
       // 1️⃣ حذف الـ Sub-collection (absences) أولاً
@@ -96,7 +99,7 @@ class FirebaseFunctions {
       final absenceSnapshot = await absenceCollection.get();
 
       if (absenceSnapshot.docs.isNotEmpty) {
-        final batch = firestore.batch();
+        final batch = _db.batch();
         for (var doc in absenceSnapshot.docs) {
           batch.delete(doc.reference);
         }
@@ -112,7 +115,7 @@ class FirebaseFunctions {
       List<Studentmodel> allStudents =
           await getAllStudentsByGrade_future(grade);
 
-      final studentBatch = firestore.batch();
+      final studentBatch = _db.batch();
       bool needsUpdate = false;
 
       for (var student in allStudents) {
@@ -189,7 +192,7 @@ class FirebaseFunctions {
 
   static CollectionReference<Magmo3amodel> getDayCollection(String day) {
     // التصحيح: بنبدأ بـ doc للمدرس، وبعدين نفتح جواه الـ collection بتاع اليوم
-    return FirebaseFirestore.instance
+    return _db
         .doc(teacherPath) // ده الـ Document بتاع المدرس
         .collection(day) // ده الـ Sub-collection اللي جواه
         .withConverter<Magmo3amodel>(
@@ -204,8 +207,6 @@ class FirebaseFunctions {
   // =============================== Student Management ===============================
 
   static Future<void> saveMonthAndStartNew(String monthName) async {
-    final firestore = FirebaseFirestore.instance;
-
     try {
       final grades = await FirebaseFunctions.getGradesList();
 
@@ -219,7 +220,7 @@ class FirebaseFunctions {
         const batchLimit = 500;
 
         for (var i = 0; i < studentDocs.length; i += batchLimit) {
-          final batch = firestore.batch();
+          final batch = _db.batch();
           final chunk = studentDocs.skip(i).take(batchLimit);
 
           for (final doc in chunk) {
@@ -255,14 +256,13 @@ class FirebaseFunctions {
     required bool deleteStudents,
     required bool deleteInvoices,
   }) async {
-    final firestore = FirebaseFirestore.instance;
 
     try {
       if (deleteInvoices) {
         final invoicesSnap =
-            await firestore.doc(teacherPath).collection('big_invoices').get();
+            await _db.doc(teacherPath).collection('big_invoices').get();
 
-        final invoiceBatch = firestore.batch();
+        final invoiceBatch = _db.batch();
         for (var doc in invoicesSnap.docs) {
           invoiceBatch.delete(doc.reference);
         }
@@ -274,7 +274,7 @@ class FirebaseFunctions {
 
       // 1. مسح اشتراكات المرحلة - المسار الجديد داخل ثابت المدرس
       if (resetSubscriptions && gradeName.isNotEmpty) {
-        await firestore
+        await _db
             .doc(teacherPath)
             .collection('constants')
             .doc('grades_subscriptions')
@@ -289,7 +289,7 @@ class FirebaseFunctions {
         const batchSize = 400;
 
         for (int i = 0; i < allStudents.length; i += batchSize) {
-          final batch = firestore.batch();
+          final batch = _db.batch();
           final chunk = allStudents.skip(i).take(batchSize);
 
           for (final student in chunk) {
@@ -315,7 +315,7 @@ class FirebaseFunctions {
         }
         // 3. حذف الامتحانات من مسار المدرس
         if (deleteExams) {
-          await firestore
+          await _db
               .doc(teacherPath)
               .collection('exams')
               .doc(gradeName)
@@ -328,7 +328,7 @@ class FirebaseFunctions {
                 .where('grade', isEqualTo: gradeName)
                 .get();
 
-            final groupBatch = firestore.batch();
+            final groupBatch = _db.batch();
             for (var doc in groupSnap.docs) {
               groupBatch.delete(doc.reference);
             }
@@ -355,10 +355,10 @@ class FirebaseFunctions {
     studentModel.id = newDocRef.id;
 
     // 2. مرجع دوكيومنت المدرس لتحديث العداد
-    DocumentReference teacherDoc = FirebaseFirestore.instance.doc(teacherPath);
+    DocumentReference teacherDoc = _db.doc(teacherPath);
 
     // بنستخدم Batch عشان نضمن إن الطالب يتضاف والعداد يزيد مع بعض (أو لا قدر الله لو فشل واحد التاني ميتعملش)
-    WriteBatch batch = FirebaseFirestore.instance.batch();
+    WriteBatch batch = _db.batch();
 
     batch.set(newDocRef, studentModel);
     batch.update(teacherDoc, {
@@ -374,9 +374,9 @@ class FirebaseFunctions {
       String grade, String documentId) async {
     DocumentReference studentDoc =
         getSecondaryCollection(grade).doc(documentId);
-    DocumentReference teacherDoc = FirebaseFirestore.instance.doc(teacherPath);
+    DocumentReference teacherDoc = _db.doc(teacherPath);
 
-    WriteBatch batch = FirebaseFirestore.instance.batch();
+    WriteBatch batch = _db.batch();
 
     batch.delete(studentDoc);
     batch.update(teacherDoc, {
@@ -391,7 +391,6 @@ class FirebaseFunctions {
     required String oldGrade,
     required String newGrade,
   }) async {
-    final firestore = FirebaseFirestore.instance;
 
     // 1. تجهيز بيانات الطالب الجديدة (تغيير الصف وتصفير السجلات)
     student.grade = newGrade;
@@ -405,7 +404,7 @@ class FirebaseFunctions {
     student.notes = [];
     student.note = "";
 
-    WriteBatch batch = firestore.batch();
+    WriteBatch batch = _db.batch();
 
     // 2. مرجع المكان القديم (حذف)
     DocumentReference oldDocRef =
@@ -453,8 +452,7 @@ class FirebaseFunctions {
 // الـ CollectionReference زي ما هو
   static CollectionReference<Studentmodel> getSecondaryCollection(
       String grade) {
-    return FirebaseFirestore.instance
-        .doc(teacherPath)
+    return _db.doc(teacherPath)
         .collection(grade)
         .withConverter<Studentmodel>(
           fromFirestore: (snapshot, _) =>
@@ -465,8 +463,8 @@ class FirebaseFunctions {
   static Future<void> addGradeToList(String newGrade) async {
     try {
       // تعديل المسار: الثوابت بقت خاصة بكل مدرس
-      final gradesDoc = FirebaseFirestore.instance
-          .doc(teacherPath)
+      final gradesDoc =
+          _db.doc(teacherPath)
           .collection('constants')
           .doc('grades');
 
@@ -492,8 +490,8 @@ class FirebaseFunctions {
   static Future<void> deleteGradeFromList(String grade) async {
     try {
       // التعديل: الوصول لمسار المدرس ثم constants ثم doc(grades)
-      DocumentReference gradesDoc = FirebaseFirestore.instance
-          .doc(teacherPath)
+      DocumentReference gradesDoc =
+          _db.doc(teacherPath)
           .collection('constants')
           .doc('grades');
 
@@ -514,9 +512,8 @@ class FirebaseFunctions {
     try {
       // التعديل: أضفنا GetOptions مع Source.serverAndCache
       // دي بتخلي الفايربيز يشوف الموبايل الأول، ولو مفيش تغيير ميسحبش Reads
-      DocumentSnapshot<Map<String, dynamic>> docSnapshot =
-          await FirebaseFirestore.instance
-              .doc(teacherPath)
+      DocumentSnapshot<Map<String, dynamic>> docSnapshot = await _db
+          .doc(teacherPath)
               .collection('constants')
               .doc('grades')
               .get(const GetOptions(source: Source.serverAndCache));
@@ -534,7 +531,7 @@ class FirebaseFunctions {
 
   static Future<void> renameGrade(String oldGrade, String newGrade) async {
     try {
-      final fireStore = FirebaseFirestore.instance;
+      final fireStore = _db;
       // المسار المختصر للمدرس
       final teacherDocRef = fireStore.doc(teacherPath);
 
@@ -685,7 +682,7 @@ class FirebaseFunctions {
   }
 
   static Stream<List<String>> getGradesStream() {
-    return FirebaseFirestore.instance
+    return _db
         .doc(teacherPath)
         .collection('constants')
         .doc('grades')
@@ -705,7 +702,7 @@ class FirebaseFunctions {
   static Future<void> createBigInvoiceCollection() async {
     // التعديل: إنشاء الكولكشن داخل مسار المدرس
     CollectionReference bigInvoicesCollection =
-        FirebaseFirestore.instance.doc(teacherPath).collection('big_invoices');
+        _db.doc(teacherPath).collection('big_invoices');
 
     await bigInvoicesCollection.doc('dummy').set({'dummyField': 'dummyValue'});
   }
@@ -713,7 +710,7 @@ class FirebaseFunctions {
   static Future<void> deleteBigInvoiceCollection() async {
     // التعديل: الوصول للكولكشن الخاص بالمدرس
     CollectionReference bigInvoicesCollection =
-        FirebaseFirestore.instance.doc(teacherPath).collection('big_invoices');
+        _db.doc(teacherPath).collection('big_invoices');
 
     QuerySnapshot snapshot = await bigInvoicesCollection.get();
 
@@ -724,8 +721,7 @@ class FirebaseFunctions {
 
   static Stream<QuerySnapshot> getAllBigInvoices() {
     // التعديل: استماع للفواتير الخاصة بالمدرس الحالي فقط
-    return FirebaseFirestore.instance
-        .doc(teacherPath)
+    return _db.doc(teacherPath)
         .collection('big_invoices')
         .snapshots();
   }
@@ -733,7 +729,7 @@ class FirebaseFunctions {
   static Future<void> updateDailyInvoice(
       String date, DailyInvoice bigInvoice) async {
     CollectionReference invoicesCollection =
-        FirebaseFirestore.instance.doc(teacherPath).collection('big_invoices');
+        _db.doc(teacherPath).collection('big_invoices');
 
     DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
 
@@ -751,8 +747,7 @@ class FirebaseFunctions {
     required String description,
   }) async {
     // التعديل: المسار أصبح تحت المدرس
-    final docRef = FirebaseFirestore.instance
-        .doc(teacherPath)
+    final docRef = _db.doc(teacherPath)
         .collection('big_invoices')
         .doc(date);
 
@@ -786,7 +781,7 @@ class FirebaseFunctions {
     required int paymentIndex,
   }) async {
     CollectionReference invoicesCollection =
-        FirebaseFirestore.instance.doc(teacherPath).collection('big_invoices');
+        _db.doc(teacherPath).collection('big_invoices');
 
     DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
 
@@ -808,12 +803,12 @@ class FirebaseFunctions {
   // ✅ تعديل جلب الـ ID التسلسلي ليكون خاص بكل مدرس
   static Future<int> getAndIncrementInvoiceId() async {
     // العداد أصبح داخل constants المدرس
-    DocumentReference docRef = FirebaseFirestore.instance
-        .doc(teacherPath)
+    DocumentReference docRef =
+        _db.doc(teacherPath)
         .collection('constants')
         .doc('bills_ids');
 
-    return await FirebaseFirestore.instance.runTransaction((transaction) async {
+    return await _db.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(docRef);
 
       if (!snapshot.exists) {
@@ -859,8 +854,8 @@ class FirebaseFunctions {
     );
 
     // التعديل: الفاتورة تحفظ في مسار المدرس
-    DocumentReference docRef = FirebaseFirestore.instance
-        .doc(teacherPath)
+    DocumentReference docRef =
+        _db.doc(teacherPath)
         .collection('big_invoices')
         .doc(date);
 
@@ -881,8 +876,7 @@ class FirebaseFunctions {
     required Invoice updatedInvoice,
   }) async {
     // التعديل: المسار تحت المدرس
-    final docRef = FirebaseFirestore.instance
-        .doc(teacherPath)
+    final docRef = _db.doc(teacherPath)
         .collection('big_invoices')
         .doc(date);
     DocumentSnapshot docSnapshot = await docRef.get();
@@ -925,8 +919,7 @@ class FirebaseFunctions {
     required String date,
     required Invoice invoice,
   }) async {
-    final docRef = FirebaseFirestore.instance
-        .doc(teacherPath)
+    final docRef = _db.doc(teacherPath)
         .collection('big_invoices')
         .doc(date);
     DocumentSnapshot docSnapshot = await docRef.get();
@@ -963,8 +956,8 @@ class FirebaseFunctions {
 
   static Future<List<Invoice>> getInvoicesByStudenId(String studentID) async {
     // التعديل: البحث في فواتير المدرس الحالي فقط
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .doc(teacherPath)
+    QuerySnapshot snapshot =
+        await _db.doc(teacherPath)
         .collection('big_invoices')
         .get();
 
@@ -989,7 +982,7 @@ class FirebaseFunctions {
   static Future<void> createGradeSubscriptionDoc(
       GradeSubscriptionsModel model) async {
     // التعديل: الحفظ داخل constants المدرس
-    await FirebaseFirestore.instance
+    await _db
         .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
@@ -1000,9 +993,7 @@ class FirebaseFunctions {
 
   static Future<void> addSubscriptionToGrade(String gradeName,
       String subscriptionName, double subscriptionAmount) async {
-    final firestore = FirebaseFirestore.instance;
-
-    final docRef = firestore
+    final docRef = _db
         .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
@@ -1010,7 +1001,7 @@ class FirebaseFunctions {
         .doc(gradeName);
 
     final doc = await docRef.get();
-    final tempId = firestore.collection('temp_ids').doc().id;
+    final tempId = _db.collection('temp_ids').doc().id;
 
     final newSubscription = SubscriptionFee(
       id: tempId,
@@ -1039,7 +1030,7 @@ class FirebaseFunctions {
     String gradeName,
     SubscriptionFee updatedSubscription,
   ) async {
-    final docRef = FirebaseFirestore.instance
+    final docRef = _db
         .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
@@ -1064,7 +1055,7 @@ class FirebaseFunctions {
 
   static Future<void> deleteSubscriptionFromGrade(
       String gradeName, String subscriptionId) async {
-    final docRef = FirebaseFirestore.instance
+    final docRef = _db
         .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
@@ -1084,7 +1075,7 @@ class FirebaseFunctions {
 
   static Future<SubscriptionFee?> getSubscriptionById(
       String gradeName, String subscriptionId) async {
-    final docRef = FirebaseFirestore.instance
+    final docRef = _db
         .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
@@ -1111,7 +1102,7 @@ class FirebaseFunctions {
   }
   static Stream<GradeSubscriptionsModel?> getGradeSubscriptionsStream(
       String gradeName) {
-    return FirebaseFirestore.instance
+    return _db
         .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
@@ -1129,8 +1120,8 @@ class FirebaseFunctions {
   static Future<bool> verifyPassword(String enteredPassword) async {
     try {
       // كلمة المرور أصبحت داخل doc خاص بكل مدرس
-      final docRef = FirebaseFirestore.instance
-          .doc(teacherPath)
+      final docRef =
+          _db.doc(teacherPath)
           .collection('constants')
           .doc('password');
       final doc = await docRef.get();
@@ -1149,7 +1140,7 @@ class FirebaseFunctions {
 
   static Future<bool> changePassword(String newPassword) async {
     try {
-      await FirebaseFirestore.instance
+      await _db
           .doc(teacherPath)
           .collection('constants')
           .doc('password')
@@ -1239,7 +1230,7 @@ class FirebaseFunctions {
   }
   static Future<Teacher?> getTeacherById(String id) async {
     // أضفنا GetOptions عشان يفتح البروفايل فوراً من الموبايل
-    var doc = await FirebaseFirestore.instance
+    var doc = await _db
         .collection('teachers')
         .doc(id)
         .get(const GetOptions(source: Source.serverAndCache));
@@ -1259,17 +1250,17 @@ class FirebaseFunctions {
     AbsenceModel? otherGroupAbsence,
     SecondaryRecord? otherGroupInfo,
   }) async {
-    final batch = FirebaseFirestore.instance.batch();
+    final batch = _db.batch();
     final rootPath = teacherPath; // استخدام المتغير الموجود عندك
 
     // 1. مرجع وثيقة الطالب
-    final studentRef = FirebaseFirestore.instance
+    final studentRef = _db
         .doc('$rootPath/${student.grade}/${student.id}'); // اختصار رهيب للمسار
 
     batch.update(studentRef, student.toJson());
 
     // 2. مرجع وثيقة الحضور للمجموعة الحالية
-    final currentAbsenceRef = FirebaseFirestore.instance
+    final currentAbsenceRef = _db
         .doc('$rootPath/$currentDay/$currentMagmo3aId/absences/$currentDate');
 
     batch.set(currentAbsenceRef, currentGroupAbsence.toJson(),
@@ -1277,7 +1268,7 @@ class FirebaseFunctions {
 
     // 3. مرجع وثيقة الحضور للمجموعة الأخرى (إن وجدت)
     if (otherGroupAbsence != null && otherGroupInfo != null) {
-      final otherAbsenceRef = FirebaseFirestore.instance.doc(
+      final otherAbsenceRef = _db.doc(
           '$rootPath/${otherGroupInfo.day}/${otherGroupInfo.magmo3aId}/absences/${otherGroupInfo.date}');
 
       batch.set(
@@ -1286,5 +1277,121 @@ class FirebaseFunctions {
 
     // تنفيذ الباتش
     await batch.commit();
+  }
+
+  // تجديد الاشتراك الأساسي (Basic)
+  static Future<void> renewBasicSubscription(
+      {required Subscription plan}) async {
+    try {
+      final String path = teacherPath; // لو مش مسجل هيرمي Exception هنا
+      final now = DateTime.now();
+
+      // جلب بيانات المدرس الحالية من الداتابيز لضمان دقة التواريخ
+      DocumentSnapshot teacherDoc = await _db.doc(path).get();
+      if (!teacherDoc.exists) throw Exception("بيانات المدرس غير موجودة");
+
+      Map<String, dynamic> tData = teacherDoc.data() as Map<String, dynamic>;
+      DateTime currentExpiry = DateTime.parse(tData['subscriptionEndTime']);
+
+      // الحسبة: لو اشتراكه لسه مخلصش، بنزود على القديم، لو خلص بنبدأ من النهاردة
+      DateTime baseDate = currentExpiry.isAfter(now) ? currentExpiry : now;
+      DateTime newExpiryDate =
+          baseDate.add(Duration(days: plan.durationInDays));
+
+      WriteBatch batch = _db.batch();
+      DocumentReference teacherRef = _db.doc(path);
+      DocumentReference billRef = teacherRef.collection('bills').doc();
+
+      // 1. تحديث بيانات المدرس
+      batch.update(teacherRef, {
+        'subscriptionEndTime': newExpiryDate.toIso8601String(),
+        'isActive': true,
+        'gracePeriodEndTime': null, // تصفير فترة السماح فوراً
+      });
+
+      // 2. إنشاء الفاتورة
+      Bill newBill = Bill(
+        id: billRef.id,
+        billType: "basic",
+        baseStudentLimit: plan.totalStudents,
+        subscriptionName: plan.name,
+        subscriptionDurationInDays: plan.durationInDays,
+        billAmount: plan.price,
+        paidAt: now,
+        expiryDate: newExpiryDate,
+        subscriptionDescription: plan.description,
+        subscriptionId: plan.id ?? "",
+        teacherId: FirebaseAuth.instance.currentUser!.uid,
+      );
+
+      batch.set(billRef, newBill.toJson());
+      await batch.commit();
+    } on Exception catch (e) {
+      if (e.toString().contains("AUTH_REQUIRED")) {
+        rethrow; // بنرميها عشان الصفحة تعرف إنه مش مسجل وتتصرف
+      }
+      throw Exception("فشل التجديد: $e");
+    }
+  }
+
+  // إضافة بوست (Boost)
+  static Future<void> renewBoostSubscription(
+      {required Subscription boostPlan}) async {
+    try {
+      final String path = teacherPath;
+      final now = DateTime.now();
+      DateTime boostExpiry = now.add(Duration(days: boostPlan.durationInDays));
+
+      WriteBatch batch = _db.batch();
+      DocumentReference teacherRef = _db.doc(path);
+      DocumentReference billRef = teacherRef.collection('bills').doc();
+
+      ActiveBoost newBoost = ActiveBoost(
+        id: billRef.id,
+        studentAmount: boostPlan.totalStudents,
+        expiryDate: boostExpiry,
+        purchasedAt: now,
+      );
+
+      batch.update(teacherRef, {
+        'activeBoosts': FieldValue.arrayUnion([newBoost.toJson()]),
+      });
+
+      Bill newBill = Bill(
+        id: billRef.id,
+        subscriptionId: boostPlan.id ?? '',
+        teacherId: FirebaseAuth.instance.currentUser!.uid,
+        billAmount: boostPlan.price,
+        paidAt: now,
+        expiryDate: boostExpiry,
+        subscriptionName: boostPlan.name,
+        subscriptionDescription: boostPlan.description,
+        subscriptionDurationInDays: boostPlan.durationInDays,
+        billType: 'boost',
+        boostAmount: boostPlan.totalStudents,
+      );
+
+      batch.set(billRef, newBill.toJson());
+      await batch.commit();
+    } on Exception catch (e) {
+      if (e.toString().contains("AUTH_REQUIRED")) rethrow;
+      throw Exception("فشل إضافة البوست: $e");
+    }
+  }
+
+  static Stream<List<Subscription>> getBoostSubscriptions() {
+    return _db.collection('admin_boost_subscriptions').snapshots().map(
+          (snap) => snap.docs
+              .map((doc) => Subscription.fromJson(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  static Stream<List<Subscription>> getSubscriptions() {
+    return _db.collection('admin_subscriptions').snapshots().map(
+          (snap) => snap.docs
+              .map((doc) => Subscription.fromJson(doc.data(), doc.id))
+              .toList(),
+        );
   }
 }

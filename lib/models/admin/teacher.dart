@@ -12,6 +12,7 @@ class Teacher {
   final DateTime subscriptionEndTime;
   final List<ActiveBoost> activeBoosts;
   final int currentStudentCount;
+  final DateTime? gracePeriodEndTime;
 
   Teacher({
     required this.id,
@@ -22,9 +23,11 @@ class Teacher {
     required this.subscriptionEndTime,
     required this.activeBoosts,
     required this.currentStudentCount,
+    this.gracePeriodEndTime,
   });
 
   // --- الحسبة الذكية (Logic) ---
+
   Future<int> getBaseStudentLimit() async {
     final now = DateTime.now();
 
@@ -94,6 +97,9 @@ class Teacher {
           json['subscriptionEndTime'] ?? DateTime.now().toIso8601String()),
       currentStudentCount: json['currentStudentCount'] ?? 0,
       activeBoosts: listBoosts,
+      gracePeriodEndTime: json['gracePeriodEndTime'] != null
+          ? DateTime.parse(json['gracePeriodEndTime'])
+          : null,
     );
   }
 
@@ -106,6 +112,8 @@ class Teacher {
       'subscriptionEndTime': subscriptionEndTime.toIso8601String(),
       'currentStudentCount': currentStudentCount,
       'activeBoosts': activeBoosts.map((e) => e.toJson()).toList(),
+      'gracePeriodEndTime': gracePeriodEndTime?.toIso8601String(),
+      // ملاحظة: حذفنا baseStudentLimit من هنا لأنه أصبح يُحسب ديناميكياً من الفواتير
     };
   }
 }

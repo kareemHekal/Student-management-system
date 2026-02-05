@@ -34,8 +34,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // 3. التحقق من رقم الهاتف (11 رقم ويبدأ بـ 01)
     final phoneRegex = RegExp(r'^01[0125][0-9]{8}$');
     if (!phoneRegex.hasMatch(phone)) {
-      AppSnackBars.showError(
-          context, "رقم الهاتف غير صحيح (يجب أن يكون 11 رقم)");
+      AppSnackBars.showError(context, "رقم الهاتف غير صحيح");
       return;
     }
 
@@ -59,8 +58,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await AuthService().registerTeacher(email, password, name, phone);
       if (!mounted) return;
       AppSnackBars.showSuccess(
-          context, "تم إنشاء الحساب بنجاح! تواصل مع الإدارة لتفعيله.");
-      Navigator.pop(context);
+          context, "تم إنشاء الحساب بنجاح! تبقي فقط اختيار الأشتراك المناسب.");
+      Navigator.pushReplacementNamed(context, "/subscriptionPlansPage");
     } catch (e) {
       AppSnackBars.showError(context, "حدث خطأ: ${e.toString()}");
     } finally {

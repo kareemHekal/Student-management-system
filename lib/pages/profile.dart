@@ -365,18 +365,57 @@ class TeacherProfilePage extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          flex: 2,
-          child: _actionBtn("الدعم الفني", Icons.support_agent, Colors.green,
-              _launchWhatsApp),
+        // زر تجديد الاشتراك بنفس تصميم أزرار الأكشن لكن بلون التطبيق
+        InkWell(
+          onTap: () {
+            Navigator.pushNamed(context, "/subscriptionPlansPage");
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            decoration: BoxDecoration(
+              color: AppColors.primaryMain.withOpacity(0.1),
+              // لون خفيف زي التانيين
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: AppColors.primaryMain.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.auto_awesome_rounded,
+                    color: AppColors.primaryMain, size: 24),
+                const SizedBox(width: 10),
+                Text(
+                  "تجديد أو ترقية الاشتراك",
+                  style: GoogleFonts.cairo(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryMain,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          flex: 1,
-          child: _actionBtn("خروج", Icons.logout_rounded, Colors.redAccent,
-              () => _handleLogout(context)),
+        const SizedBox(height: 15),
+
+        // الأزرار الحالية (دعم فني وخروج)
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: _actionBtn("الدعم الفني", Icons.support_agent,
+                  Colors.green, _launchWhatsApp),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 1,
+              child: _actionBtn("خروج", Icons.logout_rounded, Colors.redAccent,
+                  () => _handleLogout(context)),
+            ),
+          ],
         ),
       ],
     );

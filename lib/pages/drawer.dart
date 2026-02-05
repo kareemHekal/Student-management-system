@@ -167,7 +167,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
     }
 
     // 3. التحقق من وجود بيانات حقيقية (عشان مظهرش عدادات لـ "مدير النظام")
-    bool hasRealData = teacher != null && teacher.name != "مدير النظام";
+    bool hasRealData = teacher != null && teacher.name != "Studenizer";
 
     return Container(
       width: double.infinity,
@@ -192,10 +192,10 @@ class _CustomDrawerState extends State<CustomDrawer> {
 
           // اسم المدرس
           Text(
-            teacher?.name ?? "مدير النظام",
-            style: GoogleFonts.amiri(
+            teacher?.name ?? "Studenizer",
+            style: GoogleFonts.orbitron(
                 fontWeight: FontWeight.bold,
-                fontSize: 26,
+                fontSize: 28,
                 color: AppColors.primaryDark),
           ),
 
