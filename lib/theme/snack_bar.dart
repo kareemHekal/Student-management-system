@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'colors_app.dart';
 import 'text_style.dart';
 
@@ -20,6 +21,15 @@ class AppSnackBars {
       message: message,
       icon: Icons.error_outline,
       backgroundColor: AppColors.statusAbsent,
+    );
+  }
+
+  static void showWarn(BuildContext context, String message) {
+    _show(
+      context,
+      message: message,
+      icon: Icons.warning_amber_rounded,
+      backgroundColor: AppColors.statusLate,
     );
   }
 

@@ -16,3 +16,9 @@ class StudentValidationError extends StudentState {
   final String errorMessage;
   StudentValidationError(this.errorMessage);
 }
+
+class TeacherNearLimit extends StudentState {
+  final String message;
+
+  TeacherNearLimit(this.message);
+}

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -284,115 +285,140 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
 
   Future<void> fixAttendanceCounts() async {
     try {
-      debugPrint("🚀 Starting Attendance Rollback...");
+      debugPrint("🚀 Starting Smart Attendance Rollback...");
 
-      List<Future> batchUpdates = [];
+      var batch = FirebaseFirestore.instance.batch();
+      int operationCount = 0;
+      final String grade = widget.cubit.magmo3aModel.grade ?? "";
+      final String rootPath = FirebaseFunctions.teacherPath;
 
-      // 1. معالجة الطلاب الحاضرين (Attend Students)
-      // دول اللي ممكن يكون فيهم Secondary (ضيوف)
+      Future<void> checkAndCommitBatch() async {
+        operationCount++;
+        if (operationCount >= 500) {
+          await batch.commit();
+          batch = FirebaseFirestore.instance.batch();
+          operationCount = 0;
+        }
+      }
+
+      // 1. معالجة الطلاب الحاضرين (الأساسيين والضيوف)
       for (var student in widget.cubit.attendStudents) {
         if (student.countingAttendedDays != null) {
-          // البحث عن سجل اليوم الحالي
-          // نستخدم try/catch أو firstWhere orElse للبحث بأمان
+          final recordIndex = student.countingAttendedDays!.indexWhere(
+            (dr) => dr.date == widget.cubit.selectedDateStr,
+          );
 
-          DayRecord? recordToDelete;
-          try {
-            recordToDelete = student.countingAttendedDays!.firstWhere(
-              (dr) => dr.date == widget.cubit.selectedDateStr,
-              // بنبحث بتاريخ الكيوبت (المجموعة الحالية)
-            );
-          } catch (e) {
-            recordToDelete = null;
-          }
+          if (recordIndex != -1) {
+            final recordToDelete = student.countingAttendedDays![recordIndex];
 
-          if (recordToDelete != null) {
-            // --- هل الطالب ده ضيف؟ (ليه Secondary) ---
-            if (recordToDelete.secondary != null) {
-              final secRecord = recordToDelete.secondary!;
+            // --- تطبيق نظام الـ Restore الذكي ---
+            final bool isGuest = recordToDelete.secondary != null;
+            final String targetMagmo3aId = isGuest
+                ? recordToDelete.secondary!.magmo3aId
+                : recordToDelete.magmo3aId;
+            final String targetDate =
+                isGuest ? recordToDelete.secondary!.date : recordToDelete.date;
+            final String targetDay =
+                isGuest ? recordToDelete.secondary!.day : recordToDelete.day;
+            final TimeOfDay targetTime =
+                isGuest ? recordToDelete.secondary!.time : recordToDelete.time;
 
-              // أ. روح هات سجل غياب المجموعة الأصلية بتاعته
+            // حذف السجل الحالي أولاً محلياً عشان نفحص الباقي
+            student.countingAttendedDays!.removeAt(recordIndex);
+
+            // الفحص الجوهري: هل الطالب لسه حاضر في مكان تاني (تعويض آخر) لنفس الحصة؟
+            bool isStillPresentElsewhere =
+                student.countingAttendedDays!.any((r) {
+              if (r.secondary == null) {
+                return r.magmo3aId == targetMagmo3aId && r.date == targetDate;
+              } else {
+                return r.secondary!.magmo3aId == targetMagmo3aId &&
+                    r.secondary!.date == targetDate;
+              }
+            });
+
+            // إذا لم يعد حاضراً في أي مكان آخر، نرجعه غايب في مجموعته الأصلية
+            if (!isStillPresentElsewhere) {
               final secAbsenceModel =
                   await FirebaseFunctions.getAbsenceByDateOnce(
-                secRecord.day,
-                secRecord.magmo3aId,
-                secRecord.date,
+                targetDay,
+                targetMagmo3aId,
+                targetDate,
               );
 
-              // ب. لو السجل موجود، رجع الطالب ده غياب فيه
               if (secAbsenceModel != null) {
+                // أ- إرجاع الطالب لقائمة الغياب في السيرفر
                 if (!secAbsenceModel.absentStudentIds.contains(student.id)) {
                   secAbsenceModel.absentStudentIds.add(student.id);
-                  // وتأكد إنه مش في الحضور هناك
                   secAbsenceModel.attendStudentIds.remove(student.id);
 
-                  // ج. ضيف للطالب سجل غياب في مجموعته الأصلية (عشان عداد الغياب يظبط)
+                  // ب- إضافة سجل غياب للطالب محلياً
                   student.countingAbsentDays ??= [];
-                  student.countingAbsentDays!.add(DayRecord(
-                      magmo3aId: secRecord.magmo3aId,
-                      date: secRecord.date,
-                      day: secRecord.day,
-                      time: secRecord.time,
-                      secondary: null));
-                  batchUpdates
-                      .add(FirebaseFunctions.updateAbsenceByDateInSubcollection(
-                    secRecord.day,
-                    secRecord.magmo3aId,
-                    secRecord.date,
-                    secAbsenceModel,
-                  ));
+                  if (!student.countingAbsentDays!.any((d) =>
+                      d.magmo3aId == targetMagmo3aId && d.date == targetDate)) {
+                    student.countingAbsentDays!.add(DayRecord(
+                        magmo3aId: targetMagmo3aId,
+                        date: targetDate,
+                        day: targetDay,
+                        time: targetTime,
+                        secondary: null));
+                  }
+
+                  // ج- تحديث وثيقة الغياب للمجموعة الأخرى في الباتش
+                  final otherAbsRef = FirebaseFirestore.instance.doc(
+                      '$rootPath/$targetDay/$targetMagmo3aId/absences/$targetDate');
+                  batch.set(otherAbsRef, secAbsenceModel.toJson(),
+                      SetOptions(merge: true));
+                  await checkAndCommitBatch();
                 }
               }
             }
 
-            // د. احذف سجل الحضور من الطالب
-            student.countingAttendedDays!.remove(recordToDelete);
-
-            // هـ. ضيف الطالب للباتش عشان يتعمل update
-            batchUpdates.add(FirebaseFunctions.updateStudentInCollection(
-                widget.cubit.magmo3aModel.grade ?? "", student.id, student));
+            // تحديث بيانات الطالب في الباتش (بعد حذف سجل الحضور وإضافة الغياب إن وجد)
+            final studentRef = FirebaseFirestore.instance
+                .doc('$rootPath/$grade/${student.id}');
+            batch.update(studentRef, student.toJson());
+            await checkAndCommitBatch();
           }
         }
       }
 
-      // 2. معالجة الطلاب الغائبين (Absent Students)
-      // دول طلاب المجموعة الأصليين اللي اتسجلوا غياب، هنشيل الغياب عنهم بس
+      // 2. معالجة الطلاب الغائبين (تنظيف سجل الغياب الحالي)
       for (var student in widget.cubit.absentStudents) {
         if (student.countingAbsentDays != null) {
-          // احذف سجل الغياب اللي بيطابق تاريخ اليوم
+          int initialLength = student.countingAbsentDays!.length;
           student.countingAbsentDays!
               .removeWhere((dr) => dr.date == widget.cubit.selectedDateStr);
 
-          batchUpdates.add(FirebaseFunctions.updateStudentInCollection(
-              widget.cubit.magmo3aModel.grade ?? "", student.id, student));
+          if (student.countingAbsentDays!.length != initialLength) {
+            final studentRef = FirebaseFirestore.instance
+                .doc('$rootPath/$grade/${student.id}');
+            batch.update(studentRef, student.toJson());
+            await checkAndCommitBatch();
+          }
         }
       }
 
-      // 3. حذف وثيقة غياب المجموعة الحالية نهائياً
-      batchUpdates.add(FirebaseFunctions.deleteAbsenceFromSubcollection(
-          widget.cubit.selectedDay,
-          widget.cubit.magmo3aModel.id,
-          widget.cubit.selectedDateStr));
+      // 3. حذف وثيقة غياب المجموعة الحالية
+      final currentAbsRef = FirebaseFirestore.instance.doc(
+          '$rootPath/${widget.cubit.selectedDay}/${widget.cubit.magmo3aModel.id}/absences/${widget.cubit.selectedDateStr}');
+      batch.delete(currentAbsRef);
+      await checkAndCommitBatch();
 
-      // 4. تنفيذ الكل
-      await Future.wait(batchUpdates);
-
-      debugPrint("✅ Rollback Complete!");
+      // 4. التنفيذ النهائي
+      if (operationCount > 0) await batch.commit();
 
       if (mounted) {
         Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const AbsentHomePage()),
-          (route) => false,
-        );
-
+            context,
+            MaterialPageRoute(builder: (context) => const AbsentHomePage()),
+            (route) => false);
         AppSnackBars.showSuccess(
-            context, "تم حذف سجل الغياب وتصحيح العدادات بنجاح");
+            context, "تم حذف السجل وتصحيح العدادات بنظام الـ Restore الذكي");
       }
     } catch (e) {
-      debugPrint("❌ Error fixing counts: $e");
-      if (mounted) {
-        AppSnackBars.showError(context, "حدث خطأ أثناء الحذف: $e");
-      }
+      debugPrint("❌ Error: $e");
+      if (mounted) AppSnackBars.showError(context, "حدث خطأ: $e");
     }
   }
 }

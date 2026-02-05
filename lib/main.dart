@@ -18,7 +18,7 @@ import 'constants.dart';
 import 'firebase/firebase_options.dart';
 import 'home.dart';
 import 'models/admin/teacher.dart';
-import 'pages/AllStudentPage.dart';
+import 'pages/all_students/AllStudentPage.dart';
 import 'provider.dart';
 
 void main() async {

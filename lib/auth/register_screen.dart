@@ -89,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       // اللون اللي اخترناه (أبيض مخضر خفيف)
-      backgroundColor: const Color(0xFFF7FCF9),
+      backgroundColor: const Color(0xFFEBFFF4),
       body: SingleChildScrollView(
         // دي أهم حركة عشان الكيبورد ترفع التصميم
         child: Column(

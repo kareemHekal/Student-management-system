@@ -1,4 +1,4 @@
-import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_advanced_drawer/flutter_advanced_drawer.dart';
 import 'package:student_management_system/absent_home_screen.dart';
@@ -7,6 +7,7 @@ import 'Nav_Bar_Tabs/Add_student_tab.dart';
 import 'Nav_Bar_Tabs/groups_tab.dart';
 import 'pages/drawer.dart';
 import 'theme/colors_app.dart';
+import 'theme/text_style.dart';
 
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
@@ -16,8 +17,21 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
-  int _currant_index = 0;
-  final List<Widget> _bodytabs = [
+  /// التحكم في صفحات الـ Body
+  final _pageController = PageController(initialPage: 0);
+
+  /// التحكم في شريط التنقل السفلي
+  final NotchBottomBarController _notchController =
+      NotchBottomBarController(index: 0);
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  /// الصفحات الموجودة في التنقل
+  final List<Widget> _bodyTabs = [
     const GroupsTab(),
     const AddStudentTab(),
   ];
@@ -32,11 +46,11 @@ class _HomescreenState extends State<Homescreen> {
         height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topRight,
+            begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.secondaryMain, // فوق شمال
-              AppColors.primaryDark, // تحت يمين
+              AppColors.secondaryMain,
+              AppColors.primaryDark,
             ],
           ),
         ),
@@ -46,87 +60,109 @@ class _HomescreenState extends State<Homescreen> {
       animationDuration: const Duration(milliseconds: 300),
       animateChildDecoration: true,
       rtlOpening: false,
-      disabledGestures: true,
-      childDecoration: const BoxDecoration(
+      disabledGestures: false,
+      // فعلت الإيماءات لتجربة مستخدم أفضل
+      childDecoration: BoxDecoration(
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 15,
           ),
         ],
-        borderRadius: const BorderRadius.all(Radius.circular(16)),
+        borderRadius: const BorderRadius.all(Radius.circular(25)),
       ),
-      drawer: CustomDrawer(),
+      drawer: const CustomDrawer(),
       child: Scaffold(
-        extendBody: true,
+        extendBody: true, // مهم جداً لجعل الـ Navbar يبدو طافياً
         appBar: AppBar(
           automaticallyImplyLeading: false,
           centerTitle: true,
           backgroundColor: AppColors.primaryMain,
+          elevation: 0,
           title: Image.asset(
             "assets/images/logo.png",
-            height: 100,
-            width: 90,
+            height: 80, // قللت الارتفاع قليلاً ليتناسب مع التصميم المودرن
           ),
-          toolbarHeight: 120,
+          toolbarHeight: 110,
           actions: [
             IconButton(
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AbsentHomePage(),
-                    ),
-                    (route) => false,
-                  );
-                },
-                icon: Icon(Icons.qr_code_outlined,
-                    color: AppColors.secondaryMain))
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AbsentHomePage()),
+                  (route) => false,
+                );
+              },
+              icon: const Icon(Icons.qr_code_scanner_rounded,
+                  color: AppColors.secondaryMain),
+            )
           ],
           leading: IconButton(
-            onPressed: () {
-              _advancedDrawerController.showDrawer();
-            },
+            onPressed: () => _advancedDrawerController.showDrawer(),
             icon: ValueListenableBuilder<AdvancedDrawerValue>(
               valueListenable: _advancedDrawerController,
               builder: (_, value, __) {
                 return AnimatedSwitcher(
-                  duration: Duration(milliseconds: 250),
-                  child: Semantics(
-                    child: Icon(
-                      color: AppColors.secondaryMain,
-                      size: 30,
-                      value.visible ? Icons.clear : Icons.clear_all_outlined,
-                      key: ValueKey<bool>(value.visible),
-                    ),
+                  duration: const Duration(milliseconds: 250),
+                  child: Icon(
+                    value.visible ? Icons.clear : Icons.clear_all_outlined,
+                    color: AppColors.secondaryMain,
+                    size: 30,
+                    key: ValueKey<bool>(value.visible),
                   ),
                 );
               },
             ),
           ),
         ),
-        body: _bodytabs[_currant_index],
-        bottomNavigationBar: CurvedNavigationBar(
-          animationCurve: Curves.linear,
-          height: 60,
-          onTap: (index) {
-            setState(() {
-              _currant_index = index;
-            });
-          },
-          backgroundColor: Colors.transparent,
+        body: Padding(
+          padding: const EdgeInsets.only(bottom: 25),
+          child: PageView(
+            padEnds: true,
+
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            // نعتمد على الـ Tap فقط
+            children: _bodyTabs,
+          ),
+        ),
+        bottomNavigationBar: AnimatedNotchBottomBar(
+          notchBottomBarController: _notchController,
           color: AppColors.primaryMain,
-          animationDuration: const Duration(seconds: 1),
-          items: [
-            Icon(Icons.home,
-                color: _currant_index == 0
-                    ? AppColors.secondaryMain
-                    : Colors.white),
-            Icon(Icons.add,
-                color: _currant_index == 1
-                    ? AppColors.secondaryMain
-                    : Colors.white),
+          showLabel: true,
+          notchColor: AppColors.secondaryMain,
+          removeMargins: false,
+          bottomBarWidth: MediaQuery.of(context).size.width,
+          durationInMilliSeconds: 300,
+          itemLabelStyle: AppTextStyles.customText(
+            fontSize: 10,
+            color: Colors.white,
+          ),
+          bottomBarItems: const [
+            BottomBarItem(
+              inActiveItem: Icon(Icons.home_filled, color: Colors.white70),
+              activeItem: Icon(Icons.home_filled, color: Colors.white70),
+              itemLabel: 'الرئيسية',
+            ),
+            BottomBarItem(
+              inActiveItem:
+                  Icon(Icons.person_add_alt_1_rounded, color: Colors.white70),
+              activeItem:
+                  Icon(Icons.person_add_alt_1_rounded, color: Colors.white70),
+              itemLabel: 'إضافة طالب',
+            ),
           ],
+          onTap: (index) {
+            _pageController.jumpToPage(index);
+            (
+              index,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOut,
+            );
+          },
+          kIconSize: 24.0,
+          kBottomRadius: 25.0,
         ),
       ),
     );

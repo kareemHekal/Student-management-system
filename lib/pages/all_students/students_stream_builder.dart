@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../firebase/firebase_functions.dart';
-import 'BottomSheets/student_chosen_pdf.dart';
-import 'cards/student/StudentWidget.dart';
-import 'models/Student_model.dart';
-import 'theme/colors_app.dart';
+import '../../../firebase/firebase_functions.dart';
+import '../../BottomSheets/student_chosen_pdf.dart';
+import '../../cards/student/StudentWidget.dart';
+import '../../models/Student_model.dart';
+import '../../theme/colors_app.dart';
 
 class StudentListBuilder extends StatefulWidget {
   final String grade;

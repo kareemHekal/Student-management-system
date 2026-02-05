@@ -4,10 +4,10 @@ import 'package:student_management_system/loadingFile/loading_alert/run_with_loa
 import 'package:student_management_system/models/Student_model.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
 
-import '../firebase/firebase_functions.dart';
-import '../studetnstreambuilder.dart';
-import '../theme/colors_app.dart';
-import 'student/edit_student/EditStudent.dart';
+import '../../firebase/firebase_functions.dart';
+import '../../theme/colors_app.dart';
+import '../student/edit_student/EditStudent.dart';
+import 'students_stream_builder.dart';
 
 class AllStudentsTab extends StatefulWidget {
   const AllStudentsTab({super.key});
@@ -153,43 +153,38 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
             ),
             body: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : Center(
-                    child: thereIsGrades
-                        ? Column(
-                            children: [
-                              Container(
-                                color: AppColors.primaryMain,
-                                child: TabBar(
-                                  labelPadding: const EdgeInsets.symmetric(
-                                      horizontal: 10),
-                                  dividerColor: Colors.transparent,
-                                  onTap: (index) {
-                                    setState(() {
-                                      grade = grades![index];
-                                    });
-                                  },
-                                  isScrollable: true,
-                                  tabAlignment: TabAlignment.start,
-                                  indicatorColor: AppColors.secondaryMain,
-                                  labelColor: AppColors.secondaryMain,
-                                  unselectedLabelColor: Colors.white,
-                                  tabs:
-                                      grades!.map((g) => Tab(text: g)).toList(),
-                                ),
-                              ),
-                              Expanded(
-                                child: StudentListBuilder(grade: grade ?? ""),
-                              ),
-                            ],
-                          )
-                        : const Text(
-                            "لا توجد مراحل دراسية، يجب إضافة مرحلة أولاً.",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                : thereIsGrades
+                    ? Column(
+                        children: [
+                          Container(
+                            color: AppColors.primaryMain,
+                            child: TabBar(
+                              dividerColor: Colors.transparent,
+                              isScrollable: true,
+                              tabAlignment: TabAlignment.start,
+                              indicatorColor: AppColors.secondaryMain,
+                              labelColor: AppColors.secondaryMain,
+                              unselectedLabelColor: Colors.white,
+                              tabs: grades!.map((g) => Tab(text: g)).toList(),
                             ),
                           ),
-                  ),
+                          Expanded(
+                            child: TabBarView(
+                              // الـ TabBarView هي اللي بتخلي الـ Tabs تشتغل صح
+                              children: grades!.map((g) {
+                                return StudentListBuilder(grade: g);
+                              }).toList(),
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Center(
+                        child: Text(
+                          "لا توجد مراحل دراسية، يجب إضافة مرحلة أولاً.",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
           ),
         ),
       ],

@@ -75,6 +75,11 @@ class StudentCubit extends Cubit<StudentState> {
             "لقد وصلت للحد الأقصى المتاح لك حالياً ($allowed طالب). يمكنك شراء باقة Boost لزيادة السعة فوراً."));
         return;
       }
+      if (current >= (allowed - 10)) {
+        int remaining = allowed - current;
+        emit(TeacherNearLimit(
+            "تنبيه: متبقي $remaining أماكن فقط قبل الوصول للحد الأقصى."));
+      }
     } else {
       emit(StudentValidationError("خطأ: لم يتم العثور على بيانات المعلم"));
       return;

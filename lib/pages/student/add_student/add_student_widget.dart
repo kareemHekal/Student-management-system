@@ -95,20 +95,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
     if (state is StudentAddedFailure) {
       AppSnackBars.showError(context, state.errorMessage);
     }
+    if (state is TeacherNearLimit) {
+      AppSnackBars.showWarn(context, state.message);
+    }
     if (state is StudentValidationError) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        _buildSnackBar(state.errorMessage, AppColors.statusAbsent),
-      );
+      AppSnackBars.showError(context, state.errorMessage);
     }
   }
 
-  SnackBar _buildSnackBar(String content, Color color) {
-    return SnackBar(
-      content: Text(content),
-      backgroundColor: color,
-      duration: const Duration(seconds: 2),
-    );
-  }
 
   // --- دوال المساعدة للـ UI (UI Helpers) ------------------------------------
 
