@@ -169,101 +169,122 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
   }
 
   Widget _buildPlanCard(Subscription plan, bool isBoost) {
+    // تمييز باقة الـ 600 طالب
+    bool isPopular = plan.totalStudents == 600;
+
+    // تحديد اللون الأساسي للكارت بناءً على نوع الباقة
+    Color themeColor =
+        isPopular ? AppColors.secondaryMain : AppColors.primaryMain;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: themeColor.withOpacity(0.2), width: 1.5),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 15,
-              offset: const Offset(0, 8)),
+            color: themeColor.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
         ],
-        border: Border.all(color: Colors.grey.shade100),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isBoost
-                        ? Icons.bolt_rounded
-                        : Icons.workspace_premium_rounded,
-                    // استخدام secondaryMain هنا للأيقونات
-                    color: isBoost ? Colors.orange : AppColors.secondaryMain,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    plan.name,
-                    style: AppTextStyles.customText(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  // استخدام secondaryMain في خلفية السعر بشكل خفيف
-                  color: AppColors.secondaryMain.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+          // الجزء العلوي (Header الكارت)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            decoration: BoxDecoration(
+              color: themeColor.withOpacity(0.05),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(25)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isPopular)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondaryMain,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: const Text(
+                          "الأكثر مبيعاً",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    Text(
+                      plan.name,
+                      style: TextStyle(
+                        color: themeColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  "${plan.price} ج.م",
-                  style: TextStyle(
-                      color: AppColors.secondaryMain,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      "${plan.price}",
+                      style: TextStyle(
+                        color: AppColors.black,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const Text("جنيه مصري",
+                        style: TextStyle(color: Colors.grey, fontSize: 10)),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 15),
-          Text(
-            plan.description,
-            style: TextStyle(
-                color: Colors.grey.shade600, fontSize: 13, height: 1.4),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Divider(height: 1, thickness: 0.5),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildInfoItem(
-                  Icons.people_outline, "${plan.totalStudents} طالب"),
-              _buildInfoItem(
-                  Icons.calendar_today_outlined, "${plan.durationInDays} يوم"),
-            ],
-          ),
-          const SizedBox(height: 25),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isBoost ? Colors.orange : AppColors.primaryMain,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15)),
-                elevation: 0,
-              ),
-              onPressed: () => _confirmPurchase(plan, isBoost),
-              child: Text(
-                isBoost ? "تفعيل الزيادة" : "اشترك الآن",
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16),
-              ),
+
+          // محتوى الكارت
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                _buildFeatureRow(Icons.people_alt_rounded, "سعة الطلاب",
+                    "${plan.totalStudents} طالب", themeColor),
+                const SizedBox(height: 12),
+                _buildFeatureRow(Icons.calendar_month_rounded, "مدة الصلاحية",
+                    "${plan.durationInDays} يوم", themeColor),
+                const SizedBox(height: 25),
+
+                // زر الاشتراك
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: themeColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15)),
+                      elevation: 0,
+                    ),
+                    onPressed: () => _confirmPurchase(plan, isBoost),
+                    child: Text(
+                      isPopular ? "اشتراك التميز" : "اختيار الخطة",
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -271,17 +292,29 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String label) {
+// ودجت مساعد لصفوف المميزات
+  Widget _buildFeatureRow(
+      IconData icon, String title, String value, Color color) {
     return Row(
       children: [
-        // استخدام secondaryMain للأيقونات الصغيرة
-        Icon(icon, size: 18, color: AppColors.secondaryMain),
-        const SizedBox(width: 8),
-        Text(label,
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        const SizedBox(width: 12),
+        Text(title,
+            style:
+                const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+        const Spacer(),
+        Text(value,
             style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87)),
+                color: AppColors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 14)),
       ],
     );
   }

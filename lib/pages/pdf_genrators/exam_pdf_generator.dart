@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -20,254 +19,128 @@ class _PdfStudentRow {
   _PdfStudentRow({required this.name, this.score});
 }
 
-Future<Uint8List> generateExamReportPdf({
-  required ExamModel exam,
-  required List<Studentmodel> students,
-  required String gradeName,
-}) async {
+Future<Uint8List> generateExamReportPdf(Map<String, dynamic> params) async {
+  final ExamModel exam = params['exam'];
+  final List<Studentmodel> students = params['students'];
+  final String gradeName = params['gradeName'];
+  final Uint8List fontData = params['fontData']; // استلم الخط كبيانات
+
   final pdf = pw.Document();
+  final ttf = pw.Font.ttf(fontData.buffer.asByteData());
 
-  final fontData = await rootBundle.load('fonts/NotoKufiArabic-Regular.ttf');
-  final ttf = pw.Font.ttf(fontData);
-  final baseStyle = pw.TextStyle(font: ttf, fontSize: 12);
-
-  pw.Widget localizedText(String text,
-      {pw.TextStyle? style, double size = 12}) {
-    return pw.Directionality(
-      textDirection:
-          _isArabic(text) ? pw.TextDirection.rtl : pw.TextDirection.ltr,
-      child: pw.Text(
-        text,
-        style: (style ?? baseStyle).copyWith(fontSize: size),
-      ),
-    );
-  }
-
+  // منطق تجهيز البيانات (زي ما هو سليم عندك)
   final Map<String, List<_PdfStudentRow>> byMini = {};
   final List<String> noRecordStudents = [];
-
   final miniExams = exam.miniExams ?? [];
-  for (final m in miniExams) {
-    byMini[m.id] = [];
-  }
+  for (final m in miniExams) byMini[m.id] = [];
 
   for (final st in students) {
     final gradeList = st.studentExamsGrades ?? [];
     final matching = gradeList.where((g) => g.examId == exam.id).toList();
-
     if (matching.isEmpty) {
-      noRecordStudents.add(st.name ?? st.id);
+      noRecordStudents.add(st.name ?? "بدون اسم");
       continue;
     }
-
     for (final g in matching) {
-      final name = st.name ?? st.id;
-      final score = double.tryParse(g.studentGrade);
-      if (!byMini.containsKey(g.miniExamId)) {
-        byMini[g.miniExamId] = [];
+      if (byMini.containsKey(g.miniExamId)) {
+        byMini[g.miniExamId]!.add(_PdfStudentRow(
+          name: st.name ?? "بدون اسم",
+          score: double.tryParse(g.studentGrade),
+        ));
       }
-      byMini[g.miniExamId]!.add(_PdfStudentRow(name: name, score: score));
     }
   }
-
-  for (final key in byMini.keys) {
-    byMini[key]!.sort((a, b) {
-      if (a.score == null && b.score == null) return 0;
-      if (a.score == null) return 1;
-      if (b.score == null) return -1;
-      return b.score!.compareTo(a.score!);
-    });
-  }
-
-  final pageTheme = pw.PageTheme(
-    pageFormat: PdfPageFormat.a4,
-    margin: const pw.EdgeInsets.all(25),
-  );
 
   pdf.addPage(
     pw.MultiPage(
-      pageTheme: pageTheme,
+      pageFormat: PdfPageFormat.a4,
+      textDirection: pw.TextDirection.rtl,
+      theme: pw.ThemeData.withFont(base: ttf, bold: ttf),
+      margin: const pw.EdgeInsets.all(30),
       build: (context) {
         final List<pw.Widget> widgets = [];
 
-        // HEADER
-        widgets.add(
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              localizedText(
-                exam.name,
+        // 1. العنوان الرئيسي
+        widgets.add(pw.Center(
+            child: pw.Text(exam.name,
                 style: pw.TextStyle(
-                    font: ttf, fontSize: 22, fontWeight: pw.FontWeight.bold),
-              ),
-              pw.SizedBox(height: 4),
-              localizedText(
-                'الصف: $gradeName',
-                style: pw.TextStyle(font: ttf, color: PdfColors.grey700),
-              ),
-              pw.Divider(),
-            ],
-          ),
-        );
+                    fontSize: 24, fontWeight: pw.FontWeight.bold))));
+        widgets.add(pw.Center(
+            child: pw.Text('تقرير الدرجات - صف: $gradeName',
+                style: const pw.TextStyle(fontSize: 16))));
+        widgets.add(pw.SizedBox(height: 20));
+        widgets.add(pw.Divider(thickness: 2));
 
-        // MINI EXAM TABLES
+        // 2. عرض نماذج الامتحان
         for (final mini in miniExams) {
           final rows = byMini[mini.id] ?? [];
 
-          widgets.add(
-            pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(vertical: 6),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  localizedText(
-                    mini.miniExamName,
-                    style: pw.TextStyle(
-                        font: ttf,
-                        fontSize: 16,
-                        fontWeight: pw.FontWeight.bold),
-                  ),
-                  localizedText(
-                    'الدرجة الكاملة: ${mini.fullGrade.toStringAsFixed(0)}',
-                    style: pw.TextStyle(font: ttf),
-                  ),
-                ],
-              ),
-            ),
-          );
-
-          if (rows.isEmpty) {
-            widgets.add(localizedText(
-              'لا توجد درجات لهذا النموذج',
-              style: pw.TextStyle(font: ttf, color: PdfColors.grey600),
-            ));
-            widgets.add(pw.Divider());
-            continue;
-          }
-
-          widgets.add(
-            pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              columnWidths: {
-                0: const pw.FlexColumnWidth(4),
-                1: const pw.FlexColumnWidth(1.2),
-              },
-              children: [
-                pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                  children: [
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.all(6),
-                      child: localizedText('اسم الطالب',
-                          style: pw.TextStyle(
-                              font: ttf,
-                              fontSize: 12,
-                              fontWeight: pw.FontWeight.bold)),
-                    ),
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.all(6),
-                      child: localizedText('الدرجة',
-                          style: pw.TextStyle(
-                              font: ttf,
-                              fontSize: 12,
-                              fontWeight: pw.FontWeight.bold)),
-                    ),
-                  ],
-                ),
-                ...rows.map((r) {
-                  return pw.TableRow(
-                    children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: localizedText(r.name,
-                            style: pw.TextStyle(font: ttf, fontSize: 11)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: localizedText(
-                            r.score == null ? '-' : r.score!.toStringAsFixed(1),
-                            style: pw.TextStyle(font: ttf, fontSize: 11)),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ],
-            ),
-          );
-
-          widgets.add(pw.SizedBox(height: 8));
-          widgets.add(pw.Divider());
-        }
-
-        // NO EXAM STUDENTS
-        widgets.add(
-          pw.Padding(
-            padding: const pw.EdgeInsets.only(top: 10, bottom: 6),
-            child: localizedText(
-              'الطلاب الذين لم يؤدوا الامتحان',
-              style: pw.TextStyle(
-                  font: ttf, fontSize: 16, fontWeight: pw.FontWeight.bold),
-            ),
-          ),
-        );
-
-        if (noRecordStudents.isEmpty) {
-          widgets.add(localizedText(
-            'لا يوجد. جميع الطلاب لهم درجات.',
-            style: pw.TextStyle(font: ttf, color: PdfColors.grey700),
+          // عنوان النموذج
+          widgets.add(pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.all(5),
+            color: PdfColors.grey300,
+            child: pw.Text(
+                "نموذج: ${mini.miniExamName} (الدرجة: ${mini.fullGrade})",
+                style:
+                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16)),
           ));
-        } else {
-          widgets.add(
-            pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              columnWidths: {
-                0: const pw.FlexColumnWidth(4),
-                1: const pw.FlexColumnWidth(1.2),
-              },
-              children: [
-                pw.TableRow(
-                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+
+          if (rows.isNotEmpty) {
+            // بدلاً من الجدول.. سنستخدم Wrap يحتوي على "كروت" صغيرة أو قائمة نصوص
+            // لضمان السرعة، هنعرضهم كقائمة نصوص بسيطة
+            for (var i = 0; i < rows.length; i++) {
+              widgets.add(pw.Container(
+                padding:
+                    const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                decoration: pw.BoxDecoration(
+                    border: pw.Border(
+                        bottom: pw.BorderSide(
+                            color: PdfColors.grey200, width: 0.5))),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.all(6),
-                      child: localizedText('اسم الطالب',
-                          style: pw.TextStyle(
-                              font: ttf,
-                              fontSize: 12,
-                              fontWeight: pw.FontWeight.bold)),
-                    ),
-                    pw.Padding(
-                      padding: const pw.EdgeInsets.all(6),
-                      child: localizedText('الدرجة',
-                          style: pw.TextStyle(
-                              font: ttf,
-                              fontSize: 12,
-                              fontWeight: pw.FontWeight.bold)),
-                    ),
+                    pw.Text(" ${rows[i].name}  -${i + 1} "),
+                    pw.Text("${rows[i].score?.toStringAsFixed(1) ?? '-'} ",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                   ],
                 ),
-                ...noRecordStudents.map((n) {
-                  return pw.TableRow(
-                    children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: localizedText(n,
-                            style: pw.TextStyle(font: ttf, fontSize: 11)),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(6),
-                        child: localizedText('-',
-                            style: pw.TextStyle(font: ttf, fontSize: 11)),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ],
-            ),
-          );
+              ));
+            }
+          } else {
+            widgets.add(pw.Padding(
+                padding: const pw.EdgeInsets.all(10),
+                child: pw.Text("لا يوجد طلاب")));
+          }
+          widgets.add(pw.SizedBox(height: 20));
         }
 
-        widgets.add(pw.SizedBox(height: 20));
+        // 3. قسم الغائبين (بشكل مبسط جداً)
+        if (noRecordStudents.isNotEmpty) {
+          widgets.add(pw.Divider(thickness: 2));
+          widgets.add(pw.Text("الطلاب الذين لم يؤدوا الامتحان:",
+              style: pw.TextStyle(
+                  fontSize: 18,
+                  color: PdfColors.red,
+                  fontWeight: pw.FontWeight.bold)));
+          widgets.add(pw.SizedBox(height: 10));
+
+          widgets.add(pw.Wrap(
+            spacing: 10,
+            runSpacing: 5,
+            children: noRecordStudents
+                .map((name) => pw.Container(
+                      padding: const pw.EdgeInsets.all(4),
+                      decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.red100),
+                          borderRadius: pw.BorderRadius.circular(4)),
+                      child: pw.Text(name,
+                          style: const pw.TextStyle(
+                              fontSize: 10, color: PdfColors.red700)),
+                    ))
+                .toList(),
+          ));
+        }
 
         return widgets;
       },

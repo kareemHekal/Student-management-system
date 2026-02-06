@@ -146,7 +146,11 @@ class _AbsentHomePageState extends State<AbsentHomePage> {
         }
 
         var magmo3as = snapshot.data ?? [];
-
+        magmo3as.sort((a, b) {
+          final aMinutes = (a.time.hour) * 60 + (a.time.minute);
+          final bMinutes = (b.time.hour) * 60 + (b.time.minute);
+          return aMinutes.compareTo(bMinutes);
+        });
         if (magmo3as.isEmpty) {
           return _buildEmptyState();
         }

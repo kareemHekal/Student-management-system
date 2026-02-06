@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'cards/magmo3at/Magmo3aWidget.dart';
 import 'firebase/firebase_functions.dart';
 import 'models/Magmo3aModel.dart';
@@ -51,8 +52,8 @@ class _Magmo3asState extends State<Magmo3as> {
 
             // ترتيب المجموعات حسب الوقت
             magmo3as.sort((a, b) {
-              final aMinutes = (a.time?.hour ?? 0) * 60 + (a.time?.minute ?? 0);
-              final bMinutes = (b.time?.hour ?? 0) * 60 + (b.time?.minute ?? 0);
+              final aMinutes = (a.time.hour) * 60 + (a.time.minute);
+              final bMinutes = (b.time.hour) * 60 + (b.time.minute);
               return aMinutes.compareTo(bMinutes);
             });
 

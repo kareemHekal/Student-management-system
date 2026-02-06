@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 
 import '../firebase/exams_functions.dart';
 import '../models/Student_model.dart';
@@ -153,21 +156,36 @@ class _ExamResultPageState extends State<ExamResultPage> {
                               ),
                             ),
                             onPressed: () async {
-                              try {
-                                final pdfBytes = await generateExamReportPdf(
-                                  exam: examModel!,
-                                  students: students,
-                                  gradeName: widget.gradeName,
-                                );
+                              await runWithLoading(
+                                context,
+                                () async {
+                                  try {
+                                    // 1. تحميل الخط أولاً في الـ Main Thread (هذا لا يسبب freeze)
+                                    final fontData = await rootBundle.load(
+                                        'fonts/NotoKufiArabic-Regular.ttf');
+                                    final Uint8List fontBytes =
+                                        fontData.buffer.asUint8List();
 
-                                await Printing.layoutPdf(
-                                  onLayout: (format) async => pdfBytes,
-                                  name:
-                                      "${examModel!.name}_${widget.gradeName}.pdf",
-                                );
-                              } catch (e) {
-                                print("PDF Error: $e");
-                              }
+                                    // 2. تشغيل الـ compute وإرسال الخط مع البيانات
+                                    // الآن الـ Loading سيلف بسلاسة لأن الحسابات في معالج منفصل
+                                    final pdfBytes =
+                                        await compute(generateExamReportPdf, {
+                                      'exam': examModel!,
+                                      'students': students,
+                                      'gradeName': widget.gradeName,
+                                      'fontData': fontBytes, // نرسل الخط هنا
+                                    });
+
+                                    await Printing.layoutPdf(
+                                      onLayout: (format) async => pdfBytes,
+                                      name:
+                                          "${examModel!.name}_${widget.gradeName}.pdf",
+                                    );
+                                  } catch (e) {
+                                    print("PDF Error: $e");
+                                  }
+                                },
+                              );
                             },
                             icon: const Icon(
                               Icons.picture_as_pdf,

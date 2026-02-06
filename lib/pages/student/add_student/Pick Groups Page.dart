@@ -133,7 +133,11 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
                     }
 
                     var Magmo3as = snapshot.data ?? [];
-
+                    Magmo3as.sort((a, b) {
+                      final minutesA = a.time.hour * 60 + a.time.minute;
+                      final minutesB = b.time.hour * 60 + b.time.minute;
+                      return minutesA.compareTo(minutesB);
+                    });
                     if (Magmo3as.isEmpty) {
                       return Center(
                         child: Text(
@@ -147,21 +151,24 @@ class _SeconddayState extends State<ChoosedaysToAttend> with SingleTickerProvide
                     }
 
                     return Expanded(
-                      child: ListView.separated(
-                        separatorBuilder: (context, index) => const SizedBox(
-                          height: 12,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: ListView.separated(
+                          separatorBuilder: (context, index) => const SizedBox(
+                            height: 12,
+                          ),
+                          itemBuilder: (context, index) {
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.pop(context, Magmo3as[index]);
+                              },
+                              child: Magmo3aWidgetWithoutSlidable(
+                                magmo3aModel: Magmo3as[index],
+                              ),
+                            );
+                          },
+                          itemCount: Magmo3as.length,
                         ),
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.pop(context, Magmo3as[index]);
-                            },
-                            child: Magmo3aWidgetWithoutSlidable(
-                              magmo3aModel: Magmo3as[index],
-                            ),
-                          );
-                        },
-                        itemCount: Magmo3as.length,
                       ),
                     );
                   },
