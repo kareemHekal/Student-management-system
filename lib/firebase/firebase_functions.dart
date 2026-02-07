@@ -26,6 +26,7 @@ class FirebaseFunctions {
     if (user == null) throw Exception("لا يوجد مدرس مسجل دخول!");
     return 'teachers/${user.uid}';
   }
+
   // =============================== Magmo3a Functions ===============================
 
   /// Adds a `Magmo3aModel` to a specific day's collection
@@ -40,9 +41,12 @@ class FirebaseFunctions {
     // Save the document in Firestore
     await newDocRef.set(magmo3a);
   }
-  static Future<void> editMagmo3aInDay(String oldDay,
-      String oldGrade,
-      Magmo3amodel updatedMagmo3a,) async {
+
+  static Future<void> editMagmo3aInDay(
+    String oldDay,
+    String oldGrade,
+    Magmo3amodel updatedMagmo3a,
+  ) async {
     final newDay = updatedMagmo3a.day;
 
     // 🧩 1️⃣ نقل المجموعة لو اليوم اتغير
@@ -85,12 +89,12 @@ class FirebaseFunctions {
       }
     }
   }
+
   static Future<void> deleteMagmo3aFromDay({
     required String day,
     required String grade,
     required String magmo3aId,
   }) async {
-
     try {
       // 1️⃣ حذف الـ Sub-collection (absences) أولاً
       final absenceCollection =
@@ -256,7 +260,6 @@ class FirebaseFunctions {
     required bool deleteStudents,
     required bool deleteInvoices,
   }) async {
-
     try {
       if (deleteInvoices) {
         final invoicesSnap =
@@ -391,7 +394,6 @@ class FirebaseFunctions {
     required String oldGrade,
     required String newGrade,
   }) async {
-
     // 1. تجهيز بيانات الطالب الجديدة (تغيير الصف وتصفير السجلات)
     student.grade = newGrade;
     student.hisGroups = [];
@@ -452,21 +454,18 @@ class FirebaseFunctions {
 // الـ CollectionReference زي ما هو
   static CollectionReference<Studentmodel> getSecondaryCollection(
       String grade) {
-    return _db.doc(teacherPath)
-        .collection(grade)
-        .withConverter<Studentmodel>(
+    return _db.doc(teacherPath).collection(grade).withConverter<Studentmodel>(
           fromFirestore: (snapshot, _) =>
               Studentmodel.fromJson(snapshot.data()!),
           toFirestore: (value, _) => value.toJson(),
         );
   }
+
   static Future<void> addGradeToList(String newGrade) async {
     try {
       // تعديل المسار: الثوابت بقت خاصة بكل مدرس
       final gradesDoc =
-          _db.doc(teacherPath)
-          .collection('constants')
-          .doc('grades');
+          _db.doc(teacherPath).collection('constants').doc('grades');
 
       final snapshot = await gradesDoc.get();
 
@@ -491,9 +490,7 @@ class FirebaseFunctions {
     try {
       // التعديل: الوصول لمسار المدرس ثم constants ثم doc(grades)
       DocumentReference gradesDoc =
-          _db.doc(teacherPath)
-          .collection('constants')
-          .doc('grades');
+          _db.doc(teacherPath).collection('constants').doc('grades');
 
       DocumentSnapshot snapshot = await gradesDoc.get();
 
@@ -514,9 +511,9 @@ class FirebaseFunctions {
       // دي بتخلي الفايربيز يشوف الموبايل الأول، ولو مفيش تغيير ميسحبش Reads
       DocumentSnapshot<Map<String, dynamic>> docSnapshot = await _db
           .doc(teacherPath)
-              .collection('constants')
-              .doc('grades')
-              .get(const GetOptions(source: Source.serverAndCache));
+          .collection('constants')
+          .doc('grades')
+          .get(const GetOptions(source: Source.serverAndCache));
 
       if (docSnapshot.exists) {
         List<dynamic> gradesDynamic = docSnapshot.data()?['grades'] ?? [];
@@ -721,9 +718,7 @@ class FirebaseFunctions {
 
   static Stream<QuerySnapshot> getAllBigInvoices() {
     // التعديل: استماع للفواتير الخاصة بالمدرس الحالي فقط
-    return _db.doc(teacherPath)
-        .collection('big_invoices')
-        .snapshots();
+    return _db.doc(teacherPath).collection('big_invoices').snapshots();
   }
 
   static Future<void> updateDailyInvoice(
@@ -747,9 +742,7 @@ class FirebaseFunctions {
     required String description,
   }) async {
     // التعديل: المسار أصبح تحت المدرس
-    final docRef = _db.doc(teacherPath)
-        .collection('big_invoices')
-        .doc(date);
+    final docRef = _db.doc(teacherPath).collection('big_invoices').doc(date);
 
     final docSnapshot = await docRef.get();
 
@@ -804,9 +797,7 @@ class FirebaseFunctions {
   static Future<int> getAndIncrementInvoiceId() async {
     // العداد أصبح داخل constants المدرس
     DocumentReference docRef =
-        _db.doc(teacherPath)
-        .collection('constants')
-        .doc('bills_ids');
+        _db.doc(teacherPath).collection('constants').doc('bills_ids');
 
     return await _db.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(docRef);
@@ -855,9 +846,7 @@ class FirebaseFunctions {
 
     // التعديل: الفاتورة تحفظ في مسار المدرس
     DocumentReference docRef =
-        _db.doc(teacherPath)
-        .collection('big_invoices')
-        .doc(date);
+        _db.doc(teacherPath).collection('big_invoices').doc(date);
 
     try {
       await docRef.set({
@@ -876,9 +865,7 @@ class FirebaseFunctions {
     required Invoice updatedInvoice,
   }) async {
     // التعديل: المسار تحت المدرس
-    final docRef = _db.doc(teacherPath)
-        .collection('big_invoices')
-        .doc(date);
+    final docRef = _db.doc(teacherPath).collection('big_invoices').doc(date);
     DocumentSnapshot docSnapshot = await docRef.get();
 
     if (!docSnapshot.exists) {
@@ -919,9 +906,7 @@ class FirebaseFunctions {
     required String date,
     required Invoice invoice,
   }) async {
-    final docRef = _db.doc(teacherPath)
-        .collection('big_invoices')
-        .doc(date);
+    final docRef = _db.doc(teacherPath).collection('big_invoices').doc(date);
     DocumentSnapshot docSnapshot = await docRef.get();
 
     if (!docSnapshot.exists) throw Exception("BigInvoice not found");
@@ -957,9 +942,7 @@ class FirebaseFunctions {
   static Future<List<Invoice>> getInvoicesByStudenId(String studentID) async {
     // التعديل: البحث في فواتير المدرس الحالي فقط
     QuerySnapshot snapshot =
-        await _db.doc(teacherPath)
-        .collection('big_invoices')
-        .get();
+        await _db.doc(teacherPath).collection('big_invoices').get();
 
     List<Invoice> studentInvoices = [];
 
@@ -1100,6 +1083,7 @@ class FirebaseFunctions {
       return null;
     }
   }
+
   static Stream<GradeSubscriptionsModel?> getGradeSubscriptionsStream(
       String gradeName) {
     return _db
@@ -1121,9 +1105,7 @@ class FirebaseFunctions {
     try {
       // كلمة المرور أصبحت داخل doc خاص بكل مدرس
       final docRef =
-          _db.doc(teacherPath)
-          .collection('constants')
-          .doc('password');
+          _db.doc(teacherPath).collection('constants').doc('password');
       final doc = await docRef.get();
 
       if (!doc.exists) {
@@ -1228,6 +1210,7 @@ class FirebaseFunctions {
         .where("hisGroupsId", arrayContains: groupId)
         .get(const GetOptions(source: Source.serverAndCache));
   }
+
   static Future<Teacher?> getTeacherById(String id) async {
     // أضفنا GetOptions عشان يفتح البروفايل فوراً من الموبايل
     var doc = await _db
@@ -1312,7 +1295,7 @@ class FirebaseFunctions {
       // 2. إنشاء الفاتورة
       Bill newBill = Bill(
         id: billRef.id,
-        billType: "basic",
+        billType: plan.subscriptionType.name,
         baseStudentLimit: plan.totalStudents,
         subscriptionName: plan.name,
         subscriptionDurationInDays: plan.durationInDays,
@@ -1367,7 +1350,7 @@ class FirebaseFunctions {
         subscriptionName: boostPlan.name,
         subscriptionDescription: boostPlan.description,
         subscriptionDurationInDays: boostPlan.durationInDays,
-        billType: 'boost',
+        billType: boostPlan.subscriptionType.name,
         boostAmount: boostPlan.totalStudents,
       );
 
@@ -1381,6 +1364,14 @@ class FirebaseFunctions {
 
   static Stream<List<Subscription>> getBoostSubscriptions() {
     return _db.collection('admin_boost_subscriptions').snapshots().map(
+          (snap) => snap.docs
+              .map((doc) => Subscription.fromJson(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  static Stream<List<Subscription>> getOffersSubscriptions() {
+    return _db.collection('admin_offers_subscriptions').snapshots().map(
           (snap) => snap.docs
               .map((doc) => Subscription.fromJson(doc.data(), doc.id))
               .toList(),

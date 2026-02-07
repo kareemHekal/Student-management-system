@@ -1,3 +1,5 @@
+enum SubscriptionType { basic, boost, adminSubscription, offers }
+
 class Subscription {
   final String? id;
   final String name;
@@ -5,6 +7,7 @@ class Subscription {
   final int durationInDays; // أفضل من String عشان الحسابات
   final double price;
   final int totalStudents;
+  final SubscriptionType subscriptionType;
 
   Subscription({
     this.id,
@@ -12,6 +15,7 @@ class Subscription {
     required this.description,
     required this.durationInDays,
     required this.price,
+    required this.subscriptionType,
     required this.totalStudents,
   });
 
@@ -19,6 +23,10 @@ class Subscription {
     return Subscription(
       id: docId,
       name: json['name'] ?? '',
+      subscriptionType: SubscriptionType.values.firstWhere(
+        (e) => e.name == json['subscriptionType'],
+        orElse: () => SubscriptionType.basic,
+      ),
       description: json['description'] ?? '',
       durationInDays: json['durationInDays'] ?? 30,
       totalStudents: json['totalStudents'] ?? 0,
@@ -29,6 +37,7 @@ class Subscription {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
+      'subscriptionType': subscriptionType.name,
       'description': description,
       'durationInDays': durationInDays,
       'totalStudents': totalStudents,

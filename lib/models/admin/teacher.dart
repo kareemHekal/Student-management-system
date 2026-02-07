@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:student_management_system/models/admin/subsription.dart';
 
 import 'bill.dart';
 import 'boost_subscription.dart';
@@ -37,7 +38,14 @@ class Teacher {
         .collection('teachers')
         .doc(id)
         .collection('bills')
-        .where('billType', isEqualTo: 'basic')
+        .where(
+          'billType',
+          whereIn: [
+            SubscriptionType.basic.name,
+            SubscriptionType.offers.name,
+            SubscriptionType.adminSubscription.name,
+          ],
+        )
         .where('expiryDate', isGreaterThan: now.toIso8601String())
         .get();
 
@@ -58,10 +66,10 @@ class Teacher {
     return highestLimit;
   }
   /// دالة واحدة تجلب الحد الأقصى الكلي (الأساسي + البوستات) ديناميكياً
+  ///
   Future<int> getTotalAllowedStudents() async {
     // 1. جلب الليمت الأساسي من الفواتير (نادينا الفانكشن اللي في نفس الكلاس)
     int baseLimit = await getBaseStudentLimit();
-
     int total = baseLimit;
     final now = DateTime.now();
 

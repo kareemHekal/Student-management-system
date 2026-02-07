@@ -13,6 +13,36 @@ import 'package:url_launcher/url_launcher.dart';
 class TeacherProfilePage extends StatelessWidget {
   const TeacherProfilePage({super.key});
 
+  // دالة مساعدة لتحديد هوية اللون والأيقونة بناءً على نوع الاشتراك (Enum.name)
+  Map<String, dynamic> _getTypeTheme(String type) {
+    switch (type) {
+      case 'boost':
+        return {
+          'color': Colors.amber,
+          'icon': Icons.bolt,
+          'label': 'زيادة سعة'
+        };
+      case 'offers':
+        return {
+          'color': Colors.purpleAccent,
+          'icon': Icons.local_offer_rounded,
+          'label': 'عرض خاص'
+        };
+      case 'adminSubscription':
+        return {
+          'color': Colors.teal,
+          'icon': Icons.admin_panel_settings_rounded,
+          'label': 'اشتراك إداري'
+        };
+      default: // basic
+        return {
+          'color': Colors.blue,
+          'icon': Icons.star_rounded,
+          'label': 'اشتراك أساسي'
+        };
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final teacher = Provider.of<TeacherProvider>(context).teacher;
@@ -37,7 +67,6 @@ class TeacherProfilePage extends StatelessWidget {
       body: teacher == null
           ? const Center(child: CircularProgressIndicator())
           : FutureBuilder<List<int>>(
-              // جلب الليمت الأساسي والإجمالي معاً لتفصيل العرض
               future: Future.wait([
                 teacher.getBaseStudentLimit(),
                 teacher.getTotalAllowedStudents(),
@@ -48,9 +77,9 @@ class TeacherProfilePage extends StatelessWidget {
                 }
 
                 final baseLimit = snapshot.data?[0] ?? 0;
-                final totalAllowed = snapshot.data?[1] ?? 0;
-                int current = teacher.currentStudentCount;
-                bool isOverLimit = current > totalAllowed;
+          final totalAllowed = snapshot.data?[1] ?? 0;
+          int current = teacher.currentStudentCount;
+          bool isOverLimit = current > totalAllowed;
 
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -89,6 +118,7 @@ class TeacherProfilePage extends StatelessWidget {
     );
   }
 
+  // --- الهيدر العلوي لم يتغير تصميمه الجمالي ---
   Widget _buildTopHeader(
       Teacher teacher, int allowed, int current, bool isOverLimit) {
     double progress = allowed > 0 ? current / allowed : 0;
@@ -191,7 +221,6 @@ class TeacherProfilePage extends StatelessWidget {
     );
   }
 
-  // الكارت الجديد الذي يفصل بين الليمت الأساسي والإجمالي
   Widget _buildDetailedCapacityCard(
       Teacher teacher, int baseLimit, int totalAllowed) {
     return Container(
@@ -243,6 +272,7 @@ class TeacherProfilePage extends StatelessWidget {
     );
   }
 
+  // --- الجزء المعدل ليدعم التوزيع الزمني لكل الأنواع ---
   Widget _buildTimelineCard(Teacher teacher) {
     DateTime now = DateTime.now();
     int totalDays = teacher.subscriptionEndTime.difference(now).inDays;
@@ -329,35 +359,53 @@ class TeacherProfilePage extends StatelessWidget {
                     color: Colors.grey[800],
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            ...activeBills.map((bill) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10.0),
-                  child: Row(
-                    children: [
-                      Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: bill.billType == 'basic'
-                                  ? Colors.blue
-                                  : Colors.amber)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          bill.billType == 'basic'
-                              ? "${bill.subscriptionName} (الأساسي: ${bill.baseStudentLimit} ط)"
-                              : "${bill.subscriptionName} (زيادة: +${bill.boostAmount} ط)",
-                          style: GoogleFonts.cairo(fontSize: 11),
-                        ),
+            // استبدل الجزء الخاص بالـ map داخل دالة _buildActiveBillsTimeline بهذا الكود:
+            ...activeBills.map((bill) {
+              final theme = _getTypeTheme(bill.billType);
+              // حساب الأيام المتبقية لهذه الباقة تحديداً
+              int daysLeft = bill.expiryDate.difference(DateTime.now()).inDays;
+              if (daysLeft < 0) daysLeft = 0;
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Row(
+                  children: [
+                    Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle, color: theme['color'])),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "${bill.subscriptionName} (${theme['label']})",
+                            style: GoogleFonts.cairo(
+                                fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            bill.billType == 'boost'
+                                ? "زيادة +${bill.boostAmount} طالب • متبقي $daysLeft يوم"
+                                : "سعة ${bill.baseStudentLimit} طالب • متبقي $daysLeft يوم",
+                            style: GoogleFonts.cairo(
+                                fontSize: 10, color: Colors.grey[600]),
+                          ),
+                        ],
                       ),
-                      Text(
-                        "تنتهي: ${DateFormat('MM/dd').format(bill.expiryDate)}",
-                        style: GoogleFonts.cairo(
-                            fontSize: 10, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                )),
+                    ),
+                    Text(
+                      DateFormat('MM/dd').format(bill.expiryDate),
+                      style: GoogleFonts.cairo(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: theme['color']),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
         );
       },
@@ -367,17 +415,13 @@ class TeacherProfilePage extends StatelessWidget {
   Widget _buildActionButtons(BuildContext context) {
     return Column(
       children: [
-        // زر تجديد الاشتراك بنفس تصميم أزرار الأكشن لكن بلون التطبيق
         InkWell(
-          onTap: () {
-            Navigator.pushNamed(context, "/subscriptionPlansPage");
-          },
+          onTap: () => Navigator.pushNamed(context, "/subscriptionPlansPage"),
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 15),
             decoration: BoxDecoration(
               color: AppColors.primaryMain.withOpacity(0.1),
-              // لون خفيف زي التانيين
               borderRadius: BorderRadius.circular(15),
               border: Border.all(color: AppColors.primaryMain.withOpacity(0.3)),
             ),
@@ -387,34 +431,27 @@ class TeacherProfilePage extends StatelessWidget {
                 Icon(Icons.auto_awesome_rounded,
                     color: AppColors.primaryMain, size: 24),
                 const SizedBox(width: 10),
-                Text(
-                  "تجديد أو ترقية الاشتراك",
-                  style: GoogleFonts.cairo(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryMain,
-                  ),
-                ),
+                Text("تجديد أو ترقية الاشتراك",
+                    style: GoogleFonts.cairo(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryMain)),
               ],
             ),
           ),
         ),
         const SizedBox(height: 15),
-
-        // الأزرار الحالية (دعم فني وخروج)
         Row(
           children: [
             Expanded(
-              flex: 2,
-              child: _actionBtn("الدعم الفني", Icons.support_agent,
-                  Colors.green, _launchWhatsApp),
-            ),
+                flex: 2,
+                child: _actionBtn("الدعم الفني", Icons.support_agent,
+                    Colors.green, _launchWhatsApp)),
             const SizedBox(width: 10),
             Expanded(
-              flex: 1,
-              child: _actionBtn("خروج", Icons.logout_rounded, Colors.redAccent,
-                  () => _handleLogout(context)),
-            ),
+                flex: 1,
+                child: _actionBtn("خروج", Icons.logout_rounded,
+                    Colors.redAccent, () => _handleLogout(context))),
           ],
         ),
       ],
@@ -472,7 +509,15 @@ class TeacherProfilePage extends StatelessWidget {
     );
   }
 
+  // --- الكارت المعدل ليدعم الأيقونات والألوان حسب الـ Enum الجديد ---
+  // استبدل دالة _buildBillCard بهذا الكود:
   Widget _buildBillCard(Bill bill) {
+    final theme = _getTypeTheme(bill.billType);
+
+    // استخراج المدة من تاريخ الدفع وتاريخ الانتهاء
+    int duration = bill.expiryDate.difference(bill.paidAt).inDays;
+    if (duration <= 0) duration = 0;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -483,13 +528,8 @@ class TeacherProfilePage extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-              backgroundColor: bill.billType == 'basic'
-                  ? Colors.blue.withOpacity(0.1)
-                  : Colors.amber.withOpacity(0.1),
-              child: Icon(bill.billType == 'basic' ? Icons.star : Icons.bolt,
-                  size: 18,
-                  color:
-                      bill.billType == 'basic' ? Colors.blue : Colors.amber)),
+              backgroundColor: (theme['color'] as Color).withOpacity(0.1),
+              child: Icon(theme['icon'], size: 18, color: theme['color'])),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -498,14 +538,36 @@ class TeacherProfilePage extends StatelessWidget {
                 Text(bill.subscriptionName,
                     style: GoogleFonts.cairo(
                         fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(
+                  bill.billType == 'boost'
+                      ? "الزيادة: +${bill.boostAmount} طالب • لمدة $duration يوم"
+                      : "السعة: ${bill.baseStudentLimit} طالب • لمدة $duration يوم",
+                  style: GoogleFonts.cairo(
+                      fontSize: 10,
+                      color: AppColors.primaryMain,
+                      fontWeight: FontWeight.w500),
+                ),
                 Text(DateFormat('yyyy-MM-dd').format(bill.paidAt),
-                    style: GoogleFonts.cairo(fontSize: 10, color: Colors.grey)),
+                    style: GoogleFonts.cairo(fontSize: 9, color: Colors.grey)),
               ],
             ),
           ),
-          Text("${bill.billAmount} ج.م",
-              style: GoogleFonts.cairo(
-                  fontWeight: FontWeight.bold, color: AppColors.statusPresent)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text("${bill.billAmount} ج.م",
+                  style: GoogleFonts.cairo(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.statusPresent,
+                      fontSize: 14)),
+              if (bill.billType == 'offers')
+                Text("عرض خاص",
+                    style: GoogleFonts.cairo(
+                        fontSize: 8,
+                        color: Colors.purple,
+                        fontWeight: FontWeight.bold)),
+            ],
+          ),
         ],
       ),
     );

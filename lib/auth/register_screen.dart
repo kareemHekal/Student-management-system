@@ -1,5 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:student_management_system/firebase/auth_services.dart';
+import 'package:student_management_system/firebase/firebase_functions.dart';
+import 'package:student_management_system/models/admin/subsription.dart';
+import 'package:student_management_system/models/admin/teacher.dart';
+import 'package:student_management_system/provider.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
 import 'package:student_management_system/theme/text_style.dart';
@@ -12,62 +18,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-
-  void _handleRegister() async {
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
-    final password = _passwordController.text.trim();
-
-    // 1. التحقق من أن الحقول ليست فارغة
-    if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
-      AppSnackBars.showError(context, "برجاء ملء جميع البيانات");
-      return;
-    }
-
-    // 2. التحقق من الاسم (على الأقل اسمين)
-    if (name.split(' ').length < 2) {
-      AppSnackBars.showError(context, "برجاء كتابة الاسم ثنائي على الأقل");
-      return;
-    }
-
-    // 3. التحقق من رقم الهاتف (11 رقم ويبدأ بـ 01)
-    final phoneRegex = RegExp(r'^01[0125][0-9]{8}$');
-    if (!phoneRegex.hasMatch(phone)) {
-      AppSnackBars.showError(context, "رقم الهاتف غير صحيح");
-      return;
-    }
-
-    // 4. التحقق من البريد الإلكتروني (ابن ناس)
-    final emailRegex = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(email)) {
-      AppSnackBars.showError(context, "صيغة البريد الإلكتروني غير صحيحة");
-      return;
-    }
-
-    // 5. التحقق من كلمة المرور (6 أرقام أو حروف على الأقل)
-    if (password.length < 6) {
-      AppSnackBars.showError(
-          context, "كلمة المرور ضعيفة (يجب ألا تقل عن 6 رموز)");
-      return;
-    }
-
-    // لو كله تمام، ابدأ عملية التسجيل
-    setState(() => _isLoading = true);
-    try {
-      await AuthService().registerTeacher(email, password, name, phone);
-      if (!mounted) return;
-      AppSnackBars.showSuccess(
-          context, "تم إنشاء الحساب بنجاح! تبقي فقط اختيار الأشتراك المناسب.");
-      Navigator.pushReplacementNamed(context, "/subscriptionPlansPage");
-    } catch (e) {
-      AppSnackBars.showError(context, "حدث خطأ: ${e.toString()}");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  // 1. تعريف الـ FocusNodes للتنقل بين الخانات
+  // 1. التعريفات الأساسية
   final FocusNode _nameFocus = FocusNode();
   final FocusNode _phoneFocus = FocusNode();
   final FocusNode _emailFocus = FocusNode();
@@ -81,19 +32,103 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
 
+  // --- تم نقل الدالة هنا لتكون تابعة للكلاس مباشرة ---
+  void _handleRegister() async {
+    final teacherProvider =
+        Provider.of<TeacherProvider>(context, listen: false);
+
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    // التحقق من البيانات
+    if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
+      AppSnackBars.showError(context, "برجاء ملء جميع البيانات");
+      return;
+    }
+
+    if (name.split(' ').length < 2) {
+      AppSnackBars.showError(context, "برجاء كتابة الاسم ثنائي على الأقل");
+      return;
+    }
+
+    final phoneRegex = RegExp(r'^01[0125][0-9]{8}$');
+    if (!phoneRegex.hasMatch(phone)) {
+      AppSnackBars.showError(context, "رقم الهاتف غير صحيح");
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      AppSnackBars.showError(context, "صيغة البريد الإلكتروني غير صحيحة");
+      return;
+    }
+
+    if (password.length < 6) {
+      AppSnackBars.showError(
+          context, "كلمة المرور ضعيفة (يجب ألا تقل عن 6 رموز)");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      // تسجيل المدرس
+      await AuthService().registerTeacher(email, password, name, phone);
+
+      // بفر بسيط
+      await Future.delayed(const Duration(seconds: 1));
+
+      final currentUser = FirebaseAuth.instance.currentUser;
+
+      if (currentUser != null) {
+        // تفعيل الباقة التجريبية
+        await FirebaseFunctions.renewBasicSubscription(
+          plan: Subscription(
+            name: "الباقة التجريبية",
+            description: "تجربة مجانية لمدة 14 يوم لـ 30 طالب",
+            durationInDays: 14,
+            price: 0,
+            subscriptionType: SubscriptionType.adminSubscription,
+            totalStudents: 30,
+          ),
+        );
+
+        // جلب البيانات ووضعها في الـ Provider
+        Teacher? newTeacher =
+            await FirebaseFunctions.getTeacherById(currentUser.uid);
+
+        if (newTeacher != null) {
+          teacherProvider.setTeacher(newTeacher);
+          await teacherProvider.refreshTeacherData();
+        }
+      } else {
+        throw Exception(
+            "لم يتم العثور على بيانات المستخدم، يرجى تسجيل الدخول.");
+      }
+
+      if (!mounted) return;
+
+      AppSnackBars.showSuccess(
+          context, "تم إنشاء الحساب بنجاح! حصلت على 14 يوم تجربة مجانية.");
+      Navigator.pushReplacementNamed(context, "/subscriptionPlansPage");
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBars.showError(context, "حدث خطأ: ${e.toString()}");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // بنجيب عرض الشاشة عشان نظبط مقاسات الهيدر
-    final size = MediaQuery.of(context).size;
-
+    // لاحظ أن _handleRegister لم تعد هنا
     return Scaffold(
-      // اللون اللي اخترناه (أبيض مخضر خفيف)
       backgroundColor: const Color(0xFFEBFFF4),
       body: SingleChildScrollView(
-        // دي أهم حركة عشان الكيبورد ترفع التصميم
         child: Column(
           children: [
-            // 1. الهيدر العلوي (الجزء الملون)
+            // الهيدر
             Container(
               width: double.infinity,
               padding: const EdgeInsets.only(top: 60, bottom: 40),
@@ -103,12 +138,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   end: Alignment.bottomLeft,
                   colors: [
                     AppColors.primaryMain,
-                    AppColors.primaryMain.withOpacity(0.8),
+                    AppColors.primaryMain.withOpacity(0.8)
                   ],
                 ),
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(50), // انحناء احترافي
-                ),
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(50)),
               ),
               child: Column(
                 children: [
@@ -117,35 +151,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(15),
                       decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
+                          color: Colors.white, shape: BoxShape.circle),
                       child: Image.asset("assets/images/logo.png", height: 70),
                     ),
                   ),
                   const SizedBox(height: 15),
-                  Text(
-                    "إنشاء حساب جديد",
-                    style: AppTextStyles.customText(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text("إنشاء حساب جديد",
+                      style: AppTextStyles.customText(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold)),
                   const SizedBox(height: 5),
-                  Text(
-                    "سجل بياناتك للبدء في إدارة غيابك",
-                    style: AppTextStyles.customText(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 14,
-                    ),
-                  ),
+                  Text("سجل بياناتك للبدء في إدارة غيابك",
+                      style: AppTextStyles.customText(
+                          color: Colors.white.withOpacity(0.9), fontSize: 14)),
                 ],
               ),
             ),
 
-            // 2. كارت البيانات (الذي يحتوي على الـ Fields)
-            // بنعمل تداخل بسيط (Negative Margin) عشان الكارت يطلع فوق الهيدر شوية
+            // كارت البيانات
             Transform.translate(
               offset: const Offset(0, -30),
               child: Padding(
@@ -157,43 +181,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10))
                     ],
                     border: Border.all(color: Colors.grey[100]!),
                   ),
                   child: Column(
                     children: [
                       _buildTextField(
-                        controller: _nameController,
-                        focusNode: _nameFocus,
-                        nextFocus: _phoneFocus,
-                        hint: "اسم المدرس الثلاثي",
-                        icon: Icons.person_rounded,
-                        action: TextInputAction.next,
-                      ),
+                          controller: _nameController,
+                          focusNode: _nameFocus,
+                          nextFocus: _phoneFocus,
+                          hint: "اسم المدرس الثلاثي",
+                          icon: Icons.person_rounded,
+                          action: TextInputAction.next),
                       const SizedBox(height: 16),
                       _buildTextField(
-                        controller: _phoneController,
-                        focusNode: _phoneFocus,
-                        nextFocus: _emailFocus,
-                        hint: "رقم الهاتف",
-                        icon: Icons.phone_android_rounded,
-                        inputType: TextInputType.phone,
-                        action: TextInputAction.next,
-                      ),
+                          controller: _phoneController,
+                          focusNode: _phoneFocus,
+                          nextFocus: _emailFocus,
+                          hint: "رقم الهاتف",
+                          icon: Icons.phone_android_rounded,
+                          inputType: TextInputType.phone,
+                          action: TextInputAction.next),
                       const SizedBox(height: 16),
                       _buildTextField(
-                        controller: _emailController,
-                        focusNode: _emailFocus,
-                        nextFocus: _passwordFocus,
-                        hint: "البريد الإلكتروني",
-                        icon: Icons.alternate_email_rounded,
-                        inputType: TextInputType.emailAddress,
-                        action: TextInputAction.next,
-                      ),
+                          controller: _emailController,
+                          focusNode: _emailFocus,
+                          nextFocus: _passwordFocus,
+                          hint: "البريد الإلكتروني",
+                          icon: Icons.alternate_email_rounded,
+                          inputType: TextInputType.emailAddress,
+                          action: TextInputAction.next),
                       const SizedBox(height: 16),
                       _buildTextField(
                         controller: _passwordController,
@@ -215,21 +235,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               height: 55,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryMain,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  elevation: 0,
-                                ),
+                                    backgroundColor: AppColors.primaryMain,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(15)),
+                                    elevation: 0),
                                 onPressed: _handleRegister,
-                                child: Text(
-                                  "إنشاء الحساب",
-                                  style: AppTextStyles.customText(
-                                    color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
+                                child: Text("إنشاء الحساب",
+                                    style: AppTextStyles.customText(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16)),
                               ),
                             ),
                     ],
@@ -238,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
 
-            // 3. زر العودة
+            // زر العودة
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: RichText(
@@ -248,25 +264,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: Colors.grey[600]!, fontSize: 14),
                   children: [
                     TextSpan(
-                      text: "سجل دخولك",
-                      style: AppTextStyles.customText(
-                        color: AppColors.primaryMain,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                        text: "سجل دخولك",
+                        style: AppTextStyles.customText(
+                            color: AppColors.primaryMain,
+                            fontWeight: FontWeight.bold))
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            // مساحة أمان في الآخر
           ],
         ),
       ),
     );
   }
 
-  // التعديل في الـ TextField عشان يدعم الـ Focus والـ Next
   Widget _buildTextField({
     required TextEditingController controller,
     required FocusNode focusNode,
@@ -283,12 +295,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       controller: controller,
       focusNode: focusNode,
       textInputAction: action,
-      // دي الحركة اللي بتنقل للخانة اللي بعدها برمجياً
       onSubmitted: (_) {
         if (nextFocus != null) {
           FocusScope.of(context).requestFocus(nextFocus);
         } else {
-          _handleRegister(); // لو في آخر خانة وداس Done يبدأ يسجل
+          _handleRegister();
         }
       },
       obscureText: isPassword && !isVisible,
@@ -300,8 +311,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 icon: Icon(isVisible
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined),
-                onPressed: onToggle,
-              )
+                onPressed: onToggle)
             : null,
         hintText: hint,
         filled: true,
