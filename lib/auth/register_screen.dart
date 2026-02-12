@@ -25,11 +25,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final FocusNode _phoneFocus = FocusNode();
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
+  final FocusNode _hostIdFocus = FocusNode();
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _hostTeacherIdController = TextEditingController();
 
   bool _isLoading = false;
   bool _isPasswordVisible = false;
@@ -41,8 +43,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
     final password = _passwordController.text.trim();
+    final hostId = _hostTeacherIdController.text.trim();
 
-    // 1. التحقق من البيانات (Validations)
+    Teacher? hostTeacher;
+
+    // 1. التحقق الأولي من البيانات قبل بدء التحميل
     if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
       AppSnackBars.showError(context, "برجاء ملء جميع البيانات");
       return;
@@ -71,18 +76,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    // بدء حالة التحميل
     setState(() => _isLoading = true);
 
     try {
-      // 2. تسجيل المدرس في الـ Auth والـ Firestore
+      // 2. تحقق من المدرس المستضيف (لو الـ ID موجود)
+      if (hostId.isNotEmpty) {
+        try {
+          hostTeacher = await FirebaseFunctions.getTeacherById(hostId.trim());
+          if (hostTeacher == null) {
+            AppSnackBars.showError(context, "كود المدرس المستضيف غير صحيح");
+            setState(() => _isLoading = false); // إنهاء التحميل قبل الخروج
+            return;
+          }
+        } catch (e) {
+          AppSnackBars.showError(context, "خطأ أثناء التحقق من كود المدرس: $e");
+          setState(() => _isLoading = false);
+          return;
+        }
+      }
+
+      // 3. تسجيل المدرس في Auth و Firestore
+      // ملاحظة: تأكد أن AuthService ينشئ وثيقة المدرس أولاً
       await AuthService().registerTeacher(email, password, name, phone);
 
       final currentUser = FirebaseAuth.instance.currentUser;
 
       if (currentUser != null) {
-        // 3. تفعيل الباقة التجريبية (خطوة أساسية قبل الدخول)
-        // بنعمل await هنا عشان نضمن إنها خلصت قبل ما المدرس يدخل يشوف حسابه
-
+        // 4. تفعيل الباقة التجريبية للمدرس الجديد
+        // تم استخدام await لضمان انتهاء التجديد
         await FirebaseFunctions.renewBasicSubscription(
           plan: Subscription(
             name: "الباقة التجريبية",
@@ -92,46 +114,70 @@ class _RegisterScreenState extends State<RegisterScreen> {
             subscriptionType: SubscriptionType.adminSubscription,
             totalStudents: 30,
           ),
-            paymentRef: "لا يوجد لانها باقه تجريبه مجانيه ");
+          paymentRef: "باقة تجريبية مجانية للترحيب",
+          teacherId: currentUser.uid, // نمرر الـ ID بوضوح
+        );
 
-        // 4. الحل السحري: بناء المدرس محلياً فوراً
-        // عشان صفحة الخطط الجاية تلاقي بيانات المدرس جاهزة في الـ Provider
+        // 🎁 5. مكافأة المدرس المستضيف (7 أيام)
+        if (hostTeacher != null) {
+          try {
+            await FirebaseFunctions.renewBasicSubscription(
+              plan: Subscription(
+                name: "مكافأة دعوة صديق",
+                description: "أسبوع مجاني لاستضافة مدرس جديد",
+                durationInDays: 7,
+                price: 0,
+                subscriptionType: SubscriptionType.adminSubscription,
+                totalStudents: 0,
+              ),
+              paymentRef: "Referral bonus for inviting ${name}",
+              teacherId: hostTeacher.id,
+            );
+          } catch (e) {
+            // لا نوقف عملية التسجيل إذا فشلت الهدية، فقط نسجل الخطأ
+            debugPrint("Failed to reward host teacher: $e");
+          }
+        }
+
+        // 6. بناء بيانات المدرس محلياً وتحديث الـ Provider
         Teacher localTeacher = Teacher(
           id: currentUser.uid,
           name: name,
           email: email,
           phoneNumber: phone,
           createdAt: DateTime.now(),
-          isActive: false,
-          subscriptionEndTime: DateTime.now(),
+          isActive: true,
+          // أصبح نشطاً الآن بسبب الباقة التجريبية
+          subscriptionEndTime: DateTime.now().add(const Duration(days: 14)),
           currentStudentCount: 0,
           activeBoosts: [],
         );
 
         teacherProvider.setTeacher(localTeacher);
 
+        // تحديث البيانات في الخلفية
         teacherProvider
             .refreshTeacherData()
-            .catchError((e) => debugPrint("Background sync wait: $e"));
+            .catchError((e) => debugPrint("Sync error: $e"));
+
+        if (!mounted) return;
+        AppSnackBars.showSuccess(
+            context, "تم إنشاء الحساب بنجاح! حصلت على 14 يوم تجربة مجانية.");
+
+        // 7. الانتقال لصفحة الاشتراك أو الرئيسية
+        Navigator.pushReplacementNamed(context, "/subscriptionPlansPage");
       } else {
         throw Exception("فشل في استلام بيانات المستخدم من Auth");
       }
 
-      if (!mounted) return;
-
-      AppSnackBars.showSuccess(
-          context, "تم إنشاء الحساب بنجاح! حصلت على 14 يوم تجربة مجانية.");
-
-      // 6. الانتقال لصفحة خطط الاشتراك
-      Navigator.pushReplacementNamed(context, "/subscriptionPlansPage");
     } catch (e) {
       if (!mounted) return;
-      AppSnackBars.showError(context, "حدث خطأ: ${e.toString()}");
+      AppSnackBars.showError(context, "حدث خطأ غير متوقع: ${e.toString()}");
     } finally {
+      // هذا السطر يضمن توقف الـ Loading في حال النجاح أو الفشل
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     // لاحظ أن _handleRegister لم تعد هنا
@@ -230,13 +276,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _buildTextField(
                         controller: _passwordController,
                         focusNode: _passwordFocus,
+                        nextFocus: _hostIdFocus,
                         hint: "كلمة المرور",
                         icon: Icons.lock_outline_rounded,
                         isPassword: true,
                         isVisible: _isPasswordVisible,
-                        action: TextInputAction.done,
+                        action: TextInputAction.next,
                         onToggle: () => setState(
                             () => _isPasswordVisible = !_isPasswordVisible),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        controller: _hostTeacherIdController,
+                        focusNode: _hostIdFocus,
+                        hint: "ID المدرس المستضيف (اختياري)",
+                        icon: Icons.card_giftcard_rounded,
+                        action: TextInputAction.done,
                       ),
                       const SizedBox(height: 30),
                       _isLoading

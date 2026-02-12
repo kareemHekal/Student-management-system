@@ -62,6 +62,7 @@ class TermsPrivacyPage extends StatelessWidget {
                 ),
                 child: SingleChildScrollView(
                   child: Text(
+                    textDirection: TextDirection.rtl,
                     _termsText,
                     style: AppTextStyles.customText(
                         fontSize: 14, color: AppColors.textSecondary),

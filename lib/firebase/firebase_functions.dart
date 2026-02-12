@@ -1268,36 +1268,54 @@ class FirebaseFunctions {
   }
 
   // تجديد الاشتراك الأساسي (Basic)
-  static Future<void> renewBasicSubscription({required Subscription plan,
+  static Future<void> renewBasicSubscription({
+    required Subscription plan,
     String? manualBillId,
-    required String? paymentRef}) async {
+    required String? paymentRef,
+    String? teacherId,
+  }) async {
     try {
-      final String path = teacherPath; // لو مش مسجل هيرمي Exception هنا
+      final String targetTeacherId =
+          teacherId ?? FirebaseAuth.instance.currentUser!.uid;
+
+      final String path = "teachers/$targetTeacherId";
       final now = DateTime.now();
 
-      // جلب بيانات المدرس الحالية من الداتابيز لضمان دقة التواريخ
+      // جلب بيانات المدرس الحالية
       DocumentSnapshot teacherDoc = await _db.doc(path).get();
-      if (!teacherDoc.exists) throw Exception("بيانات المدرس غير موجودة");
 
-      Map<String, dynamic> tData = teacherDoc.data() as Map<String, dynamic>;
-      DateTime currentExpiry = DateTime.parse(tData['subscriptionEndTime']);
+      // تصحيح: لو المدرس لسه جديد (في حالة الـ Register)، مش هينفع نقرأ منه تاريخ قديم
+      DateTime currentExpiry;
+      if (teacherDoc.exists && teacherDoc.data() != null) {
+        Map<String, dynamic> tData = teacherDoc.data() as Map<String, dynamic>;
+        currentExpiry = DateTime.parse(
+            tData['subscriptionEndTime'] ?? now.toIso8601String());
+      } else {
+        currentExpiry = now;
+      }
 
-      // الحسبة: لو اشتراكه لسه مخلصش، بنزود على القديم، لو خلص بنبدأ من النهاردة
+      // الحسبة بتاعتك زي ما هي
       DateTime baseDate = currentExpiry.isAfter(now) ? currentExpiry : now;
       DateTime newExpiryDate =
           baseDate.add(Duration(days: plan.durationInDays));
 
       WriteBatch batch = _db.batch();
       DocumentReference teacherRef = _db.doc(path);
-      DocumentReference billRef =
-          teacherRef.collection('bills').doc(manualBillId);
 
-      // 1. تحديث بيانات المدرس
-      batch.update(teacherRef, {
-        'subscriptionEndTime': newExpiryDate.toIso8601String(),
+      // تصحيح الـ ID: لو manualBillId موجود نستخدمه، لو null نخلي Firestore يولد ID جديد تلقائي
+      DocumentReference billRef = manualBillId != null
+          ? teacherRef.collection('bills').doc(manualBillId)
+          : teacherRef.collection('bills').doc();
+
+      // 1. تحديث بيانات المدرس (استخدام set مع merge أضمن أمنياً من update في حالات الـ Register)
+      batch.set(
+          teacherRef,
+          {
+            'subscriptionEndTime': newExpiryDate.toIso8601String(),
         'isActive': true,
-        'gracePeriodEndTime': null, // تصفير فترة السماح فوراً
-      });
+            'gracePeriodEndTime': null,
+          },
+          SetOptions(merge: true));
 
       // 2. إنشاء الفاتورة
       Bill newBill = Bill(
@@ -1312,23 +1330,24 @@ class FirebaseFunctions {
         expiryDate: newExpiryDate,
         subscriptionDescription: plan.description,
         subscriptionId: plan.id ?? "",
-        teacherId: FirebaseAuth.instance.currentUser!.uid,
+        teacherId: targetTeacherId,
       );
 
       batch.set(billRef, newBill.toJson());
       await batch.commit();
     } on Exception catch (e) {
       if (e.toString().contains("AUTH_REQUIRED")) {
-        rethrow; // بنرميها عشان الصفحة تعرف إنه مش مسجل وتتصرف
+        rethrow;
       }
       throw Exception("فشل التجديد: $e");
     }
   }
 
   // إضافة بوست (Boost)
-  static Future<void> renewBoostSubscription({required Subscription boostPlan,
-    String? manualBillId,
-    required String? paymentRef}) async {
+  static Future<void> renewBoostSubscription(
+      {required Subscription boostPlan,
+      String? manualBillId,
+      required String? paymentRef}) async {
     try {
       final String path = teacherPath;
       final now = DateTime.now();

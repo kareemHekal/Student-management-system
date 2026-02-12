@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/theme/colors_app.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class EasyKashWebViewPage extends StatefulWidget {
@@ -41,7 +42,25 @@ class _EasyKashWebViewPageState extends State<EasyKashWebViewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("الدفع الآمن - Studenizer")),
+      appBar: AppBar(
+          backgroundColor: AppColors.primaryMain,
+          toolbarHeight: 70,
+          centerTitle: true,
+          leading: IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: Icon(
+                Icons.arrow_back_ios,
+                color: AppColors.white,
+              )),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadiusGeometry.only(
+                  bottomLeft: Radius.circular(25),
+                  bottomRight: Radius.circular(25))),
+          title: const Text(
+              style: TextStyle(color: AppColors.white),
+              "الدفع الآمن  Studenizer")),
       body: WebViewWidget(controller: _controller),
     );
   }

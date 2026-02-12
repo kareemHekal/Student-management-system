@@ -1,13 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:student_management_system/auth/terms_privacy_page.dart';
 import 'package:student_management_system/firebase/auth_services.dart';
 import 'package:student_management_system/models/admin/bill.dart';
 import 'package:student_management_system/models/admin/teacher.dart';
 import 'package:student_management_system/provider.dart';
 import 'package:student_management_system/theme/colors_app.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TeacherProfilePage extends StatelessWidget {
@@ -77,16 +80,16 @@ class TeacherProfilePage extends StatelessWidget {
                 }
 
                 final baseLimit = snapshot.data?[0] ?? 0;
-          final totalAllowed = snapshot.data?[1] ?? 0;
-          int current = teacher.currentStudentCount;
-          bool isOverLimit = current > totalAllowed;
+                final totalAllowed = snapshot.data?[1] ?? 0;
+                int current = teacher.currentStudentCount;
+                bool isOverLimit = current > totalAllowed;
 
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
                       _buildTopHeader(
-                          teacher, totalAllowed, current, isOverLimit),
+                          context, teacher, totalAllowed, current, isOverLimit),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Column(
@@ -106,6 +109,28 @@ class TeacherProfilePage extends StatelessWidget {
                             const SizedBox(height: 25),
                             _buildSectionTitle("سجل العمليات المادية"),
                             _buildBillsList(teacher.id),
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const TermsPrivacyPage(),
+                                  ),
+                                );
+                              },
+                              child: Center(
+                                child: Text(
+                                  "الشروط والأحكام وسياسة الخصوصية",
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryMain,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ),
                             const SizedBox(height: 30),
                           ],
                         ),
@@ -119,8 +144,8 @@ class TeacherProfilePage extends StatelessWidget {
   }
 
   // --- الهيدر العلوي لم يتغير تصميمه الجمالي ---
-  Widget _buildTopHeader(
-      Teacher teacher, int allowed, int current, bool isOverLimit) {
+  Widget _buildTopHeader(BuildContext context, Teacher teacher, int allowed,
+      int current, bool isOverLimit) {
     double progress = allowed > 0 ? current / allowed : 0;
     return Container(
       width: double.infinity,
@@ -152,6 +177,42 @@ class TeacherProfilePage extends StatelessWidget {
                     Text(teacher.phoneNumber,
                         style: GoogleFonts.cairo(
                             fontSize: 13, color: Colors.white70)),
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: teacher.id));
+                        AppSnackBars.showSuccess(context,
+                            "تم نسخ معرفك — شاركه مع الاصدقاء ليستخدموه اثناء تسجيل الدخول لتحصل على أسبوع مجاني 🎁");
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Row(
+                          spacing: 10,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "ID: ${teacher.id.substring(0, 8)}...",
+                              style: GoogleFonts.cairo(
+                                fontSize: 11,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.copy_rounded,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
