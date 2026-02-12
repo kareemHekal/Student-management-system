@@ -20,6 +20,7 @@ class AuthService {
         id: res.user!.uid,
         // المعرف القادم من Auth
         name: name,
+        email: email,
         phoneNumber: phone,
         createdAt: DateTime.now(),
         isActive: false,

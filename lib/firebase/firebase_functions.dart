@@ -1,11 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:student_management_system/models/absence_app/absence_model.dart';
 import 'package:student_management_system/models/absence_app/secondary_record.dart';
 import 'package:student_management_system/models/admin/bill.dart';
 import 'package:student_management_system/models/admin/boost_subscription.dart';
 import 'package:student_management_system/models/admin/subsription.dart';
 import 'package:student_management_system/models/admin/teacher.dart';
+import 'package:student_management_system/pages/payment/easy_cash_service.dart';
+import 'package:student_management_system/provider.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
 
 import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
@@ -1263,8 +1268,9 @@ class FirebaseFunctions {
   }
 
   // تجديد الاشتراك الأساسي (Basic)
-  static Future<void> renewBasicSubscription(
-      {required Subscription plan}) async {
+  static Future<void> renewBasicSubscription({required Subscription plan,
+    String? manualBillId,
+    required String? paymentRef}) async {
     try {
       final String path = teacherPath; // لو مش مسجل هيرمي Exception هنا
       final now = DateTime.now();
@@ -1283,7 +1289,8 @@ class FirebaseFunctions {
 
       WriteBatch batch = _db.batch();
       DocumentReference teacherRef = _db.doc(path);
-      DocumentReference billRef = teacherRef.collection('bills').doc();
+      DocumentReference billRef =
+          teacherRef.collection('bills').doc(manualBillId);
 
       // 1. تحديث بيانات المدرس
       batch.update(teacherRef, {
@@ -1295,6 +1302,7 @@ class FirebaseFunctions {
       // 2. إنشاء الفاتورة
       Bill newBill = Bill(
         id: billRef.id,
+        paymentRef: paymentRef,
         billType: plan.subscriptionType.name,
         baseStudentLimit: plan.totalStudents,
         subscriptionName: plan.name,
@@ -1318,8 +1326,9 @@ class FirebaseFunctions {
   }
 
   // إضافة بوست (Boost)
-  static Future<void> renewBoostSubscription(
-      {required Subscription boostPlan}) async {
+  static Future<void> renewBoostSubscription({required Subscription boostPlan,
+    String? manualBillId,
+    required String? paymentRef}) async {
     try {
       final String path = teacherPath;
       final now = DateTime.now();
@@ -1327,7 +1336,8 @@ class FirebaseFunctions {
 
       WriteBatch batch = _db.batch();
       DocumentReference teacherRef = _db.doc(path);
-      DocumentReference billRef = teacherRef.collection('bills').doc();
+      DocumentReference billRef =
+          teacherRef.collection('bills').doc(manualBillId);
 
       ActiveBoost newBoost = ActiveBoost(
         id: billRef.id,
@@ -1343,6 +1353,7 @@ class FirebaseFunctions {
       Bill newBill = Bill(
         id: billRef.id,
         subscriptionId: boostPlan.id ?? '',
+        paymentRef: paymentRef,
         teacherId: FirebaseAuth.instance.currentUser!.uid,
         billAmount: boostPlan.price,
         paidAt: now,
@@ -1384,5 +1395,79 @@ class FirebaseFunctions {
               .map((doc) => Subscription.fromJson(doc.data(), doc.id))
               .toList(),
         );
+  }
+
+// في ملف FirebaseFunctions
+  static Future<void> checkAndResolvePendingPayment(
+      String teacherId, BuildContext context) async {
+    try {
+      // 1. هات كل العمليات المعلقة الخاصة بالمدرس ده
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('teachers')
+          .doc(teacherId)
+          .collection('pending_payments')
+          .get();
+
+      if (querySnapshot.docs.isEmpty) return; // مفيش حاجة، اطلع
+
+      // 2. لوب على العمليات (ممكن يكون حاول كذا مرة)
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        final String ref = data['ref'];
+        final String billId = data['billId'];
+
+        // تحويل الماب لـ Subscription (لاحظ هنا بناخد الـ Map مباشرة)
+        final planMap = data['plan'] as Map<String, dynamic>;
+        final Subscription plan =
+            Subscription.fromJson(planMap, planMap['id'] ?? '');
+
+        debugPrint("Checking cloud pending payment: $ref");
+
+        // 3. اسأل EasyKash
+        final statusData = await EasyKashService.checkPaymentStatus(ref);
+
+        if (statusData != null &&
+            (statusData['status'] == "PAID" ||
+                statusData['status'] == "SUCCESS")) {
+          // --- نجاح: فعل الاشتراك ---
+          bool isBoost =
+              plan.subscriptionType.toString().toLowerCase().contains('boost');
+
+          if (isBoost) {
+            await renewBoostSubscription(
+                boostPlan: plan, manualBillId: billId, paymentRef: ref);
+          } else {
+            await renewBasicSubscription(
+                plan: plan, manualBillId: billId, paymentRef: ref);
+          }
+
+          // تحديث الـ UI لو السياق موجود
+          if (context.mounted) {
+            await Provider.of<TeacherProvider>(context, listen: false)
+                .refreshTeacherData();
+
+            AppSnackBars.showSuccess(
+              context,
+              "تم استعادة عملية دفع سابقة وتفعيل الاشتراك بنجاح!",
+            );
+          }
+
+          // حذف العملية المعلقة بعد النجاح
+          await doc.reference.delete();
+        } else if (statusData != null &&
+            (statusData['status'] == "FAILED" ||
+                statusData['status'] == "EXPIRED")) {
+          // --- فشل نهائي: احذفها عشان منظلش نسأل عليها ---
+          await doc.reference.delete();
+          AppSnackBars.showError(
+            context,
+            "نعتذر ولكن لم تتم العمليه السابقه بنجاح !",
+          );
+        }
+        // لو لسه PENDING سيبها، يمكن يدفع كمان شويه
+      }
+    } catch (e) {
+      debugPrint("Error in cloud payment check: $e");
+    }
   }
 }

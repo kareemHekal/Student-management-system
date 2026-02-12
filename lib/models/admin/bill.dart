@@ -8,13 +8,14 @@ class Bill {
   final String subscriptionName;
   final int subscriptionDurationInDays;
   final String subscriptionDescription;
-  // حقول التحكم الجديدة
+  final String? paymentRef;
   final String billType; // 'basic' أو 'boost'
-  final int? baseStudentLimit; // بنحتاجه في undo الـ basic
+  final int? baseStudentLimit;
   final int? boostAmount; // بنحتاجه في undo الـ boost
 
   Bill({
     required this.id,
+    required this.paymentRef,
     required this.subscriptionId,
     required this.teacherId,
     required this.billAmount,
@@ -32,6 +33,7 @@ class Bill {
     return Bill(
       id: docId,
       subscriptionId: json['subscriptionId'] ?? '',
+      paymentRef: json['paymentRef'] ?? '',
       teacherId: json['teacherId'] ?? '',
       billAmount: (json['billAmount'] ?? 0).toDouble(),
       paidAt: DateTime.parse(json['paidAt']),
@@ -48,6 +50,7 @@ class Bill {
   Map<String, dynamic> toJson() {
     return {
       'subscriptionId': subscriptionId,
+      'paymentRef': paymentRef,
       'teacherId': teacherId,
       'billAmount': billAmount,
       'paidAt': paidAt.toIso8601String(),

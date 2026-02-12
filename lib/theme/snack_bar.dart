@@ -63,7 +63,7 @@ class AppSnackBars {
         ),
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 4),
         margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),

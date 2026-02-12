@@ -8,6 +8,7 @@ class Teacher {
   final String id;
   final String name;
   final String phoneNumber;
+  final String email;
   final DateTime createdAt;
   final bool isActive;
   final DateTime subscriptionEndTime;
@@ -18,6 +19,7 @@ class Teacher {
   Teacher({
     required this.id,
     required this.name,
+    required this.email,
     required this.phoneNumber,
     required this.createdAt,
     required this.isActive,
@@ -98,6 +100,7 @@ class Teacher {
       id: docId,
       name: json['name'] ?? '',
       phoneNumber: json['phoneNumber'] ?? '',
+      email: json['email'] ?? '',
       createdAt:
           DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       isActive: json['isActive'] ?? true,
@@ -115,6 +118,7 @@ class Teacher {
     return {
       'name': name,
       'phoneNumber': phoneNumber,
+      'email': email,
       'createdAt': createdAt.toIso8601String(),
       'isActive': isActive,
       'subscriptionEndTime': subscriptionEndTime.toIso8601String(),

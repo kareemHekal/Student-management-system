@@ -10,6 +10,8 @@ import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
 import 'package:student_management_system/theme/text_style.dart';
 
+import 'terms_privacy_page.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -32,17 +34,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
 
-  // --- تم نقل الدالة هنا لتكون تابعة للكلاس مباشرة ---
   void _handleRegister() async {
-    final teacherProvider =
-        Provider.of<TeacherProvider>(context, listen: false);
+    final teacherProvider = context.read<TeacherProvider>();
 
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
     final password = _passwordController.text.trim();
 
-    // التحقق من البيانات
+    // 1. التحقق من البيانات (Validations)
     if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
       AppSnackBars.showError(context, "برجاء ملء جميع البيانات");
       return;
@@ -72,17 +72,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     setState(() => _isLoading = true);
-    try {
-      // تسجيل المدرس
-      await AuthService().registerTeacher(email, password, name, phone);
 
-      // بفر بسيط
-      await Future.delayed(const Duration(seconds: 1));
+    try {
+      // 2. تسجيل المدرس في الـ Auth والـ Firestore
+      await AuthService().registerTeacher(email, password, name, phone);
 
       final currentUser = FirebaseAuth.instance.currentUser;
 
       if (currentUser != null) {
-        // تفعيل الباقة التجريبية
+        // 3. تفعيل الباقة التجريبية (خطوة أساسية قبل الدخول)
+        // بنعمل await هنا عشان نضمن إنها خلصت قبل ما المدرس يدخل يشوف حسابه
+
         await FirebaseFunctions.renewBasicSubscription(
           plan: Subscription(
             name: "الباقة التجريبية",
@@ -92,25 +92,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
             subscriptionType: SubscriptionType.adminSubscription,
             totalStudents: 30,
           ),
+            paymentRef: "لا يوجد لانها باقه تجريبه مجانيه ");
+
+        // 4. الحل السحري: بناء المدرس محلياً فوراً
+        // عشان صفحة الخطط الجاية تلاقي بيانات المدرس جاهزة في الـ Provider
+        Teacher localTeacher = Teacher(
+          id: currentUser.uid,
+          name: name,
+          email: email,
+          phoneNumber: phone,
+          createdAt: DateTime.now(),
+          isActive: false,
+          subscriptionEndTime: DateTime.now(),
+          currentStudentCount: 0,
+          activeBoosts: [],
         );
 
-        // جلب البيانات ووضعها في الـ Provider
-        Teacher? newTeacher =
-            await FirebaseFunctions.getTeacherById(currentUser.uid);
+        teacherProvider.setTeacher(localTeacher);
 
-        if (newTeacher != null) {
-          teacherProvider.setTeacher(newTeacher);
-          await teacherProvider.refreshTeacherData();
-        }
+        teacherProvider
+            .refreshTeacherData()
+            .catchError((e) => debugPrint("Background sync wait: $e"));
       } else {
-        throw Exception(
-            "لم يتم العثور على بيانات المستخدم، يرجى تسجيل الدخول.");
+        throw Exception("فشل في استلام بيانات المستخدم من Auth");
       }
 
       if (!mounted) return;
 
       AppSnackBars.showSuccess(
           context, "تم إنشاء الحساب بنجاح! حصلت على 14 يوم تجربة مجانية.");
+
+      // 6. الانتقال لصفحة خطط الاشتراك
       Navigator.pushReplacementNamed(context, "/subscriptionPlansPage");
     } catch (e) {
       if (!mounted) return;
@@ -248,6 +260,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                         fontSize: 16)),
                               ),
                             ),
+                      const SizedBox(height: 12),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const TermsPrivacyPage(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          "بإنشاء الحساب، أنت توافق على الشروط وسياسة الخصوصية",
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.customText(
+                            fontSize: 12,
+                            color: AppColors.primaryMain,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
