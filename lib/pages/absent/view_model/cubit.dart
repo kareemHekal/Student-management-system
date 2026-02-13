@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:ai_barcode_scanner/ai_barcode_scanner.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:student_management_system/alert_dialogs/group_selection_while_scanning.dart';
@@ -266,6 +267,9 @@ class AbsentCubit extends Cubit<AbsentState> {
 
       absentStudents = snapshot.docs.map((doc) => doc.data()).toList();
 
+      for (var student in absentStudents) {
+        _studentsCache[student.id] = student;
+      }
       _updateFilteredLists();
 
       numberOfStudents = absentStudents.length;
@@ -299,6 +303,7 @@ class AbsentCubit extends Cubit<AbsentState> {
               day: selectedDay,
               time: magmo3aModel.time,
               secondary: null));
+          _studentsCache[student.id] = student;
         }
 
         batchOperations.add(
@@ -543,24 +548,104 @@ class AbsentCubit extends Cubit<AbsentState> {
       AbsenceModel? targetAbsenceToUpdate;
 
       if (targetSecondary != null) {
-        // تحديث سجل المجموعة المستهدفة (اللي الطالب رايح يحضر فيها)
-        final targetAbsence = await FirebaseFunctions.getAbsenceByDateOnce(
+        final String targetGrade = student.grade ?? magmo3aModel.grade ?? "";
+
+        // 1. محاولة جلب سجل المجموعة المستهدفة
+        var targetAbsence = await FirebaseFunctions.getAbsenceByDateOnce(
             targetSecondary.day,
             targetSecondary.magmo3aId,
             targetSecondary.date);
 
-        if (targetAbsence != null) {
+        // 2. السيناريو الأول: السجل غير موجود (يجب إنشاؤه)
+        if (targetAbsence == null) {
+          debugPrint("⚠️ Target absence record not found. Creating new one...");
+
+          // أ. جلب كل طلاب المجموعة المستهدفة
+          final snapshot = await FirebaseFunctions.getStudentsByGroupIdOnce(
+              targetGrade, targetSecondary.magmo3aId);
+          final allTargetStudents =
+              snapshot.docs.map((doc) => doc.data()).toList();
+
+          // ب. تجهيز قوائم الحضور والغياب للسجل الجديد
+          List<String> newAbsentIds = [];
+          List<String> newAttendIds = [student.id]; // الطالب بتاعنا حاضر
+
+          // ج. تجهيز باتش لإنشاء غياب لباقي الطلاب
+          var creationBatch = FirebaseFirestore.instance.batch();
+
+          for (var otherStudent in allTargetStudents) {
+            // تخطي الطالب الحالي (لأنه حاضر، ولأننا سنحدثه في نهاية الدالة)
+            if (otherStudent.id == student.id) continue;
+
+            otherStudent.countingAbsentDays ??= [];
+
+            // التأكد من عدم التكرار
+            bool exists = otherStudent.countingAbsentDays!.any((d) =>
+                d.date == targetSecondary.date &&
+                d.magmo3aId == targetSecondary.magmo3aId);
+
+            if (!exists) {
+              otherStudent.countingAbsentDays!.add(DayRecord(
+                magmo3aId: targetSecondary.magmo3aId,
+                date: targetSecondary.date,
+                day: targetSecondary.day,
+                time: targetSecondary.time,
+                secondary: null, // غياب طبيعي في مجموعتهم
+              ));
+
+              // إضافة للباتش
+              final otherRef = FirebaseFirestore.instance.doc(
+                  '${FirebaseFunctions.teacherPath}/$targetGrade/${otherStudent.id}');
+              creationBatch.update(otherRef, otherStudent.toJson());
+            }
+            newAbsentIds.add(otherStudent.id);
+          }
+
+          // د. إنشاء موديل الغياب الجديد
+          final newAbsenceModel = AbsenceModel(
+            numberOfStudents: allTargetStudents.length,
+            date: targetSecondary.date,
+            attendStudentIds: newAttendIds,
+            absentStudentIds: newAbsentIds,
+          );
+
+          // هـ. حفظ السجل الجديد في الداتابيز
+          final targetDocRef = FirebaseFirestore.instance.doc(
+              '${FirebaseFunctions.teacherPath}/${targetSecondary.day}/${targetSecondary.magmo3aId}/absences/${targetSecondary.date}');
+          creationBatch.set(targetDocRef, newAbsenceModel.toJson());
+
+          await creationBatch.commit();
+
+          // تعيين السجل للتحديث اللاحق (لضمان التناسق)
+          targetAbsenceToUpdate = newAbsenceModel;
+        } else {
+          // 3. السيناريو الثاني: السجل موجود بالفعل
           if (!targetAbsence.attendStudentIds.contains(student.id)) {
             targetAbsence.attendStudentIds.add(student.id);
           }
           targetAbsence.absentStudentIds.remove(student.id);
           targetAbsenceToUpdate = targetAbsence;
+
+          // ملحوظة: هنا مش محتاجين نعمل commit للسجل لسه، ممكن نضيفه للباتش النهائي بتاع الدالة الأصلية
+          // أو لو الدالة دي منفصلة، نعمل تحديث هنا:
+          final targetDocRef = FirebaseFirestore.instance.doc(
+              '${FirebaseFunctions.teacherPath}/${targetSecondary.day}/${targetSecondary.magmo3aId}/absences/${targetSecondary.date}');
+          await targetDocRef.set(
+              targetAbsence.toJson(), SetOptions(merge: true));
         }
 
-        // تحديث الطالب محلياً
+        // ============================================================
+        // 4. تحديث بيانات الطالب نفسه (الجزء المحلي واللوجيك الخاص بك)
+        // ============================================================
+
+        // إزالة الطالب من قائمة الغائبين في الشاشة الحالية
         absentStudents.removeWhere((s) => s.id == student.id);
+
+        // تهيئة قائمة الحضور
         student.countingAttendedDays ??= [];
 
+        // إضافة سجل الحضور في المجموعة المستهدفة (Target Group)
+        // مع وضع إشارة (Secondary) للمجموعة الحالية (Source Group)
         if (!student.countingAttendedDays!.any((r) =>
             r.magmo3aId == targetSecondary.magmo3aId &&
             r.date == targetSecondary.date)) {
@@ -569,20 +654,26 @@ class AbsentCubit extends Cubit<AbsentState> {
             date: targetSecondary.date,
             day: targetSecondary.day,
             time: targetSecondary.time,
-            // بنسجل المرجعية للمجموعة اللي إحنا واقفين فيها دلوقتي
+
+            // ⚠️ هنا التريكاية: الـ Secondary بيشاور على المجموعة اللي إحنا واقفين فيها دلوقتي
+            // عشان لما نيجي نعمل Restore يعرف يرجع فين
             secondary: SecondaryRecord(
-                date: selectedDateStr,
-                day: selectedDay,
-                magmo3aId: magmo3aModel.id,
+                date: selectedDateStr, // تاريخ اليوم الحالي
+                day: selectedDay, // يوم اليوم الحالي
+                magmo3aId: magmo3aModel.id, // أيدي المجموعة الحالية
                 time: magmo3aModel.time),
           ));
         }
 
-        // تنظيف سجلات الغياب المتعارضة
+        // تنظيف سجلات الغياب المتعارضة (Cleaning Conflicts)
+        // بنمسح أي غياب مسجل لنفس تاريخ المجموعة الحالية أو المجموعة المستهدفة
         student.countingAbsentDays?.removeWhere((d) =>
             (d.date == selectedDateStr && d.magmo3aId == magmo3aModel.id) ||
             (d.date == targetSecondary.date &&
                 d.magmo3aId == targetSecondary.magmo3aId));
+
+        // 🔥 خطوة التزامن الهامة جداً (تحديث الكاش) 🔥
+        _studentsCache[student.id] = student;
       } else {
         await _addBasicAttendance(student);
       }

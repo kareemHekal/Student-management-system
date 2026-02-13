@@ -143,7 +143,6 @@ class TeacherProfilePage extends StatelessWidget {
     );
   }
 
-  // --- الهيدر العلوي لم يتغير تصميمه الجمالي ---
   Widget _buildTopHeader(BuildContext context, Teacher teacher, int allowed,
       int current, bool isOverLimit) {
     double progress = allowed > 0 ? current / allowed : 0;
@@ -162,7 +161,7 @@ class TeacherProfilePage extends StatelessWidget {
               const CircleAvatar(
                 radius: 30,
                 backgroundColor: Colors.white,
-                backgroundImage: AssetImage('assets/images/logo.png'),
+                backgroundImage: AssetImage('assets/images/app_logo.jpg'),
               ),
               const SizedBox(width: 15),
               Expanded(
@@ -177,42 +176,75 @@ class TeacherProfilePage extends StatelessWidget {
                     Text(teacher.phoneNumber,
                         style: GoogleFonts.cairo(
                             fontSize: 13, color: Colors.white70)),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 10),
+
+                    // --- الجزء المعدل: منطقة دعوة الأصدقاء ---
                     GestureDetector(
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: teacher.id));
                         AppSnackBars.showSuccess(context,
-                            "تم نسخ معرفك — شاركه مع الاصدقاء ليستخدموه اثناء تسجيل الدخول لتحصل على أسبوع مجاني 🎁");
+                            "تم نسخ كود الدعوة! أرسله لزملائك للحصول على أسبوع مجاني عند تسجيلهم 🎁");
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
+                            horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white24),
+                          // استخدام لون متدرج أو خلفية فاتحة ليبرز عن اللون الأساسي
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.secondaryMain.withOpacity(0.9),
+                              AppColors.statusPresent
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: Offset(0, 2))
+                          ],
                         ),
-                        child: Row(
-                          spacing: 10,
-                          mainAxisSize: MainAxisSize.min,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "ID: ${teacher.id.substring(0, 8)}...",
-                              style: GoogleFonts.cairo(
-                                fontSize: 11,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.card_giftcard_rounded,
+                                    size: 18, color: Colors.white),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "احصل على أسبوع مجاني 🎁",
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const Icon(
-                              Icons.copy_rounded,
-                              size: 16,
-                              color: Colors.white,
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "انسخ كود الدعوة: ${teacher.id.substring(0, 8)}...",
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 11,
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                const Icon(Icons.copy_all_rounded,
+                                    size: 14, color: Colors.white),
+                              ],
                             ),
                           ],
                         ),
                       ),
                     ),
+                    // ---------------------------------------
                   ],
                 ),
               ),

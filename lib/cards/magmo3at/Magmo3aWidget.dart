@@ -233,7 +233,7 @@ class Magmo3aWidget extends StatelessWidget {
               Border.all(color: AppColors.white.withOpacity(0.3), width: 1.5),
         ),
         child: const Icon(
-          Icons.arrow_back_ios_new_rounded, // اتجاه مناسب للعربية
+          Icons.arrow_forward_ios_outlined, // اتجاه مناسب للعربية
           size: 20,
           color: AppColors.white,
         ),

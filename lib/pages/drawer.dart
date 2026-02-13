@@ -191,12 +191,16 @@ class _CustomDrawerState extends State<CustomDrawer> {
           const SizedBox(height: 10),
 
           // اسم المدرس
-          Text(
-            teacher?.name ?? "Studenizer",
-            style: GoogleFonts.orbitron(
-                fontWeight: FontWeight.bold,
-                fontSize: 28,
-                color: AppColors.primaryDark),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: Text(
+              textAlign: TextAlign.center,
+              teacher?.name ?? "Studenizer",
+              style: GoogleFonts.orbitron(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                  color: AppColors.primaryDark),
+            ),
           ),
 
           // الفراغ والعدادات يظهروا فقط لو فيه بيانات مدرس حقيقية

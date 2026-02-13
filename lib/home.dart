@@ -85,17 +85,23 @@ class _HomescreenState extends State<Homescreen> {
           ),
           toolbarHeight: 110,
           actions: [
-            IconButton(
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const AbsentHomePage()),
-                  (route) => false,
-                );
-              },
-              icon: const Icon(Icons.qr_code_scanner_rounded,
-                  color: AppColors.secondaryMain),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: IconButton(
+                onPressed: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AbsentHomePage()),
+                    (route) => false,
+                  );
+                },
+                icon: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: AppColors.secondaryMain,
+                  size: 30,
+                ),
+              ),
             )
           ],
           leading: IconButton(
@@ -108,7 +114,7 @@ class _HomescreenState extends State<Homescreen> {
                   child: Icon(
                     value.visible ? Icons.clear : Icons.clear_all_outlined,
                     color: AppColors.secondaryMain,
-                    size: 30,
+                    size: 35,
                     key: ValueKey<bool>(value.visible),
                   ),
                 );
