@@ -128,7 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 durationInDays: 7,
                 price: 0,
                 subscriptionType: SubscriptionType.adminSubscription,
-                totalStudents: 0,
+                totalStudents: await hostTeacher.getBaseStudentLimit(),
               ),
               paymentRef: "Referral bonus for inviting ${name}",
               teacherId: hostTeacher.id,

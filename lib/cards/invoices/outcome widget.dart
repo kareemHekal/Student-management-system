@@ -360,12 +360,9 @@ class _PaymentWidgetState extends State<PaymentWidget> {
                                     context, "تم تحديث الفاتورة بنجاح");
                               }
 
-                              setState(() {
-                                widget.payment.amount = updatedPayment.amount;
-                                widget.payment.description =
-                                    updatedPayment.description;
-                              });
                             } catch (e) {
+                              // here
+                              print("🥔🥔🥔 $e");
                               if (context.mounted) {
                                 AppSnackBars.showError(
                                     context, "حدث خطأ أثناء التحديث");
