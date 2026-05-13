@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'd31nm90PspZ0M5VBJhZFlnUClhe2';
+    }
+
+    // Admin Full Access
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // ===== Teachers =====
+    match /teachers/{teacherId} {
+      // Only the teacher themselves can read their own data
+      // Exception: allow create for new registration (auth.uid must match the doc ID)
+      allow read: if request.auth != null && request.auth.uid == teacherId;
+      allow create: if request.auth != null && request.auth.uid == teacherId;
+      allow update: if request.auth != null && request.auth.uid == teacherId;
+      allow delete: if false;
+
+      // All subcollections (grades, days, constants, bills, invoices, pending_payments, etc.)
+      match /{allPaths=**} {
+        allow read, write: if request.auth != null && request.auth.uid == teacherId;
+      }
+    }
+
+    // ===== Public read-only collections (subscription plans shown to all users) =====
+    match /admin_subscriptions/{doc} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /admin_boost_subscriptions/{doc} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /admin_offers_subscriptions/{doc} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /app_settings/{document} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+  }
+}

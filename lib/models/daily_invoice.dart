@@ -1,4 +1,4 @@
-import 'Invoice.dart';
+import 'invoice.dart';
 import 'payment.dart';
 
 class DailyInvoice {

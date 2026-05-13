@@ -122,7 +122,7 @@ class AbsentCubit extends Cubit<AbsentState> {
       if (absenceRecord == null) {
 // --- START TAKING ABSENCE LOGIC FOR SECONDARY ---
 
-        List<Future> batchOperations = [];
+        final batch = FirebaseFirestore.instance.batch();
 
         for (var student in students) {
           student.countingAbsentDays ??= [];
@@ -143,15 +143,15 @@ class AbsentCubit extends Cubit<AbsentState> {
               date: secondaryRecord.date,
               day: secondaryRecord.day,
               time: secondaryRecord.time,
-              // Use the secondary time
               secondary: null,
             ));
           }
 
-          batchOperations.add(
-            FirebaseFunctions.updateStudentInCollection(
-                student.grade ?? "", student.id, student),
-          );
+          final studentRef = FirebaseFirestore.instance
+              .doc(FirebaseFunctions.teacherPath)
+              .collection(student.grade ?? "")
+              .doc(student.id);
+          batch.update(studentRef, student.toJson());
         }
 
 // Create the AbsenceModel for this secondary group
@@ -163,14 +163,15 @@ class AbsentCubit extends Cubit<AbsentState> {
           absentStudentIds: students.map((s) => s.id).toList(),
         );
 
-        batchOperations.add(
-            FirebaseFunctions.updateAbsenceByDateInSubcollection(
-                secondaryRecord.day,
-                secondaryRecord.magmo3aId,
-                secondaryRecord.date,
-                newAbsenceModel));
+        final absenceRef = FirebaseFirestore.instance
+            .doc(FirebaseFunctions.teacherPath)
+            .collection(secondaryRecord.day)
+            .doc(secondaryRecord.magmo3aId)
+            .collection('absences')
+            .doc(secondaryRecord.date);
+        batch.set(absenceRef, newAbsenceModel.toJson(), SetOptions(merge: true));
 
-        await Future.wait(batchOperations);
+        await batch.commit();
       } else {
         print("secondary absence record already exists ✅✅");
       }
@@ -288,7 +289,7 @@ class AbsentCubit extends Cubit<AbsentState> {
 
   Future<void> _startTakingAbsence() async {
     try {
-      List<Future> batchOperations = [];
+      final batch = FirebaseFirestore.instance.batch();
 
       for (var student in absentStudents) {
         student.countingAbsentDays ??= [];
@@ -306,10 +307,11 @@ class AbsentCubit extends Cubit<AbsentState> {
           _studentsCache[student.id] = student;
         }
 
-        batchOperations.add(
-          FirebaseFunctions.updateStudentInCollection(
-              student.grade ?? "", student.id, student),
-        );
+        final studentRef = FirebaseFirestore.instance
+            .doc(FirebaseFunctions.teacherPath)
+            .collection(student.grade ?? "")
+            .doc(student.id);
+        batch.update(studentRef, student.toJson());
       }
 
       numberOfStudents = absentStudents.length;
@@ -321,10 +323,15 @@ class AbsentCubit extends Cubit<AbsentState> {
         absentStudentIds: absentStudents.map((s) => s.id).toList(),
       );
 
-      batchOperations.add(FirebaseFunctions.updateAbsenceByDateInSubcollection(
-          selectedDay, magmo3aModel.id, selectedDateStr, absenceModel));
+      final absenceRef = FirebaseFirestore.instance
+          .doc(FirebaseFunctions.teacherPath)
+          .collection(selectedDay)
+          .doc(magmo3aModel.id)
+          .collection('absences')
+          .doc(selectedDateStr);
+      batch.set(absenceRef, absenceModel.toJson(), SetOptions(merge: true));
 
-      await Future.wait(batchOperations);
+      await batch.commit();
 
       isAttendanceStarted = true;
 

@@ -8,7 +8,7 @@ import 'package:student_management_system/theme/text_style.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 import '../../firebase/firebase_functions.dart';
-import '../../models/Invoice.dart';
+import '../../models/invoice.dart';
 import '../../models/subscription_fee.dart';
 import '../../theme/colors_app.dart';
 

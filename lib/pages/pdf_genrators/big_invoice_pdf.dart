@@ -4,7 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
-import 'package:student_management_system/models/Invoice.dart';
+import 'package:student_management_system/models/invoice.dart';
 import 'package:student_management_system/models/payment.dart';
 
 import '../../models/daily_invoice.dart';

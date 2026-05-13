@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
 import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 import 'package:student_management_system/models/Student_model.dart';
+import 'package:student_management_system/models/daily_invoice.dart';
+import 'package:student_management_system/models/payment.dart';
 import 'package:student_management_system/provider.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
@@ -125,24 +128,56 @@ class _DeleteStudentWithSettlementDialogState
 
   Future<void> _handleFinalDelete() async {
     if (!_formKey.currentState!.validate()) return;
-    print("🥔🥔🥔🥔🥔🥔🥔🥔🥔");
+
     await runWithLoading(context, () async {
-      // 1. Call the logic function we created earlier
-      await FirebaseFunctions.addPaymentToFirestore(
-        date: widget.date,
-        day: widget.day,
-        amountText: amountController.text,
-        description: reasonController.text,
+      final db = FirebaseFirestore.instance;
+      final batch = db.batch();
+
+      // 1. Prepare the settlement payment
+      final docRef = db
+          .doc(FirebaseFunctions.teacherPath)
+          .collection('big_invoices')
+          .doc(widget.date);
+      final docSnapshot = await docRef.get();
+
+      final newPayment = Payment(
+        amount: double.tryParse(amountController.text) ?? 0.0,
+        description: reasonController.text.trim(),
+        dateTime: DateTime.now(),
       );
 
-      // 2. Delete the Student
-      await FirebaseFunctions.deleteStudentFromHisCollection(
-        widget.student.grade ?? "",
-        widget.student.id,
-      );
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data() as Map<String, dynamic>;
+        final bigInvoice = DailyInvoice.fromJson(data);
+        bigInvoice.payments.add(newPayment);
+        batch.update(docRef, bigInvoice.toJson());
+      } else {
+        final bigInvoice = DailyInvoice(
+          date: widget.date,
+          day: widget.day,
+          invoices: [],
+          payments: [newPayment],
+        );
+        batch.set(docRef, bigInvoice.toJson());
+      }
+
+      // 2. Delete the student
+      final studentRef = FirebaseFunctions.getSecondaryCollection(
+              widget.student.grade ?? "")
+          .doc(widget.student.id);
+      batch.delete(studentRef);
+
+      // 3. Decrement teacher's student count
+      final teacherRef = db.doc(FirebaseFunctions.teacherPath);
+      batch.update(teacherRef, {
+        'currentStudentCount': FieldValue.increment(-1),
+      });
+
+      // All three operations commit atomically
+      await batch.commit();
 
       if (mounted) {
-        Navigator.pop(context); // Close Dialog
+        Navigator.pop(context);
         AppSnackBars.showSuccess(context, "تم حذف الطالب وتسجيل المصروف");
       }
     });

@@ -29,7 +29,7 @@ class _EasyKashWebViewPageState extends State<EasyKashWebViewPage> {
           onPageStarted: (String url) {
             // أول ما نلاقي الصفحة اتحولت للرابط بتاعنا Studenizer
             // معناه إن العميل خلص (سواء نجاح أو فشل)
-            if (url.contains(widget.redirectUrl)) {
+            if (url.startsWith(widget.redirectUrl)) {
               Navigator.pop(
                   context, true); // ارجع للصفحة اللي قبلها وقولها "خلصنا"
             }

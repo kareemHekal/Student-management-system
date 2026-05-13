@@ -1,16 +1,36 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 
 abstract class EasyKashService {
-  static const String _privateKey = "n0yudcqv9iib48u3";
+  static String? _cachedKey;
   static const String _baseUrl = "https://back.easykash.net/api";
 
-  static Map<String, String> get _headers => {
-        "Authorization": _privateKey,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      };
+  /// Fetch the private key from Firestore instead of hardcoding it
+  static Future<String> _getPrivateKey() async {
+    if (_cachedKey != null) return _cachedKey!;
+    final doc = await FirebaseFirestore.instance
+        .collection('app_settings')
+        .doc('payment_config')
+        .get();
+    _cachedKey = doc.data()?['easykash_private_key'] ?? '';
+    return _cachedKey!;
+  }
+
+  static Future<Map<String, String>> get _headers async {
+    final key = await _getPrivateKey();
+    return {
+      "Authorization": key,
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    };
+  }
+
+  /// Clear cached key (call on logout)
+  static void clearCache() {
+    _cachedKey = null;
+  }
 
   /// إنشاء رابط الدفع
   static Future<String?> createPaymentLink({
@@ -39,10 +59,10 @@ abstract class EasyKashService {
     };
 
     try {
+      final headers = await _headers;
       final response =
-          await http.post(url, headers: _headers, body: jsonEncode(body));
+          await http.post(url, headers: headers, body: jsonEncode(body));
 
-      // دي أهم خطوة عشان لو فشل تاني تعرف السبب من الـ Console
       print("EasyKash Status: ${response.statusCode}");
       print("EasyKash Body: ${response.body}");
 
@@ -64,8 +84,9 @@ abstract class EasyKashService {
     final body = {"customerReference": reference};
 
     try {
+      final headers = await _headers;
       final response =
-          await http.post(url, headers: _headers, body: jsonEncode(body));
+          await http.post(url, headers: headers, body: jsonEncode(body));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }

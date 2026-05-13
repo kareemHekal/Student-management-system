@@ -5,7 +5,7 @@ import 'package:student_management_system/alert_dialogs/verifiy_password.dart';
 import '../../cards/invoices/In come widget.dart';
 import '../../cards/invoices/outcome widget.dart';
 import '../../firebase/firebase_functions.dart';
-import '../../models/Invoice.dart';
+import '../../models/invoice.dart';
 import '../../models/daily_invoice.dart';
 import '../../theme/colors_app.dart';
 

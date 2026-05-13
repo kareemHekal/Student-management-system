@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +15,7 @@ import 'package:student_management_system/pages/payment/easy_cash_service.dart';
 import 'package:student_management_system/provider.dart';
 import 'package:student_management_system/theme/snack_bar.dart';
 
-import '../models/Invoice.dart';
+import '../models/invoice.dart';
 import '../models/Magmo3aModel.dart';
 import '../models/Student_model.dart';
 import '../models/absence_app/student_absence_model.dart';
@@ -869,7 +872,6 @@ class FirebaseFunctions {
     required double differenceAmount,
     required Invoice updatedInvoice,
   }) async {
-    // التعديل: المسار تحت المدرس
     final docRef = _db.doc(teacherPath).collection('big_invoices').doc(date);
     DocumentSnapshot docSnapshot = await docRef.get();
 
@@ -886,13 +888,15 @@ class FirebaseFunctions {
     if (index == -1) throw Exception("Invoice not found");
 
     bigInvoice.invoices[index] = updatedInvoice;
-    await docRef.update(bigInvoice.toJson());
 
-    // تحديث الطالب (getSecondaryCollection متعدلة بالفعل لتتبع المدرس)
     Studentmodel? student = await FirebaseExams.getStudent(
       updatedInvoice.grade,
       updatedInvoice.studentId,
     );
+
+    // Atomic batch: update invoice AND student paidAmount together
+    final batch = _db.batch();
+    batch.update(docRef, bigInvoice.toJson());
 
     if (student != null) {
       for (var sub in student.studentPaidSubscriptions!) {
@@ -901,10 +905,12 @@ class FirebaseFunctions {
           break;
         }
       }
-      await getSecondaryCollection(updatedInvoice.grade)
-          .doc(updatedInvoice.studentId)
-          .update(student.toJson());
+      final studentRef = getSecondaryCollection(updatedInvoice.grade)
+          .doc(updatedInvoice.studentId);
+      batch.update(studentRef, student.toJson());
     }
+
+    await batch.commit();
   }
 
   static Future<void> deleteInvoiceFromBigInvoices({
@@ -923,12 +929,15 @@ class FirebaseFunctions {
     if (index == -1) throw Exception("Invoice not found");
 
     bigInvoice.invoices.removeAt(index);
-    await docRef.update(bigInvoice.toJson());
 
     Studentmodel? student = await FirebaseExams.getStudent(
       invoice.grade,
       invoice.studentId,
     );
+
+    // Atomic batch: delete invoice AND update student paidAmount together
+    final batch = _db.batch();
+    batch.update(docRef, bigInvoice.toJson());
 
     if (student != null && student.studentPaidSubscriptions != null) {
       for (var sub in student.studentPaidSubscriptions!) {
@@ -938,10 +947,12 @@ class FirebaseFunctions {
           break;
         }
       }
-      await getSecondaryCollection(invoice.grade)
-          .doc(invoice.studentId)
-          .update(student.toJson());
+      final studentRef =
+          getSecondaryCollection(invoice.grade).doc(invoice.studentId);
+      batch.update(studentRef, student.toJson());
     }
+
+    await batch.commit();
   }
 
   static Future<List<Invoice>> getInvoicesByStudenId(String studentID) async {
@@ -1106,20 +1117,45 @@ class FirebaseFunctions {
 
   // =============================== Password Management ===============================
 
+  /// Hash a password using SHA-256
+  static String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
   static Future<bool> verifyPassword(String enteredPassword) async {
     try {
-      // كلمة المرور أصبحت داخل doc خاص بكل مدرس
       final docRef =
           _db.doc(teacherPath).collection('constants').doc('password');
       final doc = await docRef.get();
 
       if (!doc.exists) {
-        await docRef.set({'password': '0'});
+        // First time — store hashed default
+        await docRef.set({
+          'password': _hashPassword('0'),
+          'isHashed': true,
+        });
         return enteredPassword == '0';
       }
 
-      final savedPassword = doc.data()?['password'] ?? '0';
-      return enteredPassword == savedPassword;
+      final data = doc.data()!;
+      final savedPassword = data['password'] ?? '0';
+      final isHashed = data['isHashed'] ?? false;
+
+      if (!isHashed) {
+        // Migrate plaintext → hashed on successful login
+        if (enteredPassword == savedPassword) {
+          await docRef.set({
+            'password': _hashPassword(enteredPassword),
+            'isHashed': true,
+          });
+          return true;
+        }
+        return false;
+      }
+
+      return _hashPassword(enteredPassword) == savedPassword;
     } catch (e) {
       return false;
     }
@@ -1131,7 +1167,10 @@ class FirebaseFunctions {
           .doc(teacherPath)
           .collection('constants')
           .doc('password')
-          .set({'password': newPassword}, SetOptions(merge: true));
+          .set({
+        'password': _hashPassword(newPassword),
+        'isHashed': true,
+      }, SetOptions(merge: true));
       return true;
     } catch (e) {
       return false;

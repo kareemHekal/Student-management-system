@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:student_management_system/cards/student/student_subscriptions_card.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart';
 import 'package:student_management_system/models/Student_model.dart';
-import 'package:student_management_system/models/grade_subscriptions_model.dart'; // Adjust path
+import 'package:student_management_system/models/grade_subscriptions_model.dart';
+import 'package:student_management_system/models/invoice.dart';
 import 'package:student_management_system/models/student_paid_subscription.dart';
 import 'package:student_management_system/theme/colors_app.dart';
 import 'package:student_management_system/theme/text_style.dart';
@@ -190,33 +192,52 @@ class _StudentPaymentBottomSheetState extends State<StudentPaymentBottomSheet> {
             }
 
           try {
-            await FirebaseFunctions.updateStudentInCollection(
-                  widget.student.grade ?? "",
-                  widget.student.id,
-                  widget.student);
+            // Get invoice ID first (counter increment)
+            int invoiceId = await FirebaseFunctions.getAndIncrementInvoiceId();
+            final now = DateTime.now();
+            final dateStr = now.toIso8601String().substring(0, 10);
+            final dayStr = DateFormat('EEEE').format(now);
 
-              await FirebaseFunctions.addInvoiceToBigInvoices(
-                subscriptionFeeID: studentPaidSubscription.subscriptionId,
-                date: DateTime.now().toIso8601String().substring(0, 10),
-                day: DateFormat('EEEE').format(DateTime.now()),
-                amount: newAmount,
+            final newInvoice = Invoice(
+              id: invoiceId.toString(),
+              studentId: widget.student.id,
+              studentName: widget.student.name ?? "",
+              subscriptionFeeID: studentPaidSubscription.subscriptionId,
+              studentPhoneNumber: widget.student.phoneNumber ?? "",
+              momPhoneNumber: widget.student.motherPhone ?? "",
+              dadPhoneNumber: widget.student.fatherPhone ?? "",
+              grade: widget.student.grade ?? "",
+              amount: newAmount,
               description: comingDescription,
-                grade: widget.student.grade ?? "",
-                phoneNumber: widget.student.phoneNumber ?? "",
-                motherPhone: widget.student.motherPhone ?? "",
-                fatherPhone: widget.student.fatherPhone ?? "",
-                studentId: widget.student.id,
-                studentName: widget.student.name ?? "",
-              );
+              dateTime: now,
+            );
 
-              // --- THE IMPORTANT PART ---
-              // Trigger setState to refresh the UI inside the bottom sheet
+            // Atomic batch: student update + invoice in one commit
+            final batch = FirebaseFirestore.instance.batch();
+
+            final studentRef = FirebaseFirestore.instance
+                .doc(FirebaseFunctions.teacherPath)
+                .collection(widget.student.grade ?? "")
+                .doc(widget.student.id);
+            batch.update(studentRef, widget.student.toJson());
+
+            final invoiceRef = FirebaseFirestore.instance
+                .doc(FirebaseFunctions.teacherPath)
+                .collection('big_invoices')
+                .doc(dateStr);
+            batch.set(invoiceRef, {
+              'date': dateStr,
+              'day': dayStr,
+              'invoices': FieldValue.arrayUnion([newInvoice.toJson()]),
+            }, SetOptions(merge: true));
+
+            await batch.commit();
+
               if (mounted) {
                 setState(() {});
               }
           } catch (e) {
-              // Important: Rethrow the error so the Dialog can catch it and show the error SnackBar
-              throw e;
+              rethrow;
             }
           }),
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../cards/invoices/In come widget.dart';
 import '../firebase/firebase_functions.dart';
-import '../models/Invoice.dart';
+import '../models/invoice.dart';
 import '../theme/colors_app.dart';
 
 class AllBillsForStudent extends StatefulWidget {
