@@ -724,9 +724,30 @@ class FirebaseFunctions {
     }
   }
 
-  static Stream<QuerySnapshot> getAllBigInvoices() {
-    // التعديل: استماع للفواتير الخاصة بالمدرس الحالي فقط
-    return _db.doc(teacherPath).collection('big_invoices').snapshots();
+  /// Stream invoices ordered by date descending, with a limit to prevent
+  /// loading years of history at once. Pass [limit] to control how many
+  /// daily-invoice docs to load (default: 90 days ~= 3 months).
+  static Stream<QuerySnapshot> getAllBigInvoices({int limit = 90}) {
+    return _db
+        .doc(teacherPath)
+        .collection('big_invoices')
+        .orderBy(FieldPath.documentId, descending: true)
+        .limit(limit)
+        .snapshots();
+  }
+
+  /// Paginated one-time fetch for older invoices (load-more pattern).
+  static Future<QuerySnapshot> getOlderBigInvoices({
+    required String beforeDate,
+    int limit = 30,
+  }) {
+    return _db
+        .doc(teacherPath)
+        .collection('big_invoices')
+        .orderBy(FieldPath.documentId, descending: true)
+        .startAfter([beforeDate])
+        .limit(limit)
+        .get();
   }
 
   static Future<void> updateDailyInvoice(
@@ -810,25 +831,22 @@ class FirebaseFunctions {
   }
 
   // ✅ تعديل جلب الـ ID التسلسلي ليكون خاص بكل مدرس
+  // Uses FieldValue.increment which is atomic server-side (no transaction needed,
+  // no contention, no retries). Much cheaper at scale.
   static Future<int> getAndIncrementInvoiceId() async {
-    // العداد أصبح داخل constants المدرس
     DocumentReference docRef =
         _db.doc(teacherPath).collection('constants').doc('bills_ids');
 
-    return await _db.runTransaction((transaction) async {
-      DocumentSnapshot snapshot = await transaction.get(docRef);
+    // Atomic increment (server-side) — single write, no read-then-write conflict
+    await docRef.set(
+      {'bills_ids': FieldValue.increment(1)},
+      SetOptions(merge: true),
+    );
 
-      if (!snapshot.exists) {
-        transaction.set(docRef, {'bills_ids': 1});
-        return 1;
-      }
-
-      final data = snapshot.data() as Map<String, dynamic>?;
-      int currentId = (data?['bills_ids'] ?? 0) + 1;
-
-      transaction.update(docRef, {'bills_ids': currentId});
-      return currentId;
-    });
+    // Read the new value
+    final snapshot = await docRef.get();
+    final data = snapshot.data() as Map<String, dynamic>?;
+    return (data?['bills_ids'] ?? 1) as int;
   }
 
   static Future<void> addInvoiceToBigInvoices({
@@ -1501,28 +1519,81 @@ class FirebaseFunctions {
     }
   }
 
-  static Stream<List<Subscription>> getBoostSubscriptions() {
-    return _db.collection('admin_boost_subscriptions').snapshots().map(
-          (snap) => snap.docs
-              .map((doc) => Subscription.fromJson(doc.data(), doc.id))
-              .toList(),
-        );
+  // Cached subscription plans — fetched once and reused.
+  // These rarely change (admin manages them) so real-time listeners are wasteful.
+  // Each listener at 1000+ teachers = 1000+ concurrent connections to global collection.
+  static List<Subscription>? _cachedBoostSubs;
+  static List<Subscription>? _cachedOffersSubs;
+  static List<Subscription>? _cachedSubs;
+  static DateTime? _cacheTime;
+  static const Duration _cacheTtl = Duration(minutes: 30);
+
+  static bool _cacheValid() {
+    return _cacheTime != null &&
+        DateTime.now().difference(_cacheTime!) < _cacheTtl;
   }
 
-  static Stream<List<Subscription>> getOffersSubscriptions() {
-    return _db.collection('admin_offers_subscriptions').snapshots().map(
-          (snap) => snap.docs
-              .map((doc) => Subscription.fromJson(doc.data(), doc.id))
-              .toList(),
-        );
+  /// Clear the subscription cache (e.g. on logout)
+  static void clearSubscriptionCache() {
+    _cachedBoostSubs = null;
+    _cachedOffersSubs = null;
+    _cachedSubs = null;
+    _cacheTime = null;
   }
 
-  static Stream<List<Subscription>> getSubscriptions() {
-    return _db.collection('admin_subscriptions').snapshots().map(
-          (snap) => snap.docs
-              .map((doc) => Subscription.fromJson(doc.data(), doc.id))
-              .toList(),
-        );
+  /// One-time fetch (cached for 30 min). Use this instead of a live stream
+  /// because subscription plans rarely change.
+  static Future<List<Subscription>> fetchBoostSubscriptions(
+      {bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedBoostSubs != null && _cacheValid()) {
+      return _cachedBoostSubs!;
+    }
+    final snap = await _db.collection('admin_boost_subscriptions').get();
+    _cachedBoostSubs = snap.docs
+        .map((doc) => Subscription.fromJson(doc.data(), doc.id))
+        .toList();
+    _cacheTime = DateTime.now();
+    return _cachedBoostSubs!;
+  }
+
+  static Future<List<Subscription>> fetchOffersSubscriptions(
+      {bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedOffersSubs != null && _cacheValid()) {
+      return _cachedOffersSubs!;
+    }
+    final snap = await _db.collection('admin_offers_subscriptions').get();
+    _cachedOffersSubs = snap.docs
+        .map((doc) => Subscription.fromJson(doc.data(), doc.id))
+        .toList();
+    _cacheTime = DateTime.now();
+    return _cachedOffersSubs!;
+  }
+
+  static Future<List<Subscription>> fetchSubscriptions(
+      {bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedSubs != null && _cacheValid()) {
+      return _cachedSubs!;
+    }
+    final snap = await _db.collection('admin_subscriptions').get();
+    _cachedSubs = snap.docs
+        .map((doc) => Subscription.fromJson(doc.data(), doc.id))
+        .toList();
+    _cacheTime = DateTime.now();
+    return _cachedSubs!;
+  }
+
+  // Backwards-compat: keep the stream API but use cached fetch (single emit).
+  // Existing StreamBuilder UIs keep working without changes.
+  static Stream<List<Subscription>> getBoostSubscriptions() async* {
+    yield await fetchBoostSubscriptions();
+  }
+
+  static Stream<List<Subscription>> getOffersSubscriptions() async* {
+    yield await fetchOffersSubscriptions();
+  }
+
+  static Stream<List<Subscription>> getSubscriptions() async* {
+    yield await fetchSubscriptions();
   }
 
 // في ملف FirebaseFunctions

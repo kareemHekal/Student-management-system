@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_management_system/alert_dialogs/add_edit_exam.dart';
 
-import '../Alert dialogs/add_edit_exam.dart';
 import '../cards/exam_card.dart'; // Import your ExamCard
 import '../firebase/exams_functions.dart';
 import '../models/exam_model.dart';
