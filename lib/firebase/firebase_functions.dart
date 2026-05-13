@@ -754,14 +754,20 @@ class FirebaseFunctions {
 
     final docSnapshot = await docRef.get();
 
+    final parsedAmount = double.tryParse(amountText);
+    if (parsedAmount == null && amountText != '0') {
+      throw Exception("Invalid amount: $amountText");
+    }
+
     final newPayment = Payment(
-      amount: double.tryParse(amountText) ?? 0.0,
+      amount: parsedAmount ?? 0.0,
       description: description.trim(),
       dateTime: DateTime.now(),
     );
 
     if (docSnapshot.exists) {
-      final data = docSnapshot.data() as Map<String, dynamic>;
+      final data = docSnapshot.data();
+      if (data == null) throw Exception("Document data is null for $date");
       final bigInvoice = DailyInvoice.fromJson(data);
       bigInvoice.payments.add(newPayment);
       await docRef.update(bigInvoice.toJson());
@@ -790,7 +796,9 @@ class FirebaseFunctions {
       throw Exception("Document with date $date does not exist");
     }
 
-    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+    final rawData = docSnapshot.data();
+    if (rawData == null) throw Exception("Document data is null for $date");
+    Map<String, dynamic> data = rawData as Map<String, dynamic>;
     DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
     if (paymentIndex < 0 || paymentIndex >= bigInvoice.payments.length) {
@@ -798,7 +806,7 @@ class FirebaseFunctions {
     }
     bigInvoice.payments[paymentIndex] = updatedPayment;
 
-    await invoicesCollection.doc(date).set(bigInvoice.toJson());
+    await invoicesCollection.doc(date).update(bigInvoice.toJson());
   }
 
   // ✅ تعديل جلب الـ ID التسلسلي ليكون خاص بكل مدرس
@@ -879,7 +887,9 @@ class FirebaseFunctions {
       throw Exception("BigInvoice for $date not found");
     }
 
-    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+    final rawData = docSnapshot.data();
+    if (rawData == null) throw Exception("BigInvoice data is null for $date");
+    Map<String, dynamic> data = rawData as Map<String, dynamic>;
     DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
     int index = bigInvoice.invoices
@@ -922,7 +932,9 @@ class FirebaseFunctions {
 
     if (!docSnapshot.exists) throw Exception("BigInvoice not found");
 
-    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+    final rawData = docSnapshot.data();
+    if (rawData == null) throw Exception("BigInvoice data is null for $date");
+    Map<String, dynamic> data = rawData as Map<String, dynamic>;
     DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
     int index = bigInvoice.invoices.indexWhere((inv) => inv.id == invoice.id);
@@ -963,7 +975,9 @@ class FirebaseFunctions {
     List<Invoice> studentInvoices = [];
 
     for (var doc in snapshot.docs) {
-      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      final rawData = doc.data();
+      if (rawData == null) continue;
+      Map<String, dynamic> data = rawData as Map<String, dynamic>;
       DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
       var matchingInvoices = bigInvoice.invoices
@@ -1265,7 +1279,63 @@ class FirebaseFunctions {
     return doc.exists ? Teacher.fromJson(doc.data()!, doc.id) : null;
   }
 
-  // داخل FirebaseFunctions
+  /// Queue a referral reward for the host teacher (processed on their next login)
+  /// Instead of writing directly to another teacher's doc (which security rules block),
+  /// we write to a shared 'referral_rewards' collection.
+  static Future<void> queueReferralReward({
+    required String hostTeacherId,
+    required String inviterName,
+    required int hostBaseStudentLimit,
+  }) async {
+    await _db.collection('referral_rewards').add({
+      'hostTeacherId': hostTeacherId,
+      'inviterName': inviterName,
+      'hostBaseStudentLimit': hostBaseStudentLimit,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Process any pending referral rewards for the current teacher.
+  /// Called on login — the teacher processes their own rewards (writing to their own doc).
+  static Future<void> processReferralRewards(String teacherId) async {
+    try {
+      final snapshot = await _db
+          .collection('referral_rewards')
+          .where('hostTeacherId', isEqualTo: teacherId)
+          .get();
+
+      if (snapshot.docs.isEmpty) return;
+
+      for (var rewardDoc in snapshot.docs) {
+        final data = rewardDoc.data();
+        final inviterName = data['inviterName'] ?? 'مدرس';
+        final baseLimit = data['hostBaseStudentLimit'] ?? 30;
+
+        try {
+          // Apply the reward to the teacher's own doc (allowed by rules)
+          await renewBasicSubscription(
+            plan: Subscription(
+              name: "مكافأة دعوة صديق",
+              description: "أسبوع مجاني لاستضافة مدرس جديد",
+              durationInDays: 7,
+              price: 0,
+              subscriptionType: SubscriptionType.adminSubscription,
+              totalStudents: baseLimit,
+            ),
+            paymentRef: "Referral bonus for inviting $inviterName",
+            teacherId: teacherId,
+          );
+
+          // Delete the reward after processing
+          await rewardDoc.reference.delete();
+        } catch (e) {
+          debugPrint("Failed to process referral reward: $e");
+        }
+      }
+    } catch (e) {
+      debugPrint("Error checking referral rewards: $e");
+    }
+  }
 
   static Future<void> runAttendanceTransaction({
     required Studentmodel student,
@@ -1470,59 +1540,71 @@ class FirebaseFunctions {
 
       // 2. لوب على العمليات (ممكن يكون حاول كذا مرة)
       for (var doc in querySnapshot.docs) {
-        final data = doc.data();
-        final String ref = data['ref'];
-        final String billId = data['billId'];
+        try {
+          final data = doc.data();
+          final String? ref = data['ref'] as String?;
+          final String? billId = data['billId'] as String?;
+          final planMap = data['plan'] as Map<String, dynamic>?;
 
-        // تحويل الماب لـ Subscription (لاحظ هنا بناخد الـ Map مباشرة)
-        final planMap = data['plan'] as Map<String, dynamic>;
-        final Subscription plan =
-            Subscription.fromJson(planMap, planMap['id'] ?? '');
-
-        debugPrint("Checking cloud pending payment: $ref");
-
-        // 3. اسأل EasyKash
-        final statusData = await EasyKashService.checkPaymentStatus(ref);
-
-        if (statusData != null &&
-            (statusData['status'] == "PAID" ||
-                statusData['status'] == "SUCCESS")) {
-          // --- نجاح: فعل الاشتراك ---
-          bool isBoost =
-              plan.subscriptionType.toString().toLowerCase().contains('boost');
-
-          if (isBoost) {
-            await renewBoostSubscription(
-                boostPlan: plan, manualBillId: billId, paymentRef: ref);
-          } else {
-            await renewBasicSubscription(
-                plan: plan, manualBillId: billId, paymentRef: ref);
+          // Skip malformed entries
+          if (ref == null || billId == null || planMap == null) {
+            debugPrint("Skipping malformed pending payment: ${doc.id}");
+            continue;
           }
 
-          // تحديث الـ UI لو السياق موجود
-          if (context.mounted) {
-            await Provider.of<TeacherProvider>(context, listen: false)
-                .refreshTeacherData();
+          final Subscription plan =
+              Subscription.fromJson(planMap, planMap['id'] ?? '');
 
-            AppSnackBars.showSuccess(
-              context,
-              "تم استعادة عملية دفع سابقة وتفعيل الاشتراك بنجاح!",
-            );
+          debugPrint("Checking cloud pending payment: $ref");
+
+          // 3. اسأل EasyKash
+          final statusData = await EasyKashService.checkPaymentStatus(ref);
+
+          if (statusData != null &&
+              (statusData['status'] == "PAID" ||
+                  statusData['status'] == "SUCCESS")) {
+            // --- نجاح: فعل الاشتراك ---
+            bool isBoost =
+                plan.subscriptionType.toString().toLowerCase().contains('boost');
+
+            if (isBoost) {
+              await renewBoostSubscription(
+                  boostPlan: plan, manualBillId: billId, paymentRef: ref);
+            } else {
+              await renewBasicSubscription(
+                  plan: plan, manualBillId: billId, paymentRef: ref);
+            }
+
+            // تحديث الـ UI لو السياق موجود
+            if (context.mounted) {
+              await Provider.of<TeacherProvider>(context, listen: false)
+                  .refreshTeacherData();
+
+              AppSnackBars.showSuccess(
+                context,
+                "تم استعادة عملية دفع سابقة وتفعيل الاشتراك بنجاح!",
+              );
+            }
+
+            // حذف العملية المعلقة بعد النجاح
+            await doc.reference.delete();
+          } else if (statusData != null &&
+              (statusData['status'] == "FAILED" ||
+                  statusData['status'] == "EXPIRED")) {
+            // --- فشل نهائي: احذفها عشان منظلش نسأل عليها ---
+            await doc.reference.delete();
+            if (context.mounted) {
+              AppSnackBars.showError(
+                context,
+                "نعتذر ولكن لم تتم العمليه السابقه بنجاح !",
+              );
+            }
           }
-
-          // حذف العملية المعلقة بعد النجاح
-          await doc.reference.delete();
-        } else if (statusData != null &&
-            (statusData['status'] == "FAILED" ||
-                statusData['status'] == "EXPIRED")) {
-          // --- فشل نهائي: احذفها عشان منظلش نسأل عليها ---
-          await doc.reference.delete();
-          AppSnackBars.showError(
-            context,
-            "نعتذر ولكن لم تتم العمليه السابقه بنجاح !",
-          );
+          // لو لسه PENDING سيبها، يمكن يدفع كمان شويه
+        } catch (e) {
+          debugPrint("Error processing pending payment ${doc.id}: $e");
+          // Continue to next payment instead of stopping the whole loop
         }
-        // لو لسه PENDING سيبها، يمكن يدفع كمان شويه
       }
     } catch (e) {
       debugPrint("Error in cloud payment check: $e");

@@ -178,10 +178,12 @@ class AuthGate extends StatelessWidget {
                 Provider.of<TeacherProvider>(context, listen: false)
                     .setTeacher(teacher);
 
-                // ب: فحص المدفوعات المعلقة (الإضافة الجديدة هنا)
-                // نمرر الـ user.uid والـ context الحالي
+                // ب: فحص المدفوعات المعلقة
                 FirebaseFunctions.checkAndResolvePendingPayment(
                     user.uid, context);
+
+                // ج: معالجة مكافآت الإحالة المعلقة (لو حد استخدم كود الدعوة)
+                FirebaseFunctions.processReferralRewards(user.uid);
               }
             });
 

@@ -455,6 +455,10 @@ class AbsentCubit extends Cubit<AbsentState> {
                     }
                   });
                 } catch (e) {
+                  debugPrint("QR scan error: $e");
+                  if (context.mounted) {
+                    AppSnackBars.showError(context, "حدث خطأ أثناء تسجيل الحضور");
+                  }
                   _scannerController.start();
                 } finally {
                   _isProcessingAttendance = false;

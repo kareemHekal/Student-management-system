@@ -14,20 +14,30 @@ service cloud.firestore {
 
     // ===== Teachers =====
     match /teachers/{teacherId} {
-      // Only the teacher themselves can read their own data
-      // Exception: allow create for new registration (auth.uid must match the doc ID)
-      allow read: if request.auth != null && request.auth.uid == teacherId;
+      // Any authenticated user can READ the teacher doc (needed for referral code validation).
+      // This only exposes the top-level doc (name, email, phone, subscription info).
+      // Subcollections (students, passwords, invoices) are still restricted below.
+      allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == teacherId;
       allow update: if request.auth != null && request.auth.uid == teacherId;
       allow delete: if false;
 
-      // All subcollections (grades, days, constants, bills, invoices, pending_payments, etc.)
+      // All subcollections: only the owning teacher
       match /{allPaths=**} {
         allow read, write: if request.auth != null && request.auth.uid == teacherId;
       }
     }
 
-    // ===== Public read-only collections (subscription plans shown to all users) =====
+    // ===== Referral Rewards Queue =====
+    // New users create reward entries; host teacher reads + deletes their own
+    match /referral_rewards/{rewardId} {
+      allow create: if request.auth != null;
+      allow read, delete: if request.auth != null
+        && resource.data.hostTeacherId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ===== Public read-only collections =====
     match /admin_subscriptions/{doc} {
       allow read: if request.auth != null;
       allow write: if isAdmin();

@@ -80,31 +80,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 2. تحقق من المدرس المستضيف (لو الـ ID موجود)
-      if (hostId.isNotEmpty) {
-        try {
-          hostTeacher = await FirebaseFunctions.getTeacherById(hostId.trim());
-          if (hostTeacher == null) {
-            AppSnackBars.showError(context, "كود المدرس المستضيف غير صحيح");
-            setState(() => _isLoading = false); // إنهاء التحميل قبل الخروج
-            return;
-          }
-        } catch (e) {
-          AppSnackBars.showError(context, "خطأ أثناء التحقق من كود المدرس: $e");
-          setState(() => _isLoading = false);
-          return;
-        }
-      }
-
-      // 3. تسجيل المدرس في Auth و Firestore
-      // ملاحظة: تأكد أن AuthService ينشئ وثيقة المدرس أولاً
+      // 2. تسجيل المدرس في Auth و Firestore أولاً (عشان يكون مسجل دخول)
       await AuthService().registerTeacher(email, password, name, phone);
 
       final currentUser = FirebaseAuth.instance.currentUser;
 
       if (currentUser != null) {
-        // 4. تفعيل الباقة التجريبية للمدرس الجديد
-        // تم استخدام await لضمان انتهاء التجديد
+        // 3. تفعيل الباقة التجريبية للمدرس الجديد
         await FirebaseFunctions.renewBasicSubscription(
           plan: Subscription(
             name: "الباقة التجريبية",
@@ -115,31 +97,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
             totalStudents: 30,
           ),
           paymentRef: "باقة تجريبية مجانية للترحيب",
-          teacherId: currentUser.uid, // نمرر الـ ID بوضوح
+          teacherId: currentUser.uid,
         );
 
-        // 🎁 5. مكافأة المدرس المستضيف (7 أيام)
-        if (hostTeacher != null) {
+        // 🎁 4. التحقق من كود المدرس المستضيف + إرسال المكافأة
+        // (بعد التسجيل عشان المدرس يكون مسجل دخول ويقدر يقرأ من الداتابيز)
+        if (hostId.isNotEmpty) {
           try {
-            await FirebaseFunctions.renewBasicSubscription(
-              plan: Subscription(
-                name: "مكافأة دعوة صديق",
-                description: "أسبوع مجاني لاستضافة مدرس جديد",
-                durationInDays: 7,
-                price: 0,
-                subscriptionType: SubscriptionType.adminSubscription,
-                totalStudents: await hostTeacher.getBaseStudentLimit(),
-              ),
-              paymentRef: "Referral bonus for inviting ${name}",
-              teacherId: hostTeacher.id,
-            );
+            hostTeacher =
+                await FirebaseFunctions.getTeacherById(hostId.trim());
+            if (hostTeacher != null) {
+              // بدل ما نكتب مباشرة على حساب المدرس التاني، نحط طلب مكافأة
+              // المدرس المستضيف هيستلمها تلقائي لما يفتح التطبيق
+              await FirebaseFunctions.queueReferralReward(
+                hostTeacherId: hostTeacher.id,
+                inviterName: name,
+                hostBaseStudentLimit: await hostTeacher.getBaseStudentLimit(),
+              );
+            }
           } catch (e) {
-            // لا نوقف عملية التسجيل إذا فشلت الهدية، فقط نسجل الخطأ
-            debugPrint("Failed to reward host teacher: $e");
+            debugPrint("Failed to queue referral reward: $e");
           }
         }
 
-        // 6. بناء بيانات المدرس محلياً وتحديث الـ Provider
+        // 5. بناء بيانات المدرس محلياً وتحديث الـ Provider
         Teacher localTeacher = Teacher(
           id: currentUser.uid,
           name: name,
