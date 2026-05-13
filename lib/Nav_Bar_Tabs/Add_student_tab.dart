@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../add_student_widget.dart';
-import '../colors_app.dart';
+import 'package:student_management_system/pages/student/add_student/add_student_widget.dart';
+
 import '../firebase/firebase_functions.dart';
+import '../theme/colors_app.dart';
 
 class AddStudentTab extends StatefulWidget {
   const AddStudentTab({super.key});
@@ -38,9 +39,12 @@ class _AddStudentTabState extends State<AddStudentTab> {
 
     if (grades!.isEmpty) {
       return const Center(
-        child: Text(
-          "There are no grades, you must add one first.",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            "لا توجد صفوف دراسيه متاحه يجب اضافه صفوف اولا ",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
         ),
       );
     }
@@ -51,7 +55,7 @@ class _AddStudentTabState extends State<AddStudentTab> {
         body: Column(
           children: [
             Container(
-              color: app_colors.darkGrey,
+              color: AppColors.primaryMain,
               child: TabBar(
                 labelPadding: const EdgeInsets.symmetric(horizontal: 10),
                 dividerColor: Colors.transparent,
@@ -62,13 +66,13 @@ class _AddStudentTabState extends State<AddStudentTab> {
                 },
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
-                indicatorColor: app_colors.green,
-                labelColor: app_colors.green,
+                indicatorColor: AppColors.secondaryMain,
+                labelColor: AppColors.secondaryMain,
                 unselectedLabelColor: Colors.white,
                 tabs: grades!.map((g) => Tab(text: g)).toList(),
               ),
             ),
-            Expanded(child: AddStudentScreen(level: grade)),
+            Expanded(child: AddStudentScreen(grade: grade)),
           ],
         ),
       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/theme/colors_app.dart';
+import 'package:student_management_system/theme/text_style.dart';
 
 class LoadingDialog extends StatelessWidget {
   final String? text;
@@ -10,34 +12,41 @@ class LoadingDialog extends StatelessWidget {
     return PopScope(
       canPop: false,
       child: Dialog(
+        // إزالة أي خلفية أو حدود افتراضية للديالوج
         backgroundColor: Colors.transparent,
         elevation: 0,
         child: Center(
           child: Container(
-            padding: const EdgeInsets.all(20),
+            // حاوية صغيرة جداً وبسيطة
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             decoration: BoxDecoration(
-              color: Theme.of(context).dialogBackgroundColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: AppColors.primaryMain, // لون الهوية الأساسي
+              borderRadius: BorderRadius.circular(24),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: Row(
+              mainAxisSize: MainAxisSize.min, // ليأخذ الصندوق حجم المحتوى فقط
               children: [
+                // مؤشر تحميل بسيط وبلون فاتح (أبيض)
                 const SizedBox(
-                  height: 50,
-                  width: 50,
-                  child: CircularProgressIndicator(strokeWidth: 3),
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.secondaryMain),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  text ?? 'جاري المعالجة...',
-                  style: const TextStyle(fontSize: 14),
+                const SizedBox(width: 20),
+                // نص بسيط وواضح
+                Flexible(
+                  child: Text(
+                    text ?? 'جاري التحميل...',
+                    style: AppTextStyles.customText(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.white,
+                    ),
+                  ),
                 ),
               ],
             ),

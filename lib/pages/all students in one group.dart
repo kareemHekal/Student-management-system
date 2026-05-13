@@ -1,50 +1,71 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:student_management_system/BottomSheets/student_chosen_pdf.dart';
 
-import '../cards/StudentWidget.dart';
-import '../colors_app.dart';
+import '../cards/student/StudentWidget.dart';
 import '../firebase/firebase_functions.dart';
-import '../loadingFile/loadingWidget.dart';
 import '../models/Magmo3aModel.dart';
-import '../models/Studentmodel.dart';
+import '../models/Student_model.dart';
+import '../theme/colors_app.dart';
 
-class StudentInAgroup extends StatefulWidget {
-  Magmo3amodel magmo3aModel;
+class AllStudedntsInOneGroup extends StatefulWidget {
+  final Magmo3amodel magmo3aModel;
 
-  StudentInAgroup({required this.magmo3aModel, super.key});
+  const AllStudedntsInOneGroup({required this.magmo3aModel, super.key});
 
   @override
-  State<StudentInAgroup> createState() => _StudentInAgroupState();
+  State<AllStudedntsInOneGroup> createState() => _AllStudedntsInOneGroupState();
 }
 
-class _StudentInAgroupState extends State<StudentInAgroup> {
+class _AllStudedntsInOneGroupState extends State<AllStudedntsInOneGroup> {
   final _searchController = TextEditingController();
-  List<Studentmodel> filteredStudents = [];
-  List<Studentmodel> allStudents = [];
+  List<Studentmodel> _allStudents = []; // المخزن الأصلي
+  List<Studentmodel> _filteredStudents = []; // اللي بيظهر في القائمة
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() {});
-    });
-    _loadInitialStudents();
+    _fetchStudentsOnce(); // بنجيب البيانات مرة واحدة بس
   }
 
-  Future<void> _loadInitialStudents() async {
-    var stream = FirebaseFunctions.getStudentsByGroupId(
-      widget.magmo3aModel.grade ?? "",
-      widget.magmo3aModel.id,
-    );
+  // دالة جلب البيانات الموفرة (استهلاك Reads لمرة واحدة فقط)
+  Future<void> _fetchStudentsOnce() async {
+    try {
+      final snapshot = await FirebaseFunctions.getSecondaryCollection(
+              widget.magmo3aModel.grade ?? "")
+          .where("hisGroupsId", arrayContains: widget.magmo3aModel.id)
+          .get(); // استخدام get() بدل snapshots() هو السر
 
-    stream.listen((snapshot) {
-      final students = snapshot.docs.map((e) => e.data()).toList();
-      setState(() {
-        allStudents = students;
-      });
+      final students = snapshot.docs.map((doc) => doc.data()).toList();
+
+      // ترتيب الطلاب أبجدياً لسهولة الوصول
+      students.sort((a, b) => (a.name ?? "").compareTo(b.name ?? ""));
+
+      if (mounted) {
+        setState(() {
+          _allStudents = students;
+          _filteredStudents = students;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching students: $e");
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // البحث المحلي (صفر Reads وصفر تأخير)
+  void _onSearchChanged(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredStudents = _allStudents;
+      } else {
+        _filteredStudents = _allStudents
+            .where((student) =>
+                student.name!.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
     });
   }
 
@@ -60,272 +81,132 @@ class _StudentInAgroupState extends State<StudentInAgroup> {
       appBar: AppBar(
         actions: [
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf, color: app_colors.green),
-            onPressed: () async {
-              await _generatePdf(context);
+            icon: const Icon(Icons.picture_as_pdf,
+                color: AppColors.secondaryMain),
+            onPressed: () {
+              // طباعة الطلاب المعروضين حالياً (لو باحث عن حد هيطبع المفلتر بس)
+              StudentChosenPdf.show(
+                  context: context, students: _filteredStudents);
             },
           ),
         ],
         centerTitle: true,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon:
+              const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
-        title: Image.asset(
-          "assets/images/logo.png",
-          height: 100,
-          width: 90,
-        ),
-        toolbarHeight: 150,
+        backgroundColor: AppColors.primaryMain,
+        title: Image.asset("assets/images/logo.png", height: 80, width: 80),
+        toolbarHeight: 120,
+        // صغرنا الارتفاع شوية عشان الـ UI يكون ألطف
+        elevation: 0,
       ),
-      body: SizedBox(
-        height: MediaQuery.of(context).size.height,
-        width: MediaQuery.of(context).size.width,
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 60),
-              child: Center(child: Image.asset("assets/images/logo.png")),
+      body: Stack(
+        children: [
+          // اللوجو الخلفي
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.05,
+              child: Center(
+                  child: Image.asset("assets/images/logo.png", width: 200)),
             ),
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+          ),
+          Column(
+            children: [
+              // كارت البحث والعدد
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(bottom: 20, left: 15, right: 15),
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryMain,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
                 child: Column(
                   children: [
-                    Container(
-                      height: 130,
-                      width: double.infinity,
-                      decoration: const BoxDecoration(
-                        color: app_colors.darkGrey,
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(25),
-                          bottomRight: Radius.circular(25),
+                    TextFormField(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      style: const TextStyle(color: AppColors.primaryMain),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        hintText: 'ابحث عن اسم الطالب...',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        prefixIcon: const Icon(Icons.search,
+                            color: AppColors.primaryMain),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 15, horizontal: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          borderSide: BorderSide.none,
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 10),
-                            child: TextFormField(
-                              style:
-                                  const TextStyle(color: app_colors.darkGrey),
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                hintText: 'ابحث',
-                                hintStyle:
-                                    const TextStyle(color: app_colors.darkGrey),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 15.0, horizontal: 20.0),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                      color: app_colors.green, width: 2.0),
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                      color: app_colors.green, width: 2.0),
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                suffixIcon: IconButton(
-                                  icon: const Icon(Icons.clear,
-                                      color: app_colors.green),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                  },
-                                ),
-                              ),
-                              cursorColor: app_colors.darkGrey,
-                              controller: _searchController,
-                            ),
-                          ),
-                          Text(
-                            "عدد الطلاب في هذه المجموعة: ${allStudents.length}",
-                            style: const TextStyle(
-                              color: app_colors.green,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon:
+                                    const Icon(Icons.clear, color: Colors.red),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _onSearchChanged("");
+                                },
+                              )
+                            : null,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    StreamBuilder(
-                      stream: FirebaseFunctions.getStudentsByGroupId(
-                        widget.magmo3aModel.grade ?? "",
-                        widget.magmo3aModel.id,
+                    const SizedBox(height: 15),
+                    Text(
+                      "عدد الطلاب في هذه المجموعة: ${_filteredStudents.length}",
+                      style: GoogleFonts.cairo(
+                        color: AppColors.secondaryMain,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: DiscreteCircle(
-                              color: app_colors.darkGrey,
-                              size: 30,
-                              secondCircleColor: app_colors.ligthGreen,
-                              thirdCircleColor: app_colors.green,
-                            ),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text("حدث خطأ ما"),
-                                ElevatedButton(
-                                  onPressed: () {},
-                                  child: const Text('حاول مرة أخرى'),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        var students =
-                            snapshot.data?.docs.map((e) => e.data()).toList() ??
-                                [];
-                        allStudents = students;
-                        filteredStudents = students;
-
-                        if (_searchController.text.isNotEmpty) {
-                          filteredStudents = students.where((student) {
-                            return student.name?.toLowerCase().contains(
-                                    _searchController.text.toLowerCase()) ??
-                                false;
-                          }).toList();
-                        }
-
-                        if (students.isEmpty) {
-                          return Center(
-                            child: Text(
-                              "لا يوجد طلاب",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                      fontSize: 25, color: app_colors.black),
-                            ),
-                          );
-                        }
-
-                        return Expanded(
-                          child: ListView.separated(
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 5),
-                            itemBuilder: (context, index) {
-                              return StudentWidget(
-                                IsComingFromGroup: true,
-                                grade: filteredStudents[index].grade,
-                                studentModel: filteredStudents[index],
-                              );
-                            },
-                            itemCount: filteredStudents.length,
-                          ),
-                        );
-                      },
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
+
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                            color: AppColors.primaryMain))
+                    : RefreshIndicator(
+                        color: AppColors.primaryMain,
+                        onRefresh: _fetchStudentsOnce, // تحديث بيانات المجموعة
+                        child: _filteredStudents.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: const [
+                                  SizedBox(
+                                      height: 200,
+                                      child: Center(
+                                          child: Text(
+                                              "لا يوجد طلاب مطابقين للبحث")))
+                                ],
+                              )
+                            : ListView.separated(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.all(15),
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 10),
+                                itemCount: _filteredStudents.length,
+                                itemBuilder: (context, index) {
+                                  return StudentWidget(
+                                    IsComingFromGroup: true,
+                                    studentModel: _filteredStudents[index],
+                                  );
+                                },
+                              ),
+                      ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
-  }
-
-  Future<void> _generatePdf(BuildContext context) async {
-    final pdf = pw.Document();
-    final fontData = await rootBundle.load("fonts/NotoKufiArabic-Regular.ttf");
-    final pw.Font font = pw.Font.ttf(fontData);
-    List<Studentmodel> pdfStudents = allStudents;
-
-    final String formattedTime = widget.magmo3aModel.time != null
-        ? '${widget.magmo3aModel.time!.hourOfPeriod == 0 ? 12 : widget.magmo3aModel.time!.hourOfPeriod}:${widget.magmo3aModel.time!.minute.toString().padLeft(2, '0')} ${(widget.magmo3aModel.time!.period == DayPeriod.am) ? 'صباحًا' : 'مساءً'}'
-        : 'مجموعة بدون اسم';
-
-    List<Studentmodel> boys =
-        pdfStudents.where((s) => s.gender == 'Male').toList();
-    List<Studentmodel> girls =
-        pdfStudents.where((s) => s.gender == 'Female').toList();
-
-    boys.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-    girls.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
-
-    const int maxEntriesPerPage = 40;
-
-    void addStudentPages(String title, List<Studentmodel> students, bool showGroupInfo) {
-      for (int page = 0; page * maxEntriesPerPage < students.length; page++) {
-        pdf.addPage(
-          pw.Page(
-            pageFormat: PdfPageFormat.a4,
-            margin: const pw.EdgeInsets.all(20),
-            build: (pw.Context context) {
-              return pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  if (page == 0 && showGroupInfo) ...[
-                    pw.Text("وقت المجموعة: $formattedTime",
-                        style: pw.TextStyle(
-                            font: font,
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold)),
-                    pw.Text("الصف: ${widget.magmo3aModel.grade ?? 'غير محدد'}",
-                        textDirection:
-                            _isArabic(widget.magmo3aModel.grade ?? '')
-                                ? pw.TextDirection.rtl
-                                : pw.TextDirection.ltr,
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("اليوم: ${widget.magmo3aModel.days ?? 'غير محدد'}",
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("عدد الأولاد: ${boys.length}",
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("عدد البنات: ${girls.length}",
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.Text("إجمالي عدد الطلاب: ${boys.length + girls.length}",
-                        style: pw.TextStyle(font: font, fontSize: 8)),
-                    pw.SizedBox(height: 10),
-                    pw.Text(title,
-                        style: pw.TextStyle(
-                            font: font,
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold)),
-                    pw.SizedBox(height: 5),
-                  ],
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: students
-                        .skip(page * maxEntriesPerPage)
-                        .take(maxEntriesPerPage)
-                        .map((student) => pw.Text(
-                              student.name ?? 'بدون اسم',
-                              textDirection: pw.TextDirection.rtl,
-                              style: pw.TextStyle(font: font, fontSize: 8),
-                    ))
-                        .toList(),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      }
-    }
-
-    addStudentPages("الأولاد:", boys, true);
-    addStudentPages("البنات:", girls, true);
-
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  }
-
-  bool _isArabic(String text) {
-    final arabicRegex = RegExp(r'[\u0600-\u06FF]');
-    return arabicRegex.hasMatch(text);
   }
 }

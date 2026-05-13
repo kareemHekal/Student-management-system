@@ -1,1 +1,24 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"fatma-elorbany","appId":"1:364869292760:android:e15ecdb4959f427efabdad","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"fatma-elorbany","configurations":{"android":"1:364869292760:android:e15ecdb4959f427efabdad","ios":"1:364869292760:ios:13f19fa49ba93319fabdad"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "student-management-syste-54e39",
+          "appId": "1:596818659834:android:36f4123b0ac70c306c7c43",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "student-management-syste-54e39",
+          "configurations": {
+            "android": "1:596818659834:android:36f4123b0ac70c306c7c43",
+            "ios": "1:596818659834:ios:41c951f4ca7218c16c7c43",
+            "web": "1:596818659834:web:7f0b9b035608f2906c7c43",
+            "windows": "1:596818659834:web:07b1d338c3a6f52a6c7c43"
+          }
+        }
+      }
+    }
+  }
+}

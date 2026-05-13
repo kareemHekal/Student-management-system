@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
+import 'package:student_management_system/alert_dialogs/show_add_student_payment_dialog.dart';
+import 'package:student_management_system/provider.dart';
 
-import '../../Alert dialogs/show_add_student_payment_dialog.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../home.dart';
 import '../../models/Magmo3aModel.dart';
-import '../../models/Studentmodel.dart';
+import '../../models/Student_model.dart';
 import '../../models/student_paid_subscription.dart';
 import 'add_student_state.dart';
 
@@ -30,43 +32,60 @@ class StudentCubit extends Cubit<StudentState> {
     getCurrentDate();
   }
 
-  Future<void> addStudent(BuildContext context, level) async {
+  Future<void> addStudent(BuildContext context, String? level) async {
+    // 1. جلب بيانات المدرس الحالية من البروفايدر
+    final teacherProvider =
+        Provider.of<TeacherProvider>(context, listen: false);
+    await teacherProvider.refreshTeacherData();
+    final teacher = teacherProvider.teacher;
+
+    // 2. التحققات الأساسية
     if (hisGroups.isEmpty) {
       emit(StudentValidationError("من فضلك اختر مجموعة واحدة على الأقل"));
       return;
     }
-
+    if (selectedGender == "" || selectedGender == null) {
+      emit(StudentValidationError("من فضلك اختر جنس الطالب "));
+      return;
+    }
     if (name_controller.text.isEmpty) {
       emit(StudentValidationError("من فضلك أدخل اسم الطالب"));
       return;
     }
 
-    if (studentNumberController.text.trim().isEmpty) {
-      studentNumberController.text = '00000000000';
-    } else if (!RegExp(r'^\d{11}$').hasMatch(studentNumberController.text)) {
-      emit(StudentValidationError("رقم الطالب يجب أن يكون 11 رقمًا بالضبط"));
+    _sanitizePhoneNumbers();
+
+    // 3. التحقق الذكي من الاشتراك (القلب الجديد للسيستم)
+    if (teacher != null) {
+      // أ- فحص انتهاء الاشتراك الأساسي (عشان يقدر يفتح التطبيق أصلاً)
+      if (teacher.subscriptionEndTime.isBefore(DateTime.now()) ||
+          teacher.isActive == false) {
+        emit(StudentValidationError(
+            "عفواً، اشتراكك منتهي. يرجى التجديد لتتمكن من إضافة طلاب"));
+        return;
+      }
+
+      // ب- فحص المساحة المتاحة (أساسي + بوست)
+      // لاحظ استخدام totalAllowedStudents بدلاً من المتغير القديم
+      int allowed = await teacher.getTotalAllowedStudents();
+      int current = teacher.currentStudentCount;
+
+      if (current >= allowed) {
+        emit(StudentValidationError(
+            "لقد استهلكت كامل السعة المتاحة ($allowed طالب). يمكنك ترقية حسابك عبر باقة Boost لإضافة سعة إضافية فورًا."));
+        return;
+      }
+      if (current >= (allowed - 10)) {
+        int remaining = allowed - current;
+        emit(TeacherNearLimit(
+            "تنبيه: متبقي $remaining أماكن فقط قبل الوصول للحد الأقصى."));
+      }
+    } else {
+      emit(StudentValidationError("خطأ: لم يتم العثور على بيانات المعلم"));
       return;
     }
 
-    if (fatherNumberController.text.trim().isEmpty) {
-      fatherNumberController.text = '00000000000';
-    } else if (!RegExp(r'^\d{11}$').hasMatch(fatherNumberController.text)) {
-      emit(StudentValidationError("رقم الأب يجب أن يكون 11 رقمًا بالضبط"));
-      return;
-    }
-
-    if (motherNumberController.text.trim().isEmpty) {
-      motherNumberController.text = '00000000000';
-    } else if (!RegExp(r'^\d{11}$').hasMatch(motherNumberController.text)) {
-      emit(StudentValidationError("رقم الأم يجب أن يكون 11 رقمًا بالضبط"));
-      return;
-    }
-
-    if (selectedGender == null) {
-      emit(StudentValidationError("من فضلك اختر النوع"));
-      return;
-    }
-
+    // 4. بناء موديل الطالب
     Studentmodel submodel = Studentmodel(
       hisGroupsId: hisGroupsId,
       studentPaidSubscriptions: studentPaidSubscriptions,
@@ -83,13 +102,16 @@ class StudentCubit extends Cubit<StudentState> {
 
     try {
       emit(StudentLoading());
+
+      // 5. استدعاء الفايربيز
+      // ملاحظة هامة: دالة addStudentToCollection لازم تكون بتستخدم Transaction أو Batch
+      // عشان تزود عداد الـ currentStudentCount في ملف المدرس بالتزامن مع إضافة الطالب
       String studentId = await FirebaseFunctions.addStudentToCollection(
         level ?? "",
         submodel,
       );
 
-      emit(StudentAddedSuccess());
-
+      // 6. إضافة الفواتير المرتبطة بالطالب
       for (final paidSub in studentPaidSubscriptions ?? []) {
         await FirebaseFunctions.addInvoiceToBigInvoices(
           subscriptionFeeID: paidSub.subscriptionId ?? "",
@@ -106,15 +128,31 @@ class StudentCubit extends Cubit<StudentState> {
         );
       }
 
+      // 7. تحديث البروفايدر (تأكد أن refreshTeacherData يجلب البيانات الجديدة من Firestore)
+      await teacherProvider.refreshTeacherData();
+
+      emit(StudentAddedSuccess());
       clearControllers();
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => Homescreen()),
-        (route) => false,
-      );
+
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const Homescreen()),
+          (route) => false,
+        );
+      }
     } catch (e) {
-      emit(StudentAddedFailure(e.toString()));
+      emit(StudentAddedFailure("حدث خطأ أثناء الإضافة: ${e.toString()}"));
     }
+  }
+// دالة مساعدة لتنظيف الأرقام
+  void _sanitizePhoneNumbers() {
+    if (studentNumberController.text.trim().isEmpty)
+      studentNumberController.text = '00000000000';
+    if (fatherNumberController.text.trim().isEmpty)
+      fatherNumberController.text = '00000000000';
+    if (motherNumberController.text.trim().isEmpty)
+      motherNumberController.text = '00000000000';
   }
 
   void updateGroup(BuildContext context, Magmo3amodel? result) {
@@ -181,7 +219,7 @@ class StudentCubit extends Cubit<StudentState> {
       double fullPrice, BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => PaidDialog(
+      builder: (_) => addStudentPaidDialog(
         paidAmount: studentPaidSubscription.paidAmount,
         fullPrice: fullPrice,
         onSave: (editedAmount, comingDescription) {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/alert_dialogs/add_exam_degree.dart';
 
-import '../Alert dialogs/add_exam_degree.dart';
-import '../cards/student_exam_grade.dart';
-import '../colors_app.dart';
-import '../models/Studentmodel.dart';
+import '../cards/student/student_exam_grade.dart';
+import '../models/Student_model.dart';
 import '../models/student_exam_grade.dart';
+import '../theme/colors_app.dart';
 
 class AllStudentExamGrades extends StatelessWidget {
   final Studentmodel student;
@@ -28,15 +28,16 @@ class AllStudentExamGrades extends StatelessWidget {
                 studentId: student.id,
               );
             },
-            icon: const Icon(Icons.add, size: 40, color: app_colors.green),
+            icon:
+                const Icon(Icons.add, size: 40, color: AppColors.secondaryMain),
           ),
         ],
         centerTitle: true,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),

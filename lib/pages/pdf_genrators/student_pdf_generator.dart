@@ -5,8 +5,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../models/Invoice.dart';
-import '../../models/Studentmodel.dart';
-import '../../models/absence_model.dart';
+import '../../models/Student_model.dart';
+import '../../models/absence_app/student_absence_model.dart';
 import '../../models/subscription_fee.dart';
 
 bool _isArabic(String? text) {
@@ -111,7 +111,7 @@ Future<Uint8List> generateFullStudentPdf({
         if (student.hisGroups != null && student.hisGroups!.isNotEmpty) {
           for (var group in student.hisGroups!) {
             content.add(localizedText(
-                'الصف: ${group.grade ?? "-"} - الأيام: ${group.days ?? "-"}',
+                'الصف: ${group.grade ?? "-"} - الأيام: ${group.day ?? "-"}',
                 ttf));
           }
         } else {
@@ -124,8 +124,8 @@ Future<Uint8List> generateFullStudentPdf({
             size: 18, fontWeight: pw.FontWeight.bold));
 
         // إضافة "الشهر الحالي"
-        final allMonths = <AbsenceModel>[
-          AbsenceModel(
+        final allMonths = <StudentAbsencesModel>[
+          StudentAbsencesModel(
             monthName: "الشهر الحالي",
             attendedDays: student.countingAttendedDays ?? [],
             absentDays: student.countingAbsentDays ?? [],

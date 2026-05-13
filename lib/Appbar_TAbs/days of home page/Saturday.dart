@@ -8,16 +8,23 @@ class Saturday extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [Column
-      (
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 60),
-            child: Center(child: Image.asset("assets/images/logo.png")),
+        // الصورة كخلفية باهتة
+        Center(
+          child: Opacity(
+            opacity: 0.05,
+            child: Image.asset(
+              "assets/images/studenizer_logo_2.png",
+              width: MediaQuery.of(context).size.width * 0.8,
+              fit: BoxFit.contain,
+            ),
           ),
-        SizedBox(height: 50)
+        ),
+
+        // Magmo3as فوق الصورة
+        Magmo3as(day: "Saturday"),
       ],
-    ),Magmo3as(day: "Saturday",)]);
+    );
   }
 }

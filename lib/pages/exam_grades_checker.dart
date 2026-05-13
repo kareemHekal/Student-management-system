@@ -1,11 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
+import 'package:student_management_system/firebase/firebase_functions.dart';
+import 'package:student_management_system/loadingFile/loading_alert/run_with_loading.dart';
 
-import '../colors_app.dart';
 import '../firebase/exams_functions.dart';
-import '../firebase/firebase_functions.dart';
-import '../models/Studentmodel.dart';
+import '../models/Student_model.dart';
 import '../models/exam_model.dart';
+import '../theme/colors_app.dart';
 import 'pdf_genrators/exam_pdf_generator.dart';
 
 class ExamResultPage extends StatefulWidget {
@@ -93,9 +96,10 @@ class _ExamResultPageState extends State<ExamResultPage> {
         centerTitle: true,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon:
+              const Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),
@@ -152,30 +156,45 @@ class _ExamResultPageState extends State<ExamResultPage> {
                               ),
                             ),
                             onPressed: () async {
-                              try {
-                                final pdfBytes = await generateExamReportPdf(
-                                  exam: examModel!,
-                                  students: students,
-                                  gradeName: widget.gradeName,
-                                );
+                              await runWithLoading(
+                                context,
+                                () async {
+                                  try {
+                                    // 1. تحميل الخط أولاً في الـ Main Thread (هذا لا يسبب freeze)
+                                    final fontData = await rootBundle.load(
+                                        'fonts/NotoKufiArabic-Regular.ttf');
+                                    final Uint8List fontBytes =
+                                        fontData.buffer.asUint8List();
 
-                                await Printing.layoutPdf(
-                                  onLayout: (format) async => pdfBytes,
-                                  name:
-                                      "${examModel!.name}_${widget.gradeName}.pdf",
-                                );
-                              } catch (e) {
-                                print("PDF Error: $e");
-                              }
+                                    // 2. تشغيل الـ compute وإرسال الخط مع البيانات
+                                    // الآن الـ Loading سيلف بسلاسة لأن الحسابات في معالج منفصل
+                                    final pdfBytes =
+                                        await compute(generateExamReportPdf, {
+                                      'exam': examModel!,
+                                      'students': students,
+                                      'gradeName': widget.gradeName,
+                                      'fontData': fontBytes, // نرسل الخط هنا
+                                    });
+
+                                    await Printing.layoutPdf(
+                                      onLayout: (format) async => pdfBytes,
+                                      name:
+                                          "${examModel!.name}_${widget.gradeName}.pdf",
+                                    );
+                                  } catch (e) {
+                                    print("PDF Error: $e");
+                                  }
+                                },
+                              );
                             },
                             icon: const Icon(
                               Icons.picture_as_pdf,
-                              color: app_colors.white,
+                              color: AppColors.white,
                             ),
                             label: const Text(
                               "إنشاء ملف PDF",
                               style: TextStyle(
-                                color: app_colors.white,
+                                color: AppColors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:student_management_system/alert_dialogs/add_edit_subscription_for_grade.dart';
 
-import '../Alert dialogs/add_edit_subscription_for_grade.dart';
 import '../cards/subscription_card.dart';
-import '../colors_app.dart';
 import '../firebase/firebase_functions.dart';
 import '../models/grade_subscriptions_model.dart';
 import '../models/subscription_fee.dart';
+import '../theme/colors_app.dart';
 
 class SubscriptionsForGrade extends StatelessWidget {
   final String gradeName;
@@ -21,15 +21,16 @@ class SubscriptionsForGrade extends StatelessWidget {
             onPressed: () {
               showAddOrEditSubscriptionDialog(context, gradeName);
             },
-            icon: const Icon(Icons.add, size: 40, color: app_colors.green),
+            icon:
+                const Icon(Icons.add, size: 40, color: AppColors.secondaryMain),
           )
         ],
         centerTitle: true,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_back_ios, color: app_colors.green),
+          icon: Icon(Icons.arrow_back_ios, color: AppColors.secondaryMain),
         ),
-        backgroundColor: app_colors.darkGrey,
+        backgroundColor: AppColors.primaryMain,
         title: Image.asset("assets/images/logo.png", height: 100, width: 90),
         toolbarHeight: 150,
       ),

@@ -1,19 +1,41 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:student_management_system/models/absence_app/absence_model.dart';
+import 'package:student_management_system/models/absence_app/secondary_record.dart';
+import 'package:student_management_system/models/admin/bill.dart';
+import 'package:student_management_system/models/admin/boost_subscription.dart';
+import 'package:student_management_system/models/admin/subsription.dart';
+import 'package:student_management_system/models/admin/teacher.dart';
+import 'package:student_management_system/pages/payment/easy_cash_service.dart';
+import 'package:student_management_system/provider.dart';
+import 'package:student_management_system/theme/snack_bar.dart';
 
-import '../models/Big invoice.dart';
 import '../models/Invoice.dart';
 import '../models/Magmo3aModel.dart';
-import '../models/Studentmodel.dart';
-import '../models/absence_model.dart';
+import '../models/Student_model.dart';
+import '../models/absence_app/student_absence_model.dart';
+import '../models/daily_invoice.dart';
 import '../models/grade_subscriptions_model.dart';
 import '../models/payment.dart';
 import '../models/subscription_fee.dart';
 import 'exams_functions.dart';
 
 class FirebaseFunctions {
+  static final _db = FirebaseFirestore.instance;
+
+  // دالة المساعدة الأساسية للحصول على مسار المدرس الحالي
+  static String get teacherPath {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("لا يوجد مدرس مسجل دخول!");
+    return 'teachers/${user.uid}';
+  }
+
   // =============================== Magmo3a Functions ===============================
 
   /// Adds a `Magmo3aModel` to a specific day's collection
+
   static Future<void> addMagmo3aToDay(String day, Magmo3amodel magmo3a) async {
     CollectionReference<Magmo3amodel> dayCollection = getDayCollection(day);
 
@@ -25,12 +47,14 @@ class FirebaseFunctions {
     await newDocRef.set(magmo3a);
   }
 
-  static Future<void> editMagmo3aInDay(String oldDay,
-      String oldGrade,
-      Magmo3amodel updatedMagmo3a,) async {
-    final newDay = updatedMagmo3a.days;
+  static Future<void> editMagmo3aInDay(
+    String oldDay,
+    String oldGrade,
+    Magmo3amodel updatedMagmo3a,
+  ) async {
+    final newDay = updatedMagmo3a.day;
 
-    // 🧩 1️⃣ Move document if the day changed
+    // 🧩 1️⃣ نقل المجموعة لو اليوم اتغير
     if (newDay != oldDay) {
       final oldDayCollection = getDayCollection(oldDay);
       await oldDayCollection.doc(updatedMagmo3a.id).delete();
@@ -42,33 +66,28 @@ class FirebaseFunctions {
       await dayCollection.doc(updatedMagmo3a.id).set(updatedMagmo3a);
     }
 
-    // 🧩 2️⃣ Fetch all students who have this group (from OLD grade)
-    final studentsSnapshot = await getStudentsByGroupId(
-      oldGrade, // you can replace with oldGrade if needed
+    // 🧩 2️⃣ جلب الطلاب (دلوقتي دي بقت List مباشرة مش Snapshot)
+    final studentsList = await getStudentsByGroupId_future(
+      oldGrade,
       updatedMagmo3a.id,
-    ).first;
+    );
 
-    // 🧩 3️⃣ Update their hisGroups
-    for (var doc in studentsSnapshot.docs) {
-      final data = doc.data();
-
-      // Make sure to handle both converter or raw JSON cases
-      final student = data is Studentmodel
-          ? data
-          : Studentmodel.fromJson(data as Map<String, dynamic>);
-
-      bool updated = false;
+    // 🧩 3️⃣ تحديث بيانات المجموعة جوه كل طالب
+    for (var student in studentsList) {
+      bool isChanged = false;
 
       if (student.hisGroups != null) {
         for (int i = 0; i < student.hisGroups!.length; i++) {
+          // لو لقينا المجموعة القديمة بنحدثها بالجديدة
           if (student.hisGroups![i].id == updatedMagmo3a.id) {
             student.hisGroups![i] = updatedMagmo3a;
-            updated = true;
+            isChanged = true;
           }
         }
       }
 
-      if (updated) {
+      // بنعمل Update فقط لو الطالب فعلاً اتأثر بالتعديل
+      if (isChanged) {
         await getSecondaryCollection(oldGrade).doc(student.id).update({
           "hisGroups": student.hisGroups!.map((g) => g.toJson()).toList(),
         });
@@ -76,13 +95,74 @@ class FirebaseFunctions {
     }
   }
 
-  /// Deletes a `Magmo3aModel` document from a specific day's collection
-  static Future<void> deleteMagmo3aFromDay(
-      String day, String documentId) async {
-    await getDayCollection(day).doc(documentId).delete();
+  static Future<void> deleteMagmo3aFromDay({
+    required String day,
+    required String grade,
+    required String magmo3aId,
+  }) async {
+    try {
+      // 1️⃣ حذف الـ Sub-collection (absences) أولاً
+      final absenceCollection =
+          getDayCollection(day).doc(magmo3aId).collection('absences');
+
+      final absenceSnapshot = await absenceCollection.get();
+
+      if (absenceSnapshot.docs.isNotEmpty) {
+        final batch = _db.batch();
+        for (var doc in absenceSnapshot.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+        print("✅ Absences sub-collection deleted.");
+      }
+
+      // 2️⃣ حذف المجموعة نفسها من جدول الأيام
+      await getDayCollection(day).doc(magmo3aId).delete();
+      print("✅ Magmo3a document deleted.");
+
+      // 3️⃣ تنظيف بيانات الطلاب
+      List<Studentmodel> allStudents =
+          await getAllStudentsByGrade_future(grade);
+
+      final studentBatch = _db.batch();
+      bool needsUpdate = false;
+
+      for (var student in allStudents) {
+        bool studentChanged = false;
+
+        if (student.hisGroupsId != null &&
+            student.hisGroupsId!.contains(magmo3aId)) {
+          student.hisGroupsId!.remove(magmo3aId);
+          studentChanged = true;
+        }
+
+        if (student.hisGroups != null) {
+          int initialLength = student.hisGroups!.length;
+          student.hisGroups!.removeWhere((group) => group.id == magmo3aId);
+          if (student.hisGroups!.length != initialLength) {
+            studentChanged = true;
+          }
+        }
+
+        if (studentChanged) {
+          final studentRef = getSecondaryCollection(grade).doc(student.id);
+          studentBatch.update(studentRef, student.toJson());
+          needsUpdate = true;
+        }
+      }
+
+      if (needsUpdate) {
+        await studentBatch.commit();
+        print("✅ Updated students: Removed deleted group from their profiles.");
+      }
+
+      print("🎉 Cleanup complete for Magmo3a: $magmo3aId");
+    } catch (e) {
+      print("❌ Error during deleteMagmo3a: $e");
+      rethrow;
+    }
   }
 
-  /// Retrieves all documents in a specific day's collection for the current user
   static Stream<List<Magmo3amodel>> getAllDocsFromDay(String day) {
     CollectionReference<Magmo3amodel> dayCollection = getDayCollection(day);
     return dayCollection
@@ -90,7 +170,6 @@ class FirebaseFunctions {
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
-  /// Retrieves all documents in a specific day's collection filtered by grade
   static Stream<List<Magmo3amodel>> getAllDocsFromDayWithGrade(
       String day, String grade) {
     CollectionReference<Magmo3amodel> dayCollection = getDayCollection(day);
@@ -101,12 +180,10 @@ class FirebaseFunctions {
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
 
-  /// Deletes all absence records in the "absences" subcollection under each `Magmo3a` document
-  static Future<void> deleteAbsencesSubcollection(String day) async {
+  static Future<void> deleteAbsencesSubCollection(String day) async {
     try {
-      CollectionReference dayCollection =
-          FirebaseFirestore.instance.collection(day);
-      QuerySnapshot daySnapshot = await dayCollection.get();
+      // التعديل: استخدام getDayCollection للتأكد من المسار الجديد للمدرس
+      QuerySnapshot daySnapshot = await getDayCollection(day).get();
 
       for (var groupDoc in daySnapshot.docs) {
         CollectionReference absencesSubcollectionRef =
@@ -122,10 +199,11 @@ class FirebaseFunctions {
     }
   }
 
-  /// Returns a reference to the specific day's collection
   static CollectionReference<Magmo3amodel> getDayCollection(String day) {
-    return FirebaseFirestore.instance
-        .collection(day)
+    // التصحيح: بنبدأ بـ doc للمدرس، وبعدين نفتح جواه الـ collection بتاع اليوم
+    return _db
+        .doc(teacherPath) // ده الـ Document بتاع المدرس
+        .collection(day) // ده الـ Sub-collection اللي جواه
         .withConverter<Magmo3amodel>(
           fromFirestore: (snapshot, _) =>
               Magmo3amodel.fromJson(snapshot.data()!),
@@ -135,266 +213,297 @@ class FirebaseFunctions {
 
   // =============================== Student Functions ===============================
 
-  /// Adds a `StudentModel` to a specific grade's collection
-  static Future<String> addStudentToCollection(
-      String grade, Studentmodel studentModel) async {
-    CollectionReference<Studentmodel> collection =
-        getSecondaryCollection(grade);
-
-    DocumentReference<Studentmodel> newDocRef = collection.doc();
-    studentModel.id = newDocRef.id;
-    await newDocRef.set(studentModel);
-    return newDocRef.id;
-  }
+  // =============================== Student Management ===============================
 
   static Future<void> saveMonthAndStartNew(String monthName) async {
     try {
-      final firestore = FirebaseFirestore.instance;
       final grades = await FirebaseFunctions.getGradesList();
 
-      for (final grade in grades) {
-        final collection = getSecondaryCollection(grade); // Query<Studentmodel>
+      await Future.wait(grades.map((grade) async {
+        final collection = getSecondaryCollection(grade);
         final snapshot = await collection.get();
 
-        if (snapshot.docs.isEmpty) {
-          print("⚠️ No students found for grade: $grade");
-          continue;
-        }
+        if (snapshot.docs.isEmpty) return;
 
-        print("🟢 Processing ${snapshot.docs.length} students in $grade...");
-
-        const batchSize = 100;
         final studentDocs = snapshot.docs;
+        const batchLimit = 500;
 
-        for (var i = 0; i < studentDocs.length; i += batchSize) {
-          final batch = firestore.batch();
-          final chunk = studentDocs.skip(i).take(batchSize);
+        for (var i = 0; i < studentDocs.length; i += batchLimit) {
+          final batch = _db.batch();
+          final chunk = studentDocs.skip(i).take(batchLimit);
 
           for (final doc in chunk) {
-            // Use typed model instead of casting
             final student = doc.data();
 
-            final newAbsence = AbsenceModel(
+            final newAbsence = StudentAbsencesModel(
               monthName: monthName,
               attendedDays: student.countingAttendedDays ?? [],
               absentDays: student.countingAbsentDays ?? [],
-            );
+            ).toJson();
 
-            final updatedAbsences = [
-              if (student.absencesNumbers != null)
-                ...student.absencesNumbers!.map((e) => e.toJson()),
-              newAbsence.toJson(),
-            ];
-
-            batch.update(collection.doc(doc.id), {
-              'absencesNumbers': updatedAbsences,
+            batch.update(doc.reference, {
+              'absencesNumbers': FieldValue.arrayUnion([newAbsence]),
               'countingAttendedDays': [],
               'countingAbsentDays': [],
             });
           }
-
           await batch.commit();
-          print("✅ Committed batch ${i ~/ batchSize + 1} for grade $grade");
-
-          // Small delay to reduce Firestore load
-          await Future.delayed(const Duration(milliseconds: 300));
         }
-      }
-
-      print("🎉 Finished saving month '$monthName' for all grades.");
-    } catch (e, stack) {
-      print("❌ Error in saveMonthAndStartNew: $e");
-      print(stack);
+      }));
+    } catch (e) {
       rethrow;
     }
   }
 
-  static Future<void> resetGradeSubscriptionsAndAbsences(
-      String gradeName) async {
-    final firestore = FirebaseFirestore.instance;
-
+  static Future<void> resetGradeData({
+    required String gradeName,
+    required List<String> daysList,
+    required bool resetSubscriptions,
+    required bool resetAbsence,
+    required bool deleteExams,
+    required bool deleteGroups,
+    required bool deleteStudents,
+    required bool deleteInvoices,
+  }) async {
     try {
-      final docRef = firestore
-          .collection('constants')
-          .doc('grades_subscriptions')
-          .collection('grades')
-          .doc(gradeName);
+      if (deleteInvoices) {
+        final invoicesSnap =
+            await _db.doc(teacherPath).collection('big_invoices').get();
 
-      final doc = await docRef.get();
-      if (!doc.exists) {
-        print("⚠️ Grade $gradeName does not exist.");
-        return;
+        final invoiceBatch = _db.batch();
+        for (var doc in invoicesSnap.docs) {
+          invoiceBatch.delete(doc.reference);
+        }
+        await invoiceBatch.commit();
+
+        // نغير القيمة لـ false عشان ميتكررش الحذف مع كل مرحلة لو مختار أكتر من مرحلة
+        deleteInvoices = false;
       }
 
-      // 🔹 1. Clear all grade-level subscriptions
-      await docRef.update({'subscriptions': []});
-      print("✅ Grade-level subscriptions for '$gradeName' cleared.");
+      // 1. مسح اشتراكات المرحلة - المسار الجديد داخل ثابت المدرس
+      if (resetSubscriptions && gradeName.isNotEmpty) {
+        await _db
+            .doc(teacherPath)
+            .collection('constants')
+            .doc('grades_subscriptions')
+            .collection('grades')
+            .doc(gradeName)
+            .update({'subscriptions': []});
+      }
 
-      // 🔹 2. Get all students in that grade
-      final allStudents = await getAllStudentsByGrade_future(gradeName);
+      // --- 3. معالجة الطلاب (فقط إذا تم اختيار مرحلة) ---
+      if (gradeName.isNotEmpty) {
+        final allStudents = await getAllStudentsByGrade_future(gradeName);
+        const batchSize = 400;
 
-      print("📦 Found ${allStudents.length} students in grade $gradeName.");
+        for (int i = 0; i < allStudents.length; i += batchSize) {
+          final batch = _db.batch();
+          final chunk = allStudents.skip(i).take(batchSize);
 
-      // 🔹 3. Prepare batch updates for students
-      const batchSize = 400; // <= limit to avoid Firestore overload
-      for (int i = 0; i < allStudents.length; i += batchSize) {
-        final batch = firestore.batch();
+          for (final student in chunk) {
+            final studentRef =
+                getSecondaryCollection(gradeName).doc(student.id);
 
-        final chunk = allStudents.skip(i).take(batchSize);
-        for (final student in chunk) {
-          final studentRef = getSecondaryCollection(gradeName).doc(student.id);
+            if (deleteStudents) {
+              batch.delete(studentRef);
+            } else {
+              Map<String, dynamic> updates = {};
+              if (resetSubscriptions) updates['studentPaidSubscriptions'] = [];
+              if (resetAbsence) {
+                updates['absencesNumbers'] = [];
+                updates['countingAttendedDays'] = [];
+                updates['countingAbsentDays'] = [];
+              }
+              if (deleteExams) updates['studentExamsGrades'] = [];
 
-          batch.update(studentRef, {
-            'studentPaidSubscriptions': [],
-            'studentExamsGrades': [],
-            'absencesNumbers': [],
-            'countingAttendedDays': [],
-            'countingAbsentDays': [],
-            'notes': [],
-          });
+              if (updates.isNotEmpty) batch.update(studentRef, updates);
+            }
+          }
+          await batch.commit();
+        }
+        // 3. حذف الامتحانات من مسار المدرس
+        if (deleteExams) {
+          await _db
+              .doc(teacherPath)
+              .collection('exams')
+              .doc(gradeName)
+              .delete();
         }
 
-        await batch.commit();
-        print(
-            "✅ Updated ${chunk.length} students [${i + 1}-${i + chunk.length}]");
-        await Future.delayed(const Duration(milliseconds: 300)); // small delay
+        for (String day in daysList) {
+          if (deleteGroups) {
+            final groupSnap = await getDayCollection(day)
+                .where('grade', isEqualTo: gradeName)
+                .get();
+
+            final groupBatch = _db.batch();
+            for (var doc in groupSnap.docs) {
+              groupBatch.delete(doc.reference);
+            }
+            await groupBatch.commit();
+          }
+
+          if (resetAbsence) {
+            await deleteAbsencesSubCollection(day);
+          }
+        }
       }
-
-      print(
-          "✅ All students in '$gradeName' had their subscriptions and absences reset.");
-
-      // 🔹 4. Delete all exams for this grade (safe delete)
-      final examsDocRef = firestore.collection('exams').doc(gradeName);
-
-      final examsDoc = await examsDocRef.get();
-      if (examsDoc.exists) {
-        await examsDocRef.delete();
-        print("✅ Exams for grade '$gradeName' deleted successfully.");
-      } else {
-        print("⚠️ No exams found for grade '$gradeName'.");
-      }
-
-      print("🎯 Completed reset for grade '$gradeName'.");
-    } catch (e, stack) {
-      print("❌ Error resetting grade '$gradeName': $e");
-      print(stack);
+    } catch (e) {
+      rethrow;
     }
   }
 
-  /// Deletes a `StudentModel` from a specific grade's collection
+  /// Adds a `StudentModel` and increments the teacher's total student count
+  static Future<String> addStudentToCollection(
+      String grade, Studentmodel studentModel) async {
+    // 1. المرجع بتاع الطالب
+    CollectionReference<Studentmodel> collection =
+        getSecondaryCollection(grade);
+    DocumentReference<Studentmodel> newDocRef = collection.doc();
+    studentModel.id = newDocRef.id;
+
+    // 2. مرجع دوكيومنت المدرس لتحديث العداد
+    DocumentReference teacherDoc = _db.doc(teacherPath);
+
+    // بنستخدم Batch عشان نضمن إن الطالب يتضاف والعداد يزيد مع بعض (أو لا قدر الله لو فشل واحد التاني ميتعملش)
+    WriteBatch batch = _db.batch();
+
+    batch.set(newDocRef, studentModel);
+    batch.update(teacherDoc, {
+      'currentStudentCount': FieldValue.increment(1), // بيزود العداد 1
+    });
+
+    await batch.commit();
+    return newDocRef.id;
+  }
+
+  /// Deletes a `StudentModel` and decrements the teacher's total student count
   static Future<void> deleteStudentFromHisCollection(
       String grade, String documentId) async {
-    CollectionReference<Studentmodel> collection =
-        getSecondaryCollection(grade);
-    await collection.doc(documentId).delete();
+    DocumentReference studentDoc =
+        getSecondaryCollection(grade).doc(documentId);
+    DocumentReference teacherDoc = _db.doc(teacherPath);
+
+    WriteBatch batch = _db.batch();
+
+    batch.delete(studentDoc);
+    batch.update(teacherDoc, {
+      'currentStudentCount': FieldValue.increment(-1), // بينقص العداد 1
+    });
+
+    await batch.commit();
   }
 
-  /// Updates a `StudentModel` document in a specific grade's collection
+  static Future<void> moveStudentToNewGrade({
+    required Studentmodel student,
+    required String oldGrade,
+    required String newGrade,
+  }) async {
+    // 1. تجهيز بيانات الطالب الجديدة (تغيير الصف وتصفير السجلات)
+    student.grade = newGrade;
+    student.hisGroups = [];
+    student.hisGroupsId = [];
+    student.absencesNumbers = [];
+    student.studentPaidSubscriptions = [];
+    student.studentExamsGrades = [];
+    student.countingAttendedDays = [];
+    student.countingAbsentDays = [];
+    student.notes = [];
+    student.note = "";
+
+    WriteBatch batch = _db.batch();
+
+    // 2. مرجع المكان القديم (حذف)
+    DocumentReference oldDocRef =
+        getSecondaryCollection(oldGrade).doc(student.id);
+    batch.delete(oldDocRef);
+
+    // 3. مرجع المكان الجديد (إضافة) - سنعطيه ID جديد تلقائي
+    DocumentReference<Studentmodel> newDocRef =
+        getSecondaryCollection(newGrade).doc();
+    student.id = newDocRef.id; // تحديث الـ ID داخل الموديل
+    batch.set(newDocRef, student);
+
+    // ملحوظة: العداد (StudentCount) لن يتغير لأننا حذفنا 1 وأضفنا 1
+    // فلا داعي لتحديث teacherDoc إلا لو كنت تريد التأكد تماماً
+
+    await batch.commit();
+  }
+
   static Future<void> updateStudentInCollection(
       String grade, String studentId, Studentmodel updatedStudentModel) async {
-    CollectionReference<Studentmodel> collection =
-        getSecondaryCollection(grade);
-    await collection.doc(studentId).update(updatedStudentModel.toJson());
+    await getSecondaryCollection(grade)
+        .doc(studentId)
+        .update(updatedStudentModel.toJson());
   }
 
-  /// Retrieves all students for a specific grade as a stream
-  static Stream<List<Studentmodel>> getAllStudentsByGrade(String grade) {
-    CollectionReference<Studentmodel> collection =
-        getSecondaryCollection(grade);
-    return collection
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
-  }
-
+  // 1. جلب كل طلاب المرحلة (Future) - موفر جداً
   static Future<List<Studentmodel>> getAllStudentsByGrade_future(
       String grade) async {
-    CollectionReference<Studentmodel> collection =
-        getSecondaryCollection(grade);
-    QuerySnapshot<Studentmodel> snapshot = await collection.get();
+    // بنحدد إننا عايزين الداتا من الـ Cache والسيرفر بذكاء
+    QuerySnapshot<Studentmodel> snapshot = await getSecondaryCollection(grade)
+        .get(const GetOptions(source: Source.serverAndCache));
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-  /// Retrieves students filtered by first day ID
-  static Stream<QuerySnapshot<Studentmodel>> getStudentsByGroupId(String grade,
-      String groupId // The group ID you want to check in the `hisGroups` list
-      ) {
-    var collection =
-        getSecondaryCollection(grade); // Get the collection based on grade
+// 2. جلب طلاب مجموعة معينة (Future) - ممتاز للطباعة والبحث
+  static Future<List<Studentmodel>> getStudentsByGroupId_future(
+      String grade, String groupId) async {
+    QuerySnapshot<Studentmodel> snapshot = await getSecondaryCollection(grade)
+        .where("hisGroupsId", arrayContains: groupId)
+        .get(const GetOptions(source: Source.serverAndCache));
 
-    return collection
-        .where("hisGroupsId",
-            arrayContains:
-                groupId) // Check if the hisGroups array contains the groupId
-        .snapshots();
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-  /// Returns a reference to the specific grade's collection
+// الـ CollectionReference زي ما هو
   static CollectionReference<Studentmodel> getSecondaryCollection(
       String grade) {
-    return FirebaseFirestore.instance
-        .collection(grade)
-        .withConverter<Studentmodel>(
+    return _db.doc(teacherPath).collection(grade).withConverter<Studentmodel>(
           fromFirestore: (snapshot, _) =>
               Studentmodel.fromJson(snapshot.data()!),
           toFirestore: (value, _) => value.toJson(),
         );
   }
 
-
-
   static Future<void> addGradeToList(String newGrade) async {
     try {
-      // Reference to the 'constants' collection and the 'grades' document
+      // تعديل المسار: الثوابت بقت خاصة بكل مدرس
       final gradesDoc =
-          FirebaseFirestore.instance.collection('constants').doc('grades');
+          _db.doc(teacherPath).collection('constants').doc('grades');
 
-      // Get the current document data
       final snapshot = await gradesDoc.get();
 
       if (snapshot.exists) {
-        // ✅ If document exists, update the existing list
         final data = snapshot.data() as Map<String, dynamic>;
         final List<dynamic> gradesList = List.from(data['grades'] ?? []);
         if (!gradesList.contains(newGrade)) {
           gradesList.add(newGrade);
+          await gradesDoc.update({'grades': gradesList});
         }
-
-        await gradesDoc.update({'grades': gradesList});
-        print("Grade added successfully (updated existing document).");
       } else {
-        // ✅ If document doesn’t exist, create it with the new grade
         await gradesDoc.set({
-          'grades': [newGrade],
+          'grades': [newGrade]
         });
-        print("Document created and grade added successfully.");
       }
     } catch (e) {
-      print("Error adding grade: $e");
+      print("Error: $e");
     }
   }
 
   static Future<void> deleteGradeFromList(String grade) async {
     try {
-      // Reference to the 'constants' collection and the 'grades' document
+      // التعديل: الوصول لمسار المدرس ثم constants ثم doc(grades)
       DocumentReference gradesDoc =
-          FirebaseFirestore.instance.collection('constants').doc('grades');
+          _db.doc(teacherPath).collection('constants').doc('grades');
 
-      // Get the current document data
       DocumentSnapshot snapshot = await gradesDoc.get();
 
       if (snapshot.exists) {
-        // Get the current list of grades
         List<dynamic> gradesList = snapshot['grades'];
-
-        // Remove the grade from the list
         gradesList.remove(grade);
-
-        // Update the 'grades' field in the document with the modified list
         await gradesDoc.update({'grades': gradesList});
-
         print("Grade removed successfully.");
-      } else {
-        print("Document does not exist.");
       }
     } catch (e) {
       print("Error deleting grade: $e");
@@ -403,21 +512,19 @@ class FirebaseFunctions {
 
   static Future<List<String>> getGradesList() async {
     try {
-      DocumentSnapshot<Map<String, dynamic>> docSnapshot =
-          await FirebaseFirestore.instance
-              .collection('constants')
-              .doc('grades')
-              .get();
+      // التعديل: أضفنا GetOptions مع Source.serverAndCache
+      // دي بتخلي الفايربيز يشوف الموبايل الأول، ولو مفيش تغيير ميسحبش Reads
+      DocumentSnapshot<Map<String, dynamic>> docSnapshot = await _db
+          .doc(teacherPath)
+          .collection('constants')
+          .doc('grades')
+          .get(const GetOptions(source: Source.serverAndCache));
 
       if (docSnapshot.exists) {
         List<dynamic> gradesDynamic = docSnapshot.data()?['grades'] ?? [];
-        List<String> grades =
-            gradesDynamic.map((grade) => grade.toString()).toList();
-        return grades;
-      } else {
-        print("Document does not exist.");
-        return [];
+        return gradesDynamic.map((grade) => grade.toString()).toList();
       }
+      return [];
     } catch (e) {
       print("Error fetching grades: $e");
       return [];
@@ -426,12 +533,14 @@ class FirebaseFunctions {
 
   static Future<void> renameGrade(String oldGrade, String newGrade) async {
     try {
-      final firestore = FirebaseFirestore.instance;
+      final fireStore = _db;
+      // المسار المختصر للمدرس
+      final teacherDocRef = fireStore.doc(teacherPath);
 
-      // 1️⃣ Update grade name in constants/grades list
+      // 1️⃣ Update grade name in constants/grades list (خاص بالمدرس)
       final DocumentReference gradesDoc =
-          firestore.collection('constants').doc('grades');
-      final DocumentSnapshot gradesSnapshot = await gradesDoc.get();
+          teacherDocRef.collection('constants').doc('grades');
+      final gradesSnapshot = await gradesDoc.get();
 
       if (gradesSnapshot.exists) {
         List<dynamic> gradesList = List.from(gradesSnapshot['grades']);
@@ -439,32 +548,44 @@ class FirebaseFunctions {
           int index = gradesList.indexOf(oldGrade);
           gradesList[index] = newGrade;
           await gradesDoc.update({'grades': gradesList});
-          print('✅ Grade name updated in constants.');
-        } else {
-          print('⚠️ Old grade not found in constants list.');
         }
       }
 
-      // 2️⃣ Copy all students to new collection, update grade field
-      final oldCollection =
-          getSecondaryCollection(oldGrade); // typed Collection<Studentmodel>
-      final newCollection =
-          getSecondaryCollection(newGrade); // typed Collection<Studentmodel>
+      // 2️⃣ Move Students (المسارات متعدلة أوتوماتيك داخل getSecondaryCollection)
+      final oldCollection = getSecondaryCollection(oldGrade);
+      final newCollection = getSecondaryCollection(newGrade);
       final oldStudentsSnapshot = await oldCollection.get();
 
-      for (var doc in oldStudentsSnapshot.docs) {
-        Studentmodel student = doc.data();
-        student.grade = newGrade;
-        await newCollection.doc(student.id).set(student); // pass model directly
+      if (oldStudentsSnapshot.docs.isNotEmpty) {
+        WriteBatch studentBatch = fireStore.batch();
+        int count = 0;
+
+        for (var doc in oldStudentsSnapshot.docs) {
+          Studentmodel student = doc.data();
+          student.grade = newGrade;
+
+          if (student.hisGroups != null) {
+            for (var group in student.hisGroups!) {
+              if (group.grade == oldGrade) {
+                group.grade = newGrade;
+              }
+            }
+          }
+
+          studentBatch.set(newCollection.doc(student.id), student);
+          studentBatch.delete(doc.reference);
+
+          count++;
+          if (count >= 450) {
+            await studentBatch.commit();
+            studentBatch = fireStore.batch();
+            count = 0;
+          }
+        }
+        if (count > 0) await studentBatch.commit();
       }
 
-      // 3️⃣ Delete old grade collection
-      for (var doc in oldStudentsSnapshot.docs) {
-        await doc.reference.delete();
-      }
-      print('✅ Students moved and old collection deleted.');
-
-      // 4️⃣ Update magmo3a documents in all day collections
+      // 3️⃣ Update Magmo3a documents (المسارات متعدلة داخل getDayCollection)
       final allDays = [
         "Saturday",
         "Sunday",
@@ -474,79 +595,97 @@ class FirebaseFunctions {
         "Thursday",
         "Friday"
       ];
+      await Future.wait(allDays.map((day) async {
+        final dayCollection = getDayCollection(day);
+        final daySnapshot =
+            await dayCollection.where('grade', isEqualTo: oldGrade).get();
 
-      for (var day in allDays) {
-        final dayCollection =
-            getDayCollection(day); // typed Collection<Magmo3amodel>
-        final daySnapshot = await dayCollection.get();
-
-        for (var doc in daySnapshot.docs) {
-          Magmo3amodel magmo3a = doc.data();
-          if (magmo3a.grade == oldGrade) {
+        if (daySnapshot.docs.isNotEmpty) {
+          final dayBatch = fireStore.batch();
+          for (var doc in daySnapshot.docs) {
+            Magmo3amodel magmo3a = doc.data();
             magmo3a.grade = newGrade;
-            await dayCollection
-                .doc(magmo3a.id)
-                .set(magmo3a); // pass model directly
+            dayBatch.set(dayCollection.doc(magmo3a.id), magmo3a);
           }
+          await dayBatch.commit();
         }
-      }
-      print('✅ All magmo3a groups updated.');
+      }));
 
-      // 5️⃣ Rename grade subscription document
-      final oldSubDocRef = firestore
+      // 4️⃣ Rename Grade Subscription & Exams (تحت مسار المدرس)
+      final batchFinal = fireStore.batch();
+
+      final oldSubRef = teacherDocRef
           .collection('constants')
           .doc('grades_subscriptions')
           .collection('grades')
           .doc(oldGrade);
 
-      final oldSubSnapshot = await oldSubDocRef.get();
-      if (oldSubSnapshot.exists) {
-        final oldModel =
-            GradeSubscriptionsModel.fromJson(oldSubSnapshot.data()!);
+      final newSubRef = teacherDocRef
+          .collection('constants')
+          .doc('grades_subscriptions')
+          .collection('grades')
+          .doc(newGrade);
+
+      final subSnap = await oldSubRef.get();
+      if (subSnap.exists) {
+        final oldModel = GradeSubscriptionsModel.fromJson(subSnap.data()!);
         oldModel.gradeName = newGrade;
-
-        final newSubDocRef = firestore
-            .collection('constants')
-            .doc('grades_subscriptions')
-            .collection('grades')
-            .doc(newGrade);
-
-        await newSubDocRef.set(oldModel.toJson()); // ✅ هذا صحيح
-        await oldSubDocRef.delete();
-        print('✅ Grade subscription renamed.');
-      } else {
-        print('⚠️ No subscription document found for $oldGrade.');
+        batchFinal.set(newSubRef, oldModel.toJson());
+        batchFinal.delete(oldSubRef);
       }
 
-      // 6️⃣ Rename exam document
-      final oldExamDocRef = firestore.collection('exams').doc(oldGrade);
-      final oldExamSnapshot = await oldExamDocRef.get();
+      final oldExamRef = teacherDocRef.collection('exams').doc(oldGrade);
+      final newExamRef = teacherDocRef.collection('exams').doc(newGrade);
+      final examSnap = await oldExamRef.get();
 
-      if (oldExamSnapshot.exists) {
-        final oldExamData = oldExamSnapshot.data();
-        final newExamDocRef = firestore.collection('exams').doc(newGrade);
+      if (examSnap.exists) {
+        final examData = Map<String, dynamic>.from(examSnap.data()!);
+        examData['gradeName'] = newGrade;
+        batchFinal.set(newExamRef, examData);
+        batchFinal.delete(oldExamRef);
+      }
+      await batchFinal.commit();
 
-        if (oldExamData != null) {
-          final updatedExamData = Map<String, dynamic>.from(oldExamData);
-          updatedExamData['gradeName'] = newGrade;
-          await newExamDocRef.set(updatedExamData);
+      // 5️⃣ Update Grade in "big_invoices" collection (تحت مسار المدرس)
+      final bigInvoicesCollection = teacherDocRef.collection('big_invoices');
+      final invoicesSnapshot = await bigInvoicesCollection.get();
+
+      if (invoicesSnapshot.docs.isNotEmpty) {
+        WriteBatch invoiceBatch = fireStore.batch();
+        int invCount = 0;
+
+        for (var doc in invoicesSnapshot.docs) {
+          Map<String, dynamic> data = doc.data();
+          List<dynamic> invoicesJson = data['invoices'] as List? ?? [];
+          bool docNeedsUpdate = false;
+
+          for (var inv in invoicesJson) {
+            if (inv['grade'] == oldGrade) {
+              inv['grade'] = newGrade;
+              docNeedsUpdate = true;
+            }
+          }
+
+          if (docNeedsUpdate) {
+            invoiceBatch.update(doc.reference, {'invoices': invoicesJson});
+            invCount++;
+            if (invCount >= 450) {
+              await invoiceBatch.commit();
+              invoiceBatch = fireStore.batch();
+              invCount = 0;
+            }
+          }
         }
-
-        await oldExamDocRef.delete();
-        print('✅ Exam document renamed.');
-      } else {
-        print('⚠️ No exam document found for $oldGrade.');
+        if (invCount > 0) await invoiceBatch.commit();
       }
-
-      print('🎉 Grade renamed successfully from "$oldGrade" to "$newGrade".');
-    } catch (e, stack) {
-      print('❌ Error renaming grade: $e');
-      print(stack);
+    } catch (e) {
+      rethrow;
     }
   }
 
   static Stream<List<String>> getGradesStream() {
-    return FirebaseFirestore.instance
+    return _db
+        .doc(teacherPath)
         .collection('constants')
         .doc('grades')
         .snapshots()
@@ -554,136 +693,133 @@ class FirebaseFunctions {
       if (docSnapshot.exists) {
         List<dynamic> gradesDynamic = docSnapshot.data()?['grades'] ?? [];
         return gradesDynamic.map((grade) => grade.toString()).toList();
-      } else {
-        return [];
       }
+      return [];
     });
   }
 
-
   //=============================== BigInvoices Functions ===============================
+  // =============================== Invoices & Payments (Sub-collections) ===============================
+
   static Future<void> createBigInvoiceCollection() async {
-    // Get Firestore instance
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    // Reference to the collection (this will create the collection if it doesn't exist)
+    // التعديل: إنشاء الكولكشن داخل مسار المدرس
     CollectionReference bigInvoicesCollection =
-        firestore.collection('big_invoices');
+        _db.doc(teacherPath).collection('big_invoices');
 
-    // Optionally, you can add a dummy document to ensure the collection exists
     await bigInvoicesCollection.doc('dummy').set({'dummyField': 'dummyValue'});
   }
 
   static Future<void> deleteBigInvoiceCollection() async {
-    // Get Firestore instance
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    // Reference to the collection
+    // التعديل: الوصول للكولكشن الخاص بالمدرس
     CollectionReference bigInvoicesCollection =
-        firestore.collection('big_invoices');
+        _db.doc(teacherPath).collection('big_invoices');
 
-    // Get all documents in the collection
     QuerySnapshot snapshot = await bigInvoicesCollection.get();
 
-    // Loop through each document and delete it
     for (var doc in snapshot.docs) {
       await doc.reference.delete();
     }
   }
 
   static Stream<QuerySnapshot> getAllBigInvoices() {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    return firestore.collection('big_invoices').snapshots();
+    // التعديل: استماع للفواتير الخاصة بالمدرس الحالي فقط
+    return _db.doc(teacherPath).collection('big_invoices').snapshots();
   }
 
-  static Future<void> addBigInvoice(BigInvoice bigInvoice) async {
-    // Reference to the Firestore collection
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
+  static Future<void> updateDailyInvoice(
+      String date, DailyInvoice bigInvoice) async {
     CollectionReference invoicesCollection =
-        firestore.collection('big_invoices');
+        _db.doc(teacherPath).collection('big_invoices');
 
-    // Create or update the document with the formatted date as the doc ID
-    await invoicesCollection.doc(bigInvoice.date).set(bigInvoice.toJson());
-  }
-
-  static Future<void> updateBigInvoice(
-      String date, BigInvoice bigInvoice) async {
-    // Reference to the Firestore collection
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference invoicesCollection =
-        firestore.collection('big_invoices');
-
-    // Check if the document exists
     DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
 
     if (docSnapshot.exists) {
-      // If document exists, update it with the new data
       await invoicesCollection.doc(date).update(bigInvoice.toJson());
     } else {
-      // If document doesn't exist, create a new one
       await invoicesCollection.doc(date).set(bigInvoice.toJson());
     }
   }
 
-  static Future<void> updatePaymentInBigInvoice({
-    required String date, // Document ID
-    required Payment updatedPayment,
-    required int paymentIndex, // Index of the payment in the list
+  static Future<void> addPaymentToFirestore({
+    required String date,
+    required String day,
+    required String amountText,
+    required String description,
   }) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    CollectionReference invoicesCollection =
-        firestore.collection('big_invoices');
+    // التعديل: المسار أصبح تحت المدرس
+    final docRef = _db.doc(teacherPath).collection('big_invoices').doc(date);
 
-    // Fetch the BigInvoice document
+    final docSnapshot = await docRef.get();
+
+    final newPayment = Payment(
+      amount: double.tryParse(amountText) ?? 0.0,
+      description: description.trim(),
+      dateTime: DateTime.now(),
+    );
+
+    if (docSnapshot.exists) {
+      final data = docSnapshot.data() as Map<String, dynamic>;
+      final bigInvoice = DailyInvoice.fromJson(data);
+      bigInvoice.payments.add(newPayment);
+      await docRef.update(bigInvoice.toJson());
+    } else {
+      final bigInvoice = DailyInvoice(
+        date: date,
+        day: day,
+        invoices: [],
+        payments: [newPayment],
+      );
+      await docRef.set(bigInvoice.toJson());
+    }
+  }
+
+  static Future<void> updatePaymentInBigInvoice({
+    required String date,
+    required Payment updatedPayment,
+    required int paymentIndex,
+  }) async {
+    CollectionReference invoicesCollection =
+        _db.doc(teacherPath).collection('big_invoices');
+
     DocumentSnapshot docSnapshot = await invoicesCollection.doc(date).get();
 
     if (!docSnapshot.exists) {
       throw Exception("Document with date $date does not exist");
     }
 
-    // Convert the document to a BigInvoice object
     Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-    BigInvoice bigInvoice = BigInvoice.fromJson(data);
+    DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
-    // Update the specific payment in the list
     if (paymentIndex < 0 || paymentIndex >= bigInvoice.payments.length) {
       throw Exception("Invalid payment index");
     }
     bigInvoice.payments[paymentIndex] = updatedPayment;
 
-    // Update the document in Firestore
     await invoicesCollection.doc(date).set(bigInvoice.toJson());
   }
 
-  // ------------------ FIREBASE HELPERS ------------------
-
-// ✅ 2. Get and increment invoice ID safely (single function)
+  // ✅ تعديل جلب الـ ID التسلسلي ليكون خاص بكل مدرس
   static Future<int> getAndIncrementInvoiceId() async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    // العداد أصبح داخل constants المدرس
     DocumentReference docRef =
-        firestore.collection('constants').doc('bills_ids');
+        _db.doc(teacherPath).collection('constants').doc('bills_ids');
 
-    return await firestore.runTransaction((transaction) async {
+    return await _db.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(docRef);
 
-      int currentId = 0;
       if (!snapshot.exists) {
         transaction.set(docRef, {'bills_ids': 1});
         return 1;
       }
 
       final data = snapshot.data() as Map<String, dynamic>?;
-      currentId = (data?['bills_ids'] ?? 0) + 1;
+      int currentId = (data?['bills_ids'] ?? 0) + 1;
 
       transaction.update(docRef, {'bills_ids': currentId});
-
       return currentId;
     });
   }
 
-// ------------------ MAIN FUNCTIONS ------------------
-
-// ✅ 3. Add Invoice to BigInvoice (invoices list only)
   static Future<void> addInvoiceToBigInvoices({
     required String date,
     required String day,
@@ -697,12 +833,8 @@ class FirebaseFunctions {
     required String motherPhone,
     required String fatherPhone,
   }) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    // ✅ Get and increment ID atomically
     int invoiceId = await getAndIncrementInvoiceId();
 
-    // ✅ Create invoice with assigned ID
     Invoice newInvoice = Invoice(
       id: invoiceId.toString(),
       studentId: studentId,
@@ -717,81 +849,59 @@ class FirebaseFunctions {
       dateTime: DateTime.now(),
     );
 
-    // ✅ Check if big invoice exists for this date
-    DocumentReference docRef = firestore.collection('big_invoices').doc(date);
+    // التعديل: الفاتورة تحفظ في مسار المدرس
+    DocumentReference docRef =
+        _db.doc(teacherPath).collection('big_invoices').doc(date);
 
-    DocumentSnapshot docSnapshot = await docRef.get();
-
-    if (docSnapshot.exists) {
-      Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-      BigInvoice bigInvoice = BigInvoice.fromJson(data);
-
-      bigInvoice.invoices.add(newInvoice);
-
-      await docRef.update(bigInvoice.toJson());
-    } else {
-      BigInvoice bigInvoice = BigInvoice(
-        date: date,
-        day: day,
-        invoices: [newInvoice],
-        payments: [],
-      );
-
-      await docRef.set(bigInvoice.toJson());
+    try {
+      await docRef.set({
+        'date': date,
+        'day': day,
+        'invoices': FieldValue.arrayUnion([newInvoice.toJson()]),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      rethrow;
     }
-
   }
-// 4. Update Invoice (by replacing it in invoices list)
+
   static Future<void> updateInvoiceInBigInvoices({
     required String date,
     required double differenceAmount,
     required Invoice updatedInvoice,
   }) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-    DocumentSnapshot docSnapshot =
-        await firestore.collection('big_invoices').doc(date).get();
+    // التعديل: المسار تحت المدرس
+    final docRef = _db.doc(teacherPath).collection('big_invoices').doc(date);
+    DocumentSnapshot docSnapshot = await docRef.get();
 
     if (!docSnapshot.exists) {
       throw Exception("BigInvoice for $date not found");
     }
 
     Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-    BigInvoice bigInvoice = BigInvoice.fromJson(data);
+    DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
-    // Find invoice index by id
     int index = bigInvoice.invoices
         .indexWhere((invoice) => invoice.id == updatedInvoice.id);
 
-    if (index == -1) {
-      throw Exception("Invoice with ID ${updatedInvoice.id} not found");
-    }
+    if (index == -1) throw Exception("Invoice not found");
 
-    // Replace invoice
     bigInvoice.invoices[index] = updatedInvoice;
+    await docRef.update(bigInvoice.toJson());
 
-    // ✅ Save updated big invoice
-    await firestore
-        .collection('big_invoices')
-        .doc(date)
-        .update(bigInvoice.toJson());
-
-    // ✅ Fetch the student using your function
+    // تحديث الطالب (getSecondaryCollection متعدلة بالفعل لتتبع المدرس)
     Studentmodel? student = await FirebaseExams.getStudent(
       updatedInvoice.grade,
       updatedInvoice.studentId,
     );
 
     if (student != null) {
-      // ✅ Update the paidAmount in student model
       for (var sub in student.studentPaidSubscriptions!) {
         if (sub.subscriptionId == updatedInvoice.subscriptionFeeID) {
           sub.paidAmount += differenceAmount;
           break;
         }
       }
-
-      // ✅ Save updated student back to Firestore
-      await FirebaseFunctions.getSecondaryCollection(updatedInvoice.grade)
+      await getSecondaryCollection(updatedInvoice.grade)
           .doc(updatedInvoice.studentId)
           .update(student.toJson());
     }
@@ -801,34 +911,20 @@ class FirebaseFunctions {
     required String date,
     required Invoice invoice,
   }) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final docRef = _db.doc(teacherPath).collection('big_invoices').doc(date);
+    DocumentSnapshot docSnapshot = await docRef.get();
 
-    DocumentSnapshot docSnapshot =
-        await firestore.collection('big_invoices').doc(date).get();
-
-    if (!docSnapshot.exists) {
-      throw Exception("BigInvoice for $date not found");
-    }
+    if (!docSnapshot.exists) throw Exception("BigInvoice not found");
 
     Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
-    BigInvoice bigInvoice = BigInvoice.fromJson(data);
+    DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
-    // Find invoice index in big invoice
     int index = bigInvoice.invoices.indexWhere((inv) => inv.id == invoice.id);
+    if (index == -1) throw Exception("Invoice not found");
 
-    if (index == -1) {
-      throw Exception("Invoice with ID ${invoice.id} not found");
-    }
-
-    // ✅ Remove from big invoices list
     bigInvoice.invoices.removeAt(index);
+    await docRef.update(bigInvoice.toJson());
 
-    await firestore
-        .collection('big_invoices')
-        .doc(date)
-        .update(bigInvoice.toJson());
-
-    // ✅ Now remove it from the student's records
     Studentmodel? student = await FirebaseExams.getStudent(
       invoice.grade,
       invoice.studentId,
@@ -842,43 +938,40 @@ class FirebaseFunctions {
           break;
         }
       }
-
-      // ✅ حفظ التحديث في Firebase
-      await FirebaseFunctions.getSecondaryCollection(invoice.grade)
+      await getSecondaryCollection(invoice.grade)
           .doc(invoice.studentId)
           .update(student.toJson());
     }
   }
 
-  static Future<List<Invoice>> getInvoicesByStudentNumber(
-      String studentNumber) async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    // Get all big_invoices docs
-    QuerySnapshot snapshot = await firestore.collection('big_invoices').get();
+  static Future<List<Invoice>> getInvoicesByStudenId(String studentID) async {
+    // التعديل: البحث في فواتير المدرس الحالي فقط
+    QuerySnapshot snapshot =
+        await _db.doc(teacherPath).collection('big_invoices').get();
 
     List<Invoice> studentInvoices = [];
 
     for (var doc in snapshot.docs) {
       Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-      BigInvoice bigInvoice = BigInvoice.fromJson(data);
+      DailyInvoice bigInvoice = DailyInvoice.fromJson(data);
 
-      // Filter invoices for this student number
       var matchingInvoices = bigInvoice.invoices
-          .where((invoice) => invoice.studentId == studentNumber)
+          .where((invoice) => invoice.studentId == studentID)
           .toList();
 
       studentInvoices.addAll(matchingInvoices);
     }
-
     return studentInvoices;
   }
 
   //  ................===============     subscriptions   ==============........................
+// =============================== Subscriptions (Sub-collections) ===============================
 
   static Future<void> createGradeSubscriptionDoc(
       GradeSubscriptionsModel model) async {
-    await FirebaseFirestore.instance
+    // التعديل: الحفظ داخل constants المدرس
+    await _db
+        .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
         .collection('grades')
@@ -888,18 +981,15 @@ class FirebaseFunctions {
 
   static Future<void> addSubscriptionToGrade(String gradeName,
       String subscriptionName, double subscriptionAmount) async {
-    final firestore = FirebaseFirestore.instance;
-
-    final docRef = firestore
+    final docRef = _db
+        .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
         .collection('grades')
         .doc(gradeName);
 
     final doc = await docRef.get();
-
-    // 🔹 Create a temporary document reference just to generate an ID
-    final tempId = firestore.collection('temp_ids').doc().id;
+    final tempId = _db.collection('temp_ids').doc().id;
 
     final newSubscription = SubscriptionFee(
       id: tempId,
@@ -908,17 +998,14 @@ class FirebaseFunctions {
     );
 
     if (!doc.exists) {
-      // 🔹 Create the document if it doesn't exist
       final newGrade = GradeSubscriptionsModel(
         gradeName: gradeName,
         subscriptions: [newSubscription],
       );
-
       await docRef.set(newGrade.toJson());
       return;
     }
 
-    // 🔹 If it exists, append the new subscription
     final grade = GradeSubscriptionsModel.fromJson(doc.data()!);
     grade.subscriptions.add(newSubscription);
 
@@ -927,9 +1014,12 @@ class FirebaseFunctions {
     });
   }
 
-  static Future<void> updateSubscriptionInGrade(String gradeName,
-      SubscriptionFee updatedSubscription,) async {
-    final docRef = FirebaseFirestore.instance
+  static Future<void> updateSubscriptionInGrade(
+    String gradeName,
+    SubscriptionFee updatedSubscription,
+  ) async {
+    final docRef = _db
+        .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
         .collection('grades')
@@ -939,17 +1029,11 @@ class FirebaseFunctions {
     if (!doc.exists) throw Exception("Grade '$gradeName' does not exist.");
 
     final grade = GradeSubscriptionsModel.fromJson(doc.data()!);
-
-    // 👇 Find by ID instead of name
     final index =
         grade.subscriptions.indexWhere((s) => s.id == updatedSubscription.id);
 
-    if (index == -1) {
-      throw Exception(
-          "Subscription with ID '${updatedSubscription.id}' not found.");
-    }
+    if (index == -1) throw Exception("Subscription not found.");
 
-    // 👇 Replace with updated one
     grade.subscriptions[index] = updatedSubscription;
 
     await docRef.update({
@@ -957,9 +1041,10 @@ class FirebaseFunctions {
     });
   }
 
-  static Future<void> deleteSubscriptionFromGrade(String gradeName,
-      String subscriptionId) async {
-    final docRef = FirebaseFirestore.instance
+  static Future<void> deleteSubscriptionFromGrade(
+      String gradeName, String subscriptionId) async {
+    final docRef = _db
+        .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
         .collection('grades')
@@ -978,15 +1063,15 @@ class FirebaseFunctions {
 
   static Future<SubscriptionFee?> getSubscriptionById(
       String gradeName, String subscriptionId) async {
-    final firestore = FirebaseFirestore.instance;
-
-    final docRef = firestore
+    final docRef = _db
+        .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
         .collection('grades')
         .doc(gradeName);
 
-    final doc = await docRef.get();
+    final doc =
+        await docRef.get(const GetOptions(source: Source.serverAndCache));
 
     if (!doc.exists) return null;
 
@@ -998,34 +1083,34 @@ class FirebaseFunctions {
         .toList();
 
     try {
-      // 🔍 Find the subscription by ID
       return subscriptions.firstWhere((sub) => sub.id == subscriptionId);
     } catch (e) {
-      // Not found
       return null;
     }
   }
 
   static Stream<GradeSubscriptionsModel?> getGradeSubscriptionsStream(
       String gradeName) {
-    final docRef = FirebaseFirestore.instance
+    return _db
+        .doc(teacherPath)
         .collection('constants')
         .doc('grades_subscriptions')
         .collection('grades')
-        .doc(gradeName);
-
-    return docRef.snapshots().map((snapshot) {
+        .doc(gradeName)
+        .snapshots()
+        .map((snapshot) {
       if (!snapshot.exists || snapshot.data() == null) return null;
       return GradeSubscriptionsModel.fromJson(snapshot.data()!);
     });
   }
 
-  // passwords============
+  // =============================== Password Management ===============================
 
   static Future<bool> verifyPassword(String enteredPassword) async {
     try {
+      // كلمة المرور أصبحت داخل doc خاص بكل مدرس
       final docRef =
-          FirebaseFirestore.instance.collection('constants').doc('password');
+          _db.doc(teacherPath).collection('constants').doc('password');
       final doc = await docRef.get();
 
       if (!doc.exists) {
@@ -1033,32 +1118,375 @@ class FirebaseFunctions {
         return enteredPassword == '0';
       }
 
-      final data = doc.data();
-      final savedPassword = data?['password'] ?? '0';
-
-      if (data == null || !data.containsKey('password')) {
-        await docRef.set({'password': '0'});
-      }
-
-      // ✅ Finally, compare passwords
+      final savedPassword = doc.data()?['password'] ?? '0';
       return enteredPassword == savedPassword;
     } catch (e) {
-      print('Error verifying password: $e');
       return false;
     }
   }
 
   static Future<bool> changePassword(String newPassword) async {
     try {
-      await FirebaseFirestore.instance
+      await _db
+          .doc(teacherPath)
           .collection('constants')
           .doc('password')
-          .update({'password': newPassword});
+          .set({'password': newPassword}, SetOptions(merge: true));
       return true;
     } catch (e) {
-      print('Error changing password: $e');
       return false;
     }
   }
-}
 
+  // =============================== Absence Management ===============================
+
+  static Future<void> deleteAbsenceFromSubcollection(
+      String day, String magmo3aId, String absenceDate) async {
+    try {
+      // getDayCollection تجلب المسار الصحيح للمدرس تلقائياً
+      DocumentReference magmo3aDocRef = getDayCollection(day).doc(magmo3aId);
+
+      await magmo3aDocRef.collection('absences').doc(absenceDate).delete();
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
+  static Future<void> updateAbsenceByDateInSubcollection(
+    String day,
+    String magmo3aId,
+    String absenceDate,
+    AbsenceModel updatedAbsence,
+  ) async {
+    try {
+      DocumentReference magmo3aDocRef = getDayCollection(day).doc(magmo3aId);
+
+      await magmo3aDocRef
+          .collection('absences')
+          .doc(absenceDate)
+          .set(updatedAbsence.toJson(), SetOptions(merge: true));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Stream<AbsenceModel?> getAbsenceByDateStream(
+      String day, String groupId, String date) {
+    // التعديل: استخدام getDayCollection للوصول لمسار المدرس
+    return getDayCollection(day)
+        .doc(groupId)
+        .collection('absences')
+        .doc(date)
+        .snapshots()
+        .map((docSnapshot) {
+      if (docSnapshot.exists && docSnapshot.data() != null) {
+        return AbsenceModel.fromJson(docSnapshot.data()!);
+      }
+      return null;
+    });
+  }
+
+  static Future<AbsenceModel?> getAbsenceByDateOnce(
+      String day, String groupId, String date) async {
+    final docSnapshot = await getDayCollection(day)
+        .doc(groupId)
+        .collection('absences') // تأكد من مطابقة المسار 'absence' أو 'absences'
+        .doc(date)
+        .get(const GetOptions(source: Source.server));
+
+    if (docSnapshot.exists && docSnapshot.data() != null) {
+      return AbsenceModel.fromJson(docSnapshot.data()!);
+    }
+    return null;
+  }
+
+  // =============================== Helper Getters ===============================
+
+  static Future<Studentmodel?> getStudentById(
+      String grade, String studentId) async {
+    final doc = await getSecondaryCollection(grade).doc(studentId).get();
+    return doc.exists ? doc.data() : null;
+  }
+
+  static Future<QuerySnapshot<Studentmodel>> getStudentsByGroupIdOnce(
+      String grade, String groupId) async {
+    // التعديل هنا بيضمن إن لو المدرس دخل المجموعة دي قبل كده، الداتا تظهر Offline
+    return await getSecondaryCollection(grade)
+        .where("hisGroupsId", arrayContains: groupId)
+        .get(const GetOptions(source: Source.serverAndCache));
+  }
+
+  static Future<Teacher?> getTeacherById(String id) async {
+    // أضفنا GetOptions عشان يفتح البروفايل فوراً من الموبايل
+    var doc = await _db
+        .collection('teachers')
+        .doc(id)
+        .get(const GetOptions(source: Source.serverAndCache));
+
+    return doc.exists ? Teacher.fromJson(doc.data()!, doc.id) : null;
+  }
+
+  // داخل FirebaseFunctions
+
+  static Future<void> runAttendanceTransaction({
+    required Studentmodel student,
+    required AbsenceModel currentGroupAbsence,
+    required String currentDay,
+    required String currentMagmo3aId,
+    required String currentDate,
+    // اختياري: للمجموعة الأصلية لو الطالب تعويض
+    AbsenceModel? otherGroupAbsence,
+    SecondaryRecord? otherGroupInfo,
+  }) async {
+    final batch = _db.batch();
+    final rootPath = teacherPath; // استخدام المتغير الموجود عندك
+
+    // 1. مرجع وثيقة الطالب
+    final studentRef = _db
+        .doc('$rootPath/${student.grade}/${student.id}'); // اختصار رهيب للمسار
+
+    batch.update(studentRef, student.toJson());
+
+    // 2. مرجع وثيقة الحضور للمجموعة الحالية
+    final currentAbsenceRef = _db
+        .doc('$rootPath/$currentDay/$currentMagmo3aId/absences/$currentDate');
+
+    batch.set(currentAbsenceRef, currentGroupAbsence.toJson(),
+        SetOptions(merge: true));
+
+    // 3. مرجع وثيقة الحضور للمجموعة الأخرى (إن وجدت)
+    if (otherGroupAbsence != null && otherGroupInfo != null) {
+      final otherAbsenceRef = _db.doc(
+          '$rootPath/${otherGroupInfo.day}/${otherGroupInfo.magmo3aId}/absences/${otherGroupInfo.date}');
+
+      batch.set(
+          otherAbsenceRef, otherGroupAbsence.toJson(), SetOptions(merge: true));
+    }
+
+    // تنفيذ الباتش
+    await batch.commit();
+  }
+
+  // تجديد الاشتراك الأساسي (Basic)
+  static Future<void> renewBasicSubscription({
+    required Subscription plan,
+    String? manualBillId,
+    required String? paymentRef,
+    String? teacherId,
+  }) async {
+    try {
+      final String targetTeacherId =
+          teacherId ?? FirebaseAuth.instance.currentUser!.uid;
+
+      final String path = "teachers/$targetTeacherId";
+      final now = DateTime.now();
+
+      // جلب بيانات المدرس الحالية
+      DocumentSnapshot teacherDoc = await _db.doc(path).get();
+
+      // تصحيح: لو المدرس لسه جديد (في حالة الـ Register)، مش هينفع نقرأ منه تاريخ قديم
+      DateTime currentExpiry;
+      if (teacherDoc.exists && teacherDoc.data() != null) {
+        Map<String, dynamic> tData = teacherDoc.data() as Map<String, dynamic>;
+        currentExpiry = DateTime.parse(
+            tData['subscriptionEndTime'] ?? now.toIso8601String());
+      } else {
+        currentExpiry = now;
+      }
+
+      // الحسبة بتاعتك زي ما هي
+      DateTime baseDate = currentExpiry.isAfter(now) ? currentExpiry : now;
+      DateTime newExpiryDate =
+          baseDate.add(Duration(days: plan.durationInDays));
+
+      WriteBatch batch = _db.batch();
+      DocumentReference teacherRef = _db.doc(path);
+
+      // تصحيح الـ ID: لو manualBillId موجود نستخدمه، لو null نخلي Firestore يولد ID جديد تلقائي
+      DocumentReference billRef = manualBillId != null
+          ? teacherRef.collection('bills').doc(manualBillId)
+          : teacherRef.collection('bills').doc();
+
+      // 1. تحديث بيانات المدرس (استخدام set مع merge أضمن أمنياً من update في حالات الـ Register)
+      batch.set(
+          teacherRef,
+          {
+            'subscriptionEndTime': newExpiryDate.toIso8601String(),
+        'isActive': true,
+            'gracePeriodEndTime': null,
+          },
+          SetOptions(merge: true));
+
+      // 2. إنشاء الفاتورة
+      Bill newBill = Bill(
+        id: billRef.id,
+        paymentRef: paymentRef,
+        billType: plan.subscriptionType.name,
+        baseStudentLimit: plan.totalStudents,
+        subscriptionName: plan.name,
+        subscriptionDurationInDays: plan.durationInDays,
+        billAmount: plan.price,
+        paidAt: now,
+        expiryDate: newExpiryDate,
+        subscriptionDescription: plan.description,
+        subscriptionId: plan.id ?? "",
+        teacherId: targetTeacherId,
+      );
+
+      batch.set(billRef, newBill.toJson());
+      await batch.commit();
+    } on Exception catch (e) {
+      if (e.toString().contains("AUTH_REQUIRED")) {
+        rethrow;
+      }
+      throw Exception("فشل التجديد: $e");
+    }
+  }
+
+  // إضافة بوست (Boost)
+  static Future<void> renewBoostSubscription(
+      {required Subscription boostPlan,
+      String? manualBillId,
+      required String? paymentRef}) async {
+    try {
+      final String path = teacherPath;
+      final now = DateTime.now();
+      DateTime boostExpiry = now.add(Duration(days: boostPlan.durationInDays));
+
+      WriteBatch batch = _db.batch();
+      DocumentReference teacherRef = _db.doc(path);
+      DocumentReference billRef =
+          teacherRef.collection('bills').doc(manualBillId);
+
+      ActiveBoost newBoost = ActiveBoost(
+        id: billRef.id,
+        studentAmount: boostPlan.totalStudents,
+        expiryDate: boostExpiry,
+        purchasedAt: now,
+      );
+
+      batch.update(teacherRef, {
+        'activeBoosts': FieldValue.arrayUnion([newBoost.toJson()]),
+      });
+
+      Bill newBill = Bill(
+        id: billRef.id,
+        subscriptionId: boostPlan.id ?? '',
+        paymentRef: paymentRef,
+        teacherId: FirebaseAuth.instance.currentUser!.uid,
+        billAmount: boostPlan.price,
+        paidAt: now,
+        expiryDate: boostExpiry,
+        subscriptionName: boostPlan.name,
+        subscriptionDescription: boostPlan.description,
+        subscriptionDurationInDays: boostPlan.durationInDays,
+        billType: boostPlan.subscriptionType.name,
+        boostAmount: boostPlan.totalStudents,
+      );
+
+      batch.set(billRef, newBill.toJson());
+      await batch.commit();
+    } on Exception catch (e) {
+      if (e.toString().contains("AUTH_REQUIRED")) rethrow;
+      throw Exception("فشل إضافة البوست: $e");
+    }
+  }
+
+  static Stream<List<Subscription>> getBoostSubscriptions() {
+    return _db.collection('admin_boost_subscriptions').snapshots().map(
+          (snap) => snap.docs
+              .map((doc) => Subscription.fromJson(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  static Stream<List<Subscription>> getOffersSubscriptions() {
+    return _db.collection('admin_offers_subscriptions').snapshots().map(
+          (snap) => snap.docs
+              .map((doc) => Subscription.fromJson(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  static Stream<List<Subscription>> getSubscriptions() {
+    return _db.collection('admin_subscriptions').snapshots().map(
+          (snap) => snap.docs
+              .map((doc) => Subscription.fromJson(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+// في ملف FirebaseFunctions
+  static Future<void> checkAndResolvePendingPayment(
+      String teacherId, BuildContext context) async {
+    try {
+      // 1. هات كل العمليات المعلقة الخاصة بالمدرس ده
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('teachers')
+          .doc(teacherId)
+          .collection('pending_payments')
+          .get();
+
+      if (querySnapshot.docs.isEmpty) return; // مفيش حاجة، اطلع
+
+      // 2. لوب على العمليات (ممكن يكون حاول كذا مرة)
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        final String ref = data['ref'];
+        final String billId = data['billId'];
+
+        // تحويل الماب لـ Subscription (لاحظ هنا بناخد الـ Map مباشرة)
+        final planMap = data['plan'] as Map<String, dynamic>;
+        final Subscription plan =
+            Subscription.fromJson(planMap, planMap['id'] ?? '');
+
+        debugPrint("Checking cloud pending payment: $ref");
+
+        // 3. اسأل EasyKash
+        final statusData = await EasyKashService.checkPaymentStatus(ref);
+
+        if (statusData != null &&
+            (statusData['status'] == "PAID" ||
+                statusData['status'] == "SUCCESS")) {
+          // --- نجاح: فعل الاشتراك ---
+          bool isBoost =
+              plan.subscriptionType.toString().toLowerCase().contains('boost');
+
+          if (isBoost) {
+            await renewBoostSubscription(
+                boostPlan: plan, manualBillId: billId, paymentRef: ref);
+          } else {
+            await renewBasicSubscription(
+                plan: plan, manualBillId: billId, paymentRef: ref);
+          }
+
+          // تحديث الـ UI لو السياق موجود
+          if (context.mounted) {
+            await Provider.of<TeacherProvider>(context, listen: false)
+                .refreshTeacherData();
+
+            AppSnackBars.showSuccess(
+              context,
+              "تم استعادة عملية دفع سابقة وتفعيل الاشتراك بنجاح!",
+            );
+          }
+
+          // حذف العملية المعلقة بعد النجاح
+          await doc.reference.delete();
+        } else if (statusData != null &&
+            (statusData['status'] == "FAILED" ||
+                statusData['status'] == "EXPIRED")) {
+          // --- فشل نهائي: احذفها عشان منظلش نسأل عليها ---
+          await doc.reference.delete();
+          AppSnackBars.showError(
+            context,
+            "نعتذر ولكن لم تتم العمليه السابقه بنجاح !",
+          );
+        }
+        // لو لسه PENDING سيبها، يمكن يدفع كمان شويه
+      }
+    } catch (e) {
+      debugPrint("Error in cloud payment check: $e");
+    }
+  }
+}

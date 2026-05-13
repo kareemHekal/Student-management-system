@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:student_management_system/alert_dialogs/edit_on_payment.dart';
 
-import '../../Alert dialogs/edit_on_payment.dart';
 import '../../firebase/firebase_functions.dart';
 import '../../models/Magmo3aModel.dart';
-import '../../models/Studentmodel.dart';
+import '../../models/Student_model.dart';
 import '../../models/student_paid_subscription.dart';
 import 'edit_student_state.dart';
 
@@ -12,8 +12,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
   final Studentmodel student;
 
   StudentEditCubit({required this.student}) : super(StudentEditInitial());
-
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   late String? date;
   late String? day;
@@ -174,13 +172,6 @@ class StudentEditCubit extends Cubit<StudentEditState> {
       emit(StudentEditFailure(errorMessage: e.toString()));
     }
     Navigator.pop(context);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Colors.green,
-        content: Text('تم تعديل بيانات الطالب بنجاح!'),
-      ),
-    );
   }
 
   void setTheSelectedGenderByNull() {

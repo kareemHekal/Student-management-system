@@ -1,14 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // نحتاج اليوزر الحالي
+import 'package:student_management_system/firebase/firebase_functions.dart';
 
-import '../models/Studentmodel.dart';
+import '../models/Student_model.dart';
 import '../models/exam_model.dart';
 import '../models/mini_exam.dart';
 import '../models/student_exam_grade.dart';
 import 'firebase_functions.dart';
 
 class FirebaseExams {
-  static final _firestore = FirebaseFirestore.instance;
-  static final _collection = _firestore.collection('exams');
+  // دالة مساعدة لجلب مسار المدرس الحالي
+  static String get _teacherPath {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("No teacher logged in!");
+    return 'teachers/${user.uid}';
+  }
+
+  // التعديل: الكولكشن الآن يفتح من داخل وثيقة المدرس
+  static CollectionReference<Map<String, dynamic>> get _collection =>
+      FirebaseFirestore.instance.doc(_teacherPath).collection('exams');
 
   /// Get all exams for a grade
   static Stream<List<ExamModel>> getExamsStream(String gradeName) {
@@ -39,14 +49,14 @@ class FirebaseExams {
   static Future<void> addExam(String gradeName, ExamModel exam) async {
     final docRef = _collection.doc(gradeName);
 
-    // Generate Firestore ID if exam.id is null
+    // Generate Firestore ID using the teacher's path context
     final newExamId =
         exam.id ?? FirebaseFirestore.instance.collection('tmp').doc().id;
     final newExam = exam.copyWith(id: newExamId);
 
     await docRef.set({
       'exams': FieldValue.arrayUnion([newExam.toJson()])
-    }, SetOptions(merge: true)); // <-- merge ensures doc is created if missing
+    }, SetOptions(merge: true));
   }
 
   /// Update an exam by its ID
@@ -65,29 +75,28 @@ class FirebaseExams {
   static Future<void> deleteExam(String gradeName, String examId) async {
     final docRef = _collection.doc(gradeName);
 
-    // 1. Remove the exam from the exams list
+    // 1. Remove from the exams list
     final exams = await getExams(gradeName);
     exams.removeWhere((e) => e.id == examId);
     await docRef.update({
       'exams': exams.map((e) => e.toJson()).toList(),
     });
 
-    // 2. Get all students in this grade
+    // 2. Get students (FirebaseFunctions will handle teacher path automatically)
     final students =
         await FirebaseFunctions.getAllStudentsByGrade_future(gradeName);
 
-    // 3. Update each student by removing the exam from their studentExamsGrades
+    // 3. Update students
     for (final student in students) {
       final updatedExams = student.studentExamsGrades
               ?.where((grade) => grade.examId != examId)
               .toList() ??
           [];
 
-      // Only update if there was a change
       if (updatedExams.length != (student.studentExamsGrades?.length ?? 0)) {
         student.studentExamsGrades = updatedExams;
 
-        // Save the updated student back to Firestore
+        // Save back (getSecondaryCollection is already teacher-aware)
         await FirebaseFunctions.getSecondaryCollection(gradeName)
             .doc(student.id)
             .update(student.toJson());
@@ -97,6 +106,7 @@ class FirebaseExams {
 
   static Future<Studentmodel?> getStudent(
       String gradeName, String studentId) async {
+    // جلب الطالب باستخدام دالة FirebaseFunctions اللي متعدلة لمسار المدرس
     final doc = await FirebaseFunctions.getSecondaryCollection(gradeName)
         .doc(studentId)
         .get();
@@ -116,11 +126,9 @@ class FirebaseExams {
     await studentDoc.update(student.toJson());
   }
 
-  static Future<MiniExam?> getMiniExamById(
-    String gradeName,
-    String examId,
-    String miniExamId,
-  ) async {
+  static Future<MiniExam?> getMiniExamById(String gradeName,
+      String examId,
+      String miniExamId,) async {
     final doc = await _collection.doc(gradeName).get();
 
     if (!doc.exists) return null;
@@ -131,7 +139,6 @@ class FirebaseExams {
         .map((e) => ExamModel.fromJson(e))
         .toList();
 
-    // Find the exam
     final exam = exams.firstWhere(
       (exam) => exam.id == examId,
       orElse: () => ExamModel(id: null, name: '', miniExams: []),
@@ -139,7 +146,6 @@ class FirebaseExams {
 
     if (exam.id == null || exam.miniExams == null) return null;
 
-    // Find the mini exam
     try {
       return exam.miniExams!.firstWhere((mini) => mini.id == miniExamId);
     } catch (e) {
@@ -147,7 +153,6 @@ class FirebaseExams {
     }
   }
 
-  /// Get a single exam by its ID for a specific grade
   static Future<ExamModel?> getExamById(String gradeName, String examId) async {
     final doc = await _collection.doc(gradeName).get();
 
@@ -162,7 +167,6 @@ class FirebaseExams {
     try {
       return exams.firstWhere((exam) => exam.id == examId);
     } catch (e) {
-      // If no match found, return null
       return null;
     }
   }
@@ -177,46 +181,37 @@ class FirebaseExams {
     final student = await getStudent(gradeName, studentId);
     if (student == null) return;
 
-    // Ensure list exists
     student.studentExamsGrades ??= [];
 
-    // Find the index of the existing grade using IDs from the updated model
     final index = student.studentExamsGrades!.indexWhere(
       (grade) =>
           grade.examId == updatedGrade.examId &&
           grade.miniExamId == updatedGrade.miniExamId,
     );
 
-    if (index == -1) return; // not found, nothing to update
+    if (index == -1) return;
 
-    // Replace the old one with the updated model
     student.studentExamsGrades![index] = updatedGrade;
 
-    // Update Firestore document
     await studentDoc.update(student.toJson());
   }
 
-  /// Delete a student exam grade by exam ID and mini exam ID
   static Future<void> deleteStudentExamGrade({
     required String gradeName,
     required String studentId,
     required String examId,
     required String miniExamId,
   }) async {
-    // Get student document reference
     final studentDoc =
         FirebaseFunctions.getSecondaryCollection(gradeName).doc(studentId);
 
-    // Fetch student data
     final student = await getStudent(gradeName, studentId);
     if (student == null || student.studentExamsGrades == null) return;
 
-    // Remove the matching grade
     student.studentExamsGrades!.removeWhere(
       (grade) => grade.examId == examId && grade.miniExamId == miniExamId,
     );
 
-    // Update Firestore with new list
     await studentDoc.update(student.toJson());
   }
 }

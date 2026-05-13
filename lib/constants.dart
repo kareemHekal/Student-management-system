@@ -1,3 +1,3 @@
-abstract class Constants {
-  static final String teacherName = " your _ logo  ";
+class AppConstants {
+  static const String currentAppVersion = "1.0.0";
 }
