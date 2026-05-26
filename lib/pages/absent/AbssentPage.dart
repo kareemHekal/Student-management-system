@@ -297,10 +297,12 @@ class AbsentPage extends StatelessWidget {
                             student: student,
                             secondaryRecord: selectedMagmo3a,
                           ));
-                          Navigator.pop(context);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
                         });
                       });
-                      if (context.mounted) {
+                      if (rootContext.mounted) {
                         await showModalBottomSheet(
                           context: rootContext,
                           isScrollControlled: true,

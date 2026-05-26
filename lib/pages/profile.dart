@@ -192,7 +192,7 @@ class TeacherProfilePage extends StatelessWidget {
                           // استخدام لون متدرج أو خلفية فاتحة ليبرز عن اللون الأساسي
                           gradient: LinearGradient(
                             colors: [
-                              AppColors.secondaryMain.withValues(alpha: 0.9),
+                              AppColors.secondaryMain.withOpacity(0.9),
                               AppColors.statusPresent
                             ],
                           ),

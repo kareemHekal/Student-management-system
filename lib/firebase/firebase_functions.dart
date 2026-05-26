@@ -1420,20 +1420,41 @@ class FirebaseFunctions {
 
     batch.update(studentRef, student.toJson());
 
-    // 2. مرجع وثيقة الحضور للمجموعة الحالية
+    // 2. تحديث الحضور للمجموعة الحالية باستخدام ArrayUnion لمنع Race Conditions
     final currentAbsenceRef = _db
         .doc('$rootPath/$currentDay/$currentMagmo3aId/absences/$currentDate');
 
-    batch.set(currentAbsenceRef, currentGroupAbsence.toJson(),
-        SetOptions(merge: true));
+    // نستنتج حالة الطالب من الموديل المحدث المبعوث من الـ UI
+    bool isAttending = currentGroupAbsence.attendStudentIds.contains(student.id);
 
-    // 3. مرجع وثيقة الحضور للمجموعة الأخرى (إن وجدت)
+    batch.set(currentAbsenceRef, {
+      'date': currentGroupAbsence.date,
+      'numberOfStudents': currentGroupAbsence.numberOfStudents,
+      'attendStudentIds': isAttending 
+          ? FieldValue.arrayUnion([student.id]) 
+          : FieldValue.arrayRemove([student.id]),
+      'absentStudentIds': isAttending 
+          ? FieldValue.arrayRemove([student.id]) 
+          : FieldValue.arrayUnion([student.id]),
+    }, SetOptions(merge: true));
+
+    // 3. تحديث الحضور للمجموعة الأخرى (التعويض) بنفس الطريقة الآمنة
     if (otherGroupAbsence != null && otherGroupInfo != null) {
       final otherAbsenceRef = _db.doc(
           '$rootPath/${otherGroupInfo.day}/${otherGroupInfo.magmo3aId}/absences/${otherGroupInfo.date}');
+      
+      bool isOtherAttending = otherGroupAbsence.attendStudentIds.contains(student.id);
 
-      batch.set(
-          otherAbsenceRef, otherGroupAbsence.toJson(), SetOptions(merge: true));
+      batch.set(otherAbsenceRef, {
+        'date': otherGroupAbsence.date,
+        'numberOfStudents': otherGroupAbsence.numberOfStudents,
+        'attendStudentIds': isOtherAttending 
+            ? FieldValue.arrayUnion([student.id]) 
+            : FieldValue.arrayRemove([student.id]),
+        'absentStudentIds': isOtherAttending 
+            ? FieldValue.arrayRemove([student.id]) 
+            : FieldValue.arrayUnion([student.id]),
+      }, SetOptions(merge: true));
     }
 
     // تنفيذ الباتش

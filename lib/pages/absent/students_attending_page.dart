@@ -219,9 +219,11 @@ class StudentsAttending extends StatelessWidget {
                       .read<AbsentCubit>()
                       .handleIntent(RestoreStudentToAbsent(student: student));
 
+                  if (!context.mounted) return;
                   AppSnackBars.showSuccess(
                       context, '✅ تم تسجيل غياب ${student.name} بنجاح!');
                 } catch (e) {
+                  if (!context.mounted) return;
                   AppSnackBars.showError(context, '$e');
                 }
               });
