@@ -74,7 +74,6 @@ class _AllStudentsTabState extends State<AllStudentsTab> {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => AiBarcodeScanner(
-                          sheetTitle: "بحث شامل عن طالب",
                           controller: MobileScannerController(
                             detectionSpeed: DetectionSpeed.noDuplicates,
                           ),

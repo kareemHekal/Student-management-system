@@ -23,12 +23,18 @@ class SubscriptionPlansPage extends StatefulWidget {
 class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late Future<List<Subscription>> _subsFuture;
+  late Future<List<Subscription>> _boostSubsFuture;
+  late Future<List<Subscription>> _offersSubsFuture;
   final String studenizerRedirect = "https://studenizer.com/status";
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _subsFuture = FirebaseFunctions.fetchSubscriptions();
+    _boostSubsFuture = FirebaseFunctions.fetchBoostSubscriptions();
+    _offersSubsFuture = FirebaseFunctions.fetchOffersSubscriptions();
   }
 
   @override
@@ -192,12 +198,9 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildSubscriptionList(
-                    stream: FirebaseFunctions.getSubscriptions()),
-                _buildSubscriptionList(
-                    stream: FirebaseFunctions.getBoostSubscriptions()),
-                _buildSubscriptionList(
-                    stream: FirebaseFunctions.getOffersSubscriptions()),
+                _buildSubscriptionList(future: _subsFuture),
+                _buildSubscriptionList(future: _boostSubsFuture),
+                _buildSubscriptionList(future: _offersSubsFuture),
               ],
             ),
           ),
@@ -292,9 +295,9 @@ class _SubscriptionPlansPageState extends State<SubscriptionPlansPage>
     );
   }
 
-  Widget _buildSubscriptionList({required Stream<List<Subscription>> stream}) {
-    return StreamBuilder<List<Subscription>>(
-      stream: stream,
+  Widget _buildSubscriptionList({required Future<List<Subscription>> future}) {
+    return FutureBuilder<List<Subscription>>(
+      future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting)
           return const Center(child: CircularProgressIndicator());
