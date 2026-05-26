@@ -1303,12 +1303,10 @@ class FirebaseFunctions {
   static Future<void> queueReferralReward({
     required String hostTeacherId,
     required String inviterName,
-    required int hostBaseStudentLimit,
   }) async {
     await _db.collection('referral_rewards').add({
       'hostTeacherId': hostTeacherId,
       'inviterName': inviterName,
-      'hostBaseStudentLimit': hostBaseStudentLimit,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -1324,17 +1322,35 @@ class FirebaseFunctions {
 
       if (snapshot.docs.isEmpty) return;
 
+      // نجلب بيانات المدرس الحالية عشان نحسب الليمت بتاعه
+      final teacherDoc = await _db.collection('teachers').doc(teacherId).get();
+      int baseLimit = 30; // افتراضي
+
+      if (teacherDoc.exists) {
+        final teacher = Teacher.fromJson(
+            teacherDoc.data() as Map<String, dynamic>, teacherId);
+        baseLimit = await teacher.getBaseStudentLimit();
+      }
+
+      // الخدعة هنا: لو المدرس كان منتهي الصلاحية، الليمت هيطلع صفر
+      // لو سيبناه صفر، هيدخل في فترة سماح إجبارية بمجرد ما يفتح، فنعطيه 30 كحد أدنى
+      if (baseLimit <= 0) {
+        baseLimit = 30;
+      }
+
       for (var rewardDoc in snapshot.docs) {
         final data = rewardDoc.data();
         final inviterName = data['inviterName'] ?? 'مدرس';
-        final baseLimit = data['hostBaseStudentLimit'] ?? 30;
 
         try {
-          // Apply the reward to the teacher's own doc (allowed by rules)
+          // مسح المكافأة من قاعدة البيانات "أولاً" لمنع تكرارها لو حصل Refresh سريع
+          await rewardDoc.reference.delete();
+
+          // ثم تطبيق المكافأة بأمان
           await renewBasicSubscription(
             plan: Subscription(
               name: "مكافأة دعوة صديق",
-              description: "أسبوع مجاني لاستضافة مدرس جديد",
+              description: "أسبوع مجاني لاستضافة المدرس ($inviterName)",
               durationInDays: 7,
               price: 0,
               subscriptionType: SubscriptionType.adminSubscription,
@@ -1343,9 +1359,6 @@ class FirebaseFunctions {
             paymentRef: "Referral bonus for inviting $inviterName",
             teacherId: teacherId,
           );
-
-          // Delete the reward after processing
-          await rewardDoc.reference.delete();
         } catch (e) {
           debugPrint("Failed to process referral reward: $e");
         }

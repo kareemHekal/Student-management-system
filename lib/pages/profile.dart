@@ -192,7 +192,7 @@ class TeacherProfilePage extends StatelessWidget {
                           // استخدام لون متدرج أو خلفية فاتحة ليبرز عن اللون الأساسي
                           gradient: LinearGradient(
                             colors: [
-                              AppColors.secondaryMain.withOpacity(0.9),
+                              AppColors.secondaryMain.withValues(alpha: 0.9),
                               AppColors.statusPresent
                             ],
                           ),
@@ -231,7 +231,7 @@ class TeacherProfilePage extends StatelessWidget {
                                   "انسخ كود الدعوة: ${teacher.id.substring(0, 8)}...",
                                   style: GoogleFonts.cairo(
                                     fontSize: 11,
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -322,7 +322,7 @@ class TeacherProfilePage extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)
         ],
       ),
       child: Column(
@@ -514,9 +514,9 @@ class TeacherProfilePage extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 15),
             decoration: BoxDecoration(
-              color: AppColors.primaryMain.withOpacity(0.1),
+              color: AppColors.primaryMain.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: AppColors.primaryMain.withOpacity(0.3)),
+              border: Border.all(color: AppColors.primaryMain.withValues(alpha: 0.3)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -558,9 +558,9 @@ class TeacherProfilePage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-            color: color.withOpacity(0.05),
+            color: color.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: color.withOpacity(0.2))),
+            border: Border.all(color: color.withValues(alpha: 0.2))),
         child: Column(
           children: [
             Icon(icon, color: color, size: 22),
@@ -621,7 +621,7 @@ class TeacherProfilePage extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-              backgroundColor: (theme['color'] as Color).withOpacity(0.1),
+              backgroundColor: (theme['color'] as Color).withValues(alpha: 0.1),
               child: Icon(theme['icon'], size: 18, color: theme['color'])),
           const SizedBox(width: 12),
           Expanded(

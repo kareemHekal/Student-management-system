@@ -87,11 +87,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (currentUser != null) {
         // 3. تفعيل الباقة التجريبية للمدرس الجديد
+        int trialDays = hostId.isNotEmpty ? 21 : 14;
+        String trialDesc = hostId.isNotEmpty 
+            ? "تجربة مجانية لمدة 21 يوم (استخدام كود صديق) لـ 30 طالب" 
+            : "تجربة مجانية لمدة 14 يوم لـ 30 طالب";
+
         await FirebaseFunctions.renewBasicSubscription(
           plan: Subscription(
             name: "الباقة التجريبية",
-            description: "تجربة مجانية لمدة 14 يوم لـ 30 طالب",
-            durationInDays: 14,
+            description: trialDesc,
+            durationInDays: trialDays,
             price: 0,
             subscriptionType: SubscriptionType.adminSubscription,
             totalStudents: 30,
@@ -100,21 +105,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           teacherId: currentUser.uid,
         );
 
-        // 🎁 4. التحقق من كود المدرس المستضيف + إرسال المكافأة
-        // (بعد التسجيل عشان المدرس يكون مسجل دخول ويقدر يقرأ من الداتابيز)
+        // 🎁 4. إرسال المكافأة للمدرس المستضيف فوراً وبدون قراءة بياناته
+        // (لحماية الـ Security Rules وتجنب الـ Permission Denied)
         if (hostId.isNotEmpty) {
           try {
-            hostTeacher =
-                await FirebaseFunctions.getTeacherById(hostId.trim());
-            if (hostTeacher != null) {
-              // بدل ما نكتب مباشرة على حساب المدرس التاني، نحط طلب مكافأة
-              // المدرس المستضيف هيستلمها تلقائي لما يفتح التطبيق
-              await FirebaseFunctions.queueReferralReward(
-                hostTeacherId: hostTeacher.id,
-                inviterName: name,
-                hostBaseStudentLimit: await hostTeacher.getBaseStudentLimit(),
-              );
-            }
+            await FirebaseFunctions.queueReferralReward(
+              hostTeacherId: hostId.trim(),
+              inviterName: name,
+            );
           } catch (e) {
             debugPrint("Failed to queue referral reward: $e");
           }

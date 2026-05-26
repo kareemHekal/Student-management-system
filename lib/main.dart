@@ -24,8 +24,6 @@ import 'pages/all_students/AllStudentPage.dart';
 import 'provider.dart';
 
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:student_management_system/firebase/firebase_functions.dart'; // تأكد من المسار
 
 // 1. تعريف المفاتيح العالمية للوصول للـ Context في أي وقت
@@ -202,6 +200,22 @@ class AuthGate extends StatelessWidget {
 
                 // --- منطق الحماية والـ 3 أيام (The Core Logic) ---
 
+                bool isTimeValid = teacher.subscriptionEndTime.isAfter(now) &&
+                    teacher.isActive;
+                bool isCountValid = teacher.currentStudentCount <= totalAllowed;
+
+                if (isTimeValid && isCountValid) {
+                  // المدرس سليم تماماً
+                  // (Recovery Check) مسح فترة السماح إن وجدت بالخطأ
+                  if (teacher.gracePeriodEndTime != null) {
+                    FirebaseFirestore.instance
+                        .collection('teachers')
+                        .doc(teacher.id)
+                        .update({'gracePeriodEndTime': FieldValue.delete()});
+                  }
+                  return const Homescreen();
+                }
+
                 // أولاً: إذا كانت هناك فترة سماح مخزنة وانتهت (المنع النهائي)
                 if (teacher.gracePeriodEndTime != null &&
                     now.isAfter(teacher.gracePeriodEndTime!)) {
@@ -215,28 +229,26 @@ class AuthGate extends StatelessWidget {
                       graceEndDate: teacher.gracePeriodEndTime!);
                 }
 
-                // ثالثاً: لو الخانة null، نفحص هل هو سليم أم تخطى الحدود؟
-                bool isTimeValid = teacher.subscriptionEndTime.isAfter(now) &&
-                    teacher.isActive;
-                bool isCountValid = teacher.currentStudentCount <= totalAllowed;
-
-                if (isTimeValid && isCountValid) {
-                  // المدرس سليم تماماً
-                  return const Homescreen();
-                } else {
-                  // حصلت مشكلة (وقت أو عدد) والخانة لسه null -> نبدأ الـ 3 أيام
-                  DateTime newGraceEnd = now.add(const Duration(days: 3));
-
-                  // تحديث الداتابيز
-                  FirebaseFirestore.instance
-                      .collection('teachers')
-                      .doc(teacher.id)
-                      .update({
-                    'gracePeriodEndTime': newGraceEnd.toIso8601String(),
-                  });
-
-                  return GracePeriodAlertScreen(graceEndDate: newGraceEnd);
+                // ثالثاً: حصلت مشكلة (وقت أو عدد) والخانة لسه null -> نبدأ الـ 3 أيام
+                // (Initialization Check) نتحقق من عمر الحساب لتجنب مشكلة الـ Race Condition
+                final accountAge = now.difference(teacher.createdAt);
+                if (accountAge.inMinutes < 5) {
+                  // الحساب قيد الإنشاء في الخلفية، لا نكتب فترة سماح
+                  return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()));
                 }
+
+                DateTime newGraceEnd = now.add(const Duration(days: 3));
+
+                // تحديث الداتابيز
+                FirebaseFirestore.instance
+                    .collection('teachers')
+                    .doc(teacher.id)
+                    .update({
+                  'gracePeriodEndTime': newGraceEnd.toIso8601String(),
+                });
+
+                return GracePeriodAlertScreen(graceEndDate: newGraceEnd);
               },
             );
           },
