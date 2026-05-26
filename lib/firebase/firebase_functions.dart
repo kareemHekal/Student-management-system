@@ -127,8 +127,8 @@ class FirebaseFunctions {
       List<Studentmodel> allStudents =
           await getAllStudentsByGrade_future(grade);
 
-      final studentBatch = _db.batch();
-      bool needsUpdate = false;
+      WriteBatch studentBatch = _db.batch();
+      int updateCount = 0;
 
       for (var student in allStudents) {
         bool studentChanged = false;
@@ -150,11 +150,17 @@ class FirebaseFunctions {
         if (studentChanged) {
           final studentRef = getSecondaryCollection(grade).doc(student.id);
           studentBatch.update(studentRef, student.toJson());
-          needsUpdate = true;
+          updateCount++;
+
+          if (updateCount >= 450) {
+            await studentBatch.commit();
+            studentBatch = _db.batch();
+            updateCount = 0;
+          }
         }
       }
 
-      if (needsUpdate) {
+      if (updateCount > 0) {
         await studentBatch.commit();
         print("✅ Updated students: Removed deleted group from their profiles.");
       }
@@ -187,6 +193,8 @@ class FirebaseFunctions {
     try {
       // التعديل: استخدام getDayCollection للتأكد من المسار الجديد للمدرس
       QuerySnapshot daySnapshot = await getDayCollection(day).get();
+      WriteBatch batch = _db.batch();
+      int count = 0;
 
       for (var groupDoc in daySnapshot.docs) {
         CollectionReference absencesSubcollectionRef =
@@ -194,8 +202,19 @@ class FirebaseFunctions {
 
         QuerySnapshot absencesSnapshot = await absencesSubcollectionRef.get();
         for (var absenceDoc in absencesSnapshot.docs) {
-          await absenceDoc.reference.delete();
+          batch.delete(absenceDoc.reference);
+          count++;
+
+          if (count >= 450) {
+            await batch.commit();
+            batch = _db.batch();
+            count = 0;
+          }
         }
+      }
+      
+      if (count > 0) {
+        await batch.commit();
       }
     } catch (e) {
       print("Error deleting absences subcollection: $e");
@@ -356,7 +375,6 @@ class FirebaseFunctions {
     }
   }
 
-  /// Adds a `StudentModel` and increments the teacher's total student count
   static Future<String> addStudentToCollection(
       String grade, Studentmodel studentModel) async {
     // 1. المرجع بتاع الطالب
@@ -368,15 +386,30 @@ class FirebaseFunctions {
     // 2. مرجع دوكيومنت المدرس لتحديث العداد
     DocumentReference teacherDoc = _db.doc(teacherPath);
 
-    // بنستخدم Batch عشان نضمن إن الطالب يتضاف والعداد يزيد مع بعض (أو لا قدر الله لو فشل واحد التاني ميتعملش)
-    WriteBatch batch = _db.batch();
+    // استخدام Transaction لضمان الذرية والتحقق من الحد الأقصى قبل الإضافة
+    await _db.runTransaction((transaction) async {
+      DocumentSnapshot teacherSnapshot = await transaction.get(teacherDoc);
+      
+      if (!teacherSnapshot.exists) {
+        throw Exception("بيانات المدرس غير موجودة");
+      }
+      
+      final teacherData = teacherSnapshot.data() as Map<String, dynamic>;
+      final teacher = Teacher.fromJson(teacherData, teacherDoc.id);
+      
+      int allowed = await teacher.getTotalAllowedStudents();
+      int current = teacher.currentStudentCount;
+      
+      if (current >= allowed) {
+        throw Exception("لقد وصلت للحد الأقصى من الطلاب ($allowed طالب). لا يمكنك تجاوز السعة المسموحة.");
+      }
 
-    batch.set(newDocRef, studentModel);
-    batch.update(teacherDoc, {
-      'currentStudentCount': FieldValue.increment(1), // بيزود العداد 1
+      transaction.set(newDocRef, studentModel);
+      transaction.update(teacherDoc, {
+        'currentStudentCount': FieldValue.increment(1),
+      });
     });
 
-    await batch.commit();
     return newDocRef.id;
   }
 
@@ -1442,9 +1475,15 @@ class FirebaseFunctions {
       WriteBatch batch = _db.batch();
       DocumentReference teacherRef = _db.doc(path);
 
-      // تصحيح الـ ID: لو manualBillId موجود نستخدمه، لو null نخلي Firestore يولد ID جديد تلقائي
-      DocumentReference billRef = manualBillId != null
-          ? teacherRef.collection('bills').doc(manualBillId)
+      // Idempotency: منع الدفع المزدوج لو ضغط مرتين في نفس الدقيقة
+      String effectiveBillId = manualBillId ?? '';
+      if (effectiveBillId.isEmpty && paymentRef != null && paymentRef.isNotEmpty) {
+        var bytes = utf8.encode(paymentRef + targetTeacherId + plan.name + now.toIso8601String().substring(0, 16)); 
+        effectiveBillId = md5.convert(bytes).toString();
+      }
+
+      DocumentReference billRef = effectiveBillId.isNotEmpty
+          ? teacherRef.collection('bills').doc(effectiveBillId)
           : teacherRef.collection('bills').doc();
 
       // 1. تحديث بيانات المدرس (استخدام set مع merge أضمن أمنياً من update في حالات الـ Register)
@@ -1495,8 +1534,16 @@ class FirebaseFunctions {
 
       WriteBatch batch = _db.batch();
       DocumentReference teacherRef = _db.doc(path);
-      DocumentReference billRef =
-          teacherRef.collection('bills').doc(manualBillId);
+      // Idempotency: منع الدفع المزدوج
+      String effectiveBillId = manualBillId ?? '';
+      if (effectiveBillId.isEmpty && paymentRef != null && paymentRef.isNotEmpty) {
+        var bytes = utf8.encode(paymentRef + FirebaseAuth.instance.currentUser!.uid + boostPlan.name + now.toIso8601String().substring(0, 16)); 
+        effectiveBillId = md5.convert(bytes).toString();
+      }
+
+      DocumentReference billRef = effectiveBillId.isNotEmpty
+          ? teacherRef.collection('bills').doc(effectiveBillId)
+          : teacherRef.collection('bills').doc();
 
       ActiveBoost newBoost = ActiveBoost(
         id: billRef.id,
